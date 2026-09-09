@@ -69,13 +69,35 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
+      # Sin los secrets cargados butler falla con un error poco claro, asi que
+      # avisamos y omitimos la publicacion en lugar de dejar el pipeline en rojo.
+      - name: Verificar credenciales de itch.io
+        id: credenciales
+        env:
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          ITCH_USER: ${{ secrets.ITCHIO_USERNAME }}
+          ITCH_GAME: ${{ secrets.ITCHIO_GAME }}
+        run: |
+          faltantes=""
+          if [ -z "$BUTLER_API_KEY" ]; then faltantes="$faltantes BUTLER_API_KEY"; fi
+          if [ -z "$ITCH_USER" ]; then faltantes="$faltantes ITCHIO_USERNAME"; fi
+          if [ -z "$ITCH_GAME" ]; then faltantes="$faltantes ITCHIO_GAME"; fi
+          if [ -n "$faltantes" ]; then
+            echo "::warning::Faltan estos secrets:$faltantes - se omite la publicacion en itch.io. Ver 'Configuracion inicial' en el README."
+            echo "listo=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "listo=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Descargar artefacto
+        if: steps.credenciales.outputs.listo == 'true'
         uses: actions/download-artifact@v7
         with:
           name: web-build
           path: builds/web
 
       - name: Instalar butler
+        if: steps.credenciales.outputs.listo == 'true'
         run: |
           curl -sSL -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
           unzip -q butler.zip -d "$HOME/butler"
@@ -83,6 +105,7 @@ jobs:
           "$HOME/butler/butler" -V
 
       - name: Publicar en itch.io
+        if: steps.credenciales.outputs.listo == 'true'
         env:
           BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
           ITCH_USER: ${{ secrets.ITCHIO_USERNAME }}
