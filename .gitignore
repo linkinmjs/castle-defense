@@ -1,0 +1,8 @@
+# Builds exportados (los genera Godot localmente y el CI en GitHub Actions)
+/builds/*
+!/builds/.gitkeep
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+desktop.ini

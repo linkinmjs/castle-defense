@@ -1,3 +1,9 @@
-# Godot 4+ specific ignores
+# Carpeta de datos del editor de Godot 4+ (caches, imports, layout)
 .godot/
+
+# Exportacion a Android (se regenera desde el editor)
 /android/
+
+# Logs y datos temporales
+/logs/
+*.tmp
