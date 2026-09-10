@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="HabilidadCurar" format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/hab_curar.gd" id="1_wjbwj"]
+
+[resource]
+script = ExtResource("1_wjbwj")
+nombre = "Curar"
+tecla = "LMB"
+costo = 25.0
+enfriamiento = 0.6
+color = Color(0.37254903, 0.7490196, 0.37254903, 1)
+descripcion = "Devuelve vida a un aliado. Lo que pasa del tope se pierde."

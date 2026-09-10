@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="HabilidadEstabilizar" format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/hab_estabilizar.gd" id="1_ukik8"]
+
+[resource]
+script = ExtResource("1_ukik8")
+nombre = "Estabilizar"
+tecla = "RMB"
+costo = 10.0
+enfriamiento = 1.2
+color = Color(0.8235294, 0.3137255, 0.23529412, 1)
+descripcion = "Corta el sangrado. No devuelve vida."

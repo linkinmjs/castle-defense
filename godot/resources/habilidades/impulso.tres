@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="HabilidadImpulso" format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/hab_impulso.gd" id="1_sjlkl"]
+
+[resource]
+script = ExtResource("1_sjlkl")
+nombre = "Impulso"
+tecla = "3"
+costo = 12.0
+enfriamiento = 4.0
+objetivo = 2
+color = Color(0.8784314, 0.7529412, 0.3764706, 1)
+descripcion = "Empuja al healer hacia el mouse. Para llegar a tiempo."

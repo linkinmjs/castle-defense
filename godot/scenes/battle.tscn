@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/battle.gd" id="1_6vh42"]
+[ext_resource type="Script" path="res://scripts/campo.gd" id="2_4k1nj"]
+[ext_resource type="PackedScene" path="res://scenes/units/healer.tscn" id="3_f4pi3"]
+[ext_resource type="Script" path="res://scripts/healer.gd" id="4_yahae"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="5_v7i3o"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="6_66ngm"]
+
+[node name="Battle" type="Node2D" unique_id=1651737116]
+script = ExtResource("1_6vh42")
+
+[node name="Campo" type="Node2D" parent="." unique_id=887202131]
+script = ExtResource("2_4k1nj")
+
+[node name="Unidades" type="Node2D" parent="." unique_id=1892501286]
+unique_name_in_owner = true
+y_sort_enabled = true
+
+[node name="Healer" type="CharacterBody2D" parent="Unidades" unique_id=1775028344 instance=ExtResource("3_f4pi3")]
+unique_name_in_owner = true
+position = Vector2(700, 220)
+collision_layer = 2
+script = ExtResource("4_yahae")
+
+[node name="Camara" type="Camera2D" parent="." unique_id=937547629]
+unique_name_in_owner = true
+position_smoothing_enabled = true
+position_smoothing_speed = 6.0
+
+[node name="HUD" type="CanvasLayer" parent="." unique_id=332406480 instance=ExtResource("5_v7i3o")]
+unique_name_in_owner = true
+script = ExtResource("6_66ngm")

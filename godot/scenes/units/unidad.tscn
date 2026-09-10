@@ -1,0 +1,24 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/unidad.gd" id="1_rrmci"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/soldier/soldier_frames.tres" id="2_412id"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_4vtv4"]
+radius = 14.0
+height = 44.0
+
+[node name="Unidad" type="CharacterBody2D" unique_id=514609364]
+collision_layer = 4
+collision_mask = 12
+script = ExtResource("1_rrmci")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=104595]
+scale = Vector2(2, 2)
+sprite_frames = ExtResource("2_412id")
+animation = &"idle"
+autoplay = "idle"
+offset = Vector2(0, -64)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1840341665]
+position = Vector2(0, -22)
+shape = SubResource("CapsuleShape2D_4vtv4")

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="HabilidadBendicion" format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/hab_bendicion.gd" id="1_bhsjc"]
+
+[resource]
+script = ExtResource("1_bhsjc")
+nombre = "Bendicion"
+tecla = "2"
+costo = 35.0
+enfriamiento = 16.0
+color = Color(0.43529412, 0.827451, 0.78039217, 1)
+descripcion = "Protege y acelera a un aliado por unos segundos."
