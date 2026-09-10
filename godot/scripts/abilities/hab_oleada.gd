@@ -16,8 +16,8 @@ func motivo_bloqueo(healer: Node) -> String:
 func ejecutar(healer: Node) -> String:
 	var curados := 0
 	var total := 0.0
-	for unidad: Unidad in _alcanzados(healer):
-		var recuperado := unidad.curar(cantidad)
+	for unidad in _alcanzados(healer):
+		var recuperado: float = unidad.curar(cantidad)
 		if recuperado > 0.0:
 			curados += 1
 			total += recuperado
@@ -29,9 +29,12 @@ func ejecutar(healer: Node) -> String:
 	return "Oleada: +%d en %d %s" % [total, curados, plural]
 
 
-func _alcanzados(healer: Node) -> Array[Unidad]:
-	var lista: Array[Unidad] = []
-	for unidad: Unidad in healer.get_tree().get_nodes_in_group("aliados"):
+## El objetivo no se tipa: Unidad (2D) y Unidad3D heredan de CharacterBody2D
+## y CharacterBody3D, que no comparten un tipo comun. Se usan por los
+## metodos que ambas exponen.
+func _alcanzados(healer: Node) -> Array:
+	var lista: Array = []
+	for unidad in healer.get_tree().get_nodes_in_group("aliados"):
 		if not unidad.esta_viva():
 			continue
 		if healer.global_position.distance_to(unidad.global_position) <= radio:

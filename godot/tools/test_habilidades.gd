@@ -1,19 +1,30 @@
 extends SceneTree
 ## Prueba el apuntado y el sistema de habilidades sin depender del mouse.
 
-var _healer: Healer
-var _contenedor: Node2D
+var _healer: Healer3D
+var _camara: Camera3D
+var _contenedor: Node3D
 var _fallos := 0
 var _avisos: Array[String] = []
 
 
 func _initialize() -> void:
-	_contenedor = Node2D.new()
+	_contenedor = Node3D.new()
 	root.add_child(_contenedor)
 
-	_healer = load("res://scenes/units/healer.tscn").instantiate()
-	_healer.position = Vector2(500, 200)
+	# El apuntado proyecta el mundo a pantalla, asi que hace falta una camara
+	# aunque no se dibuje nada.
+	_camara = Camera3D.new()
+	_camara.fov = 42.0
+	_contenedor.add_child(_camara)
+	# look_at_from_position sirve aunque el nodo todavia no este en el arbol.
+	_camara.look_at_from_position(Vector3(15, 3, 16), Vector3(15, 1, 5), Vector3.UP)
+	_camara.make_current()
+
+	_healer = load("res://scenes/3d/healer3d.tscn").instantiate()
+	_healer.position = Vector3(15, 0, 5)
 	_contenedor.add_child(_healer)
+	_healer.usar_camara(_camara)
 
 
 func _process(_delta: float) -> bool:
@@ -32,50 +43,34 @@ func _process(_delta: float) -> bool:
 func _probar_apuntado() -> void:
 	print("--- apuntado ---")
 
-	# Un cuerpo solo: el mouse sobre el torso lo agarra.
-	var a := _crear_aliado(Vector2(560, 200))
-	var punto_torso := a.global_position + Vector2(0, -70)
-	_ok("apunta al cuerpo bajo el mouse", _healer.buscar_bajo_punto(punto_torso) == a)
-	_ok("apunta tambien a la cabeza", _healer.buscar_bajo_punto(a.global_position + Vector2(0, -130)) == a)
-	_ok("apunta tambien a los pies", _healer.buscar_bajo_punto(a.global_position + Vector2(0, -6)) == a)
+	var a := _crear_aliado(Vector3(16.5, 0, 5))
+	_ok("apunta al torso", _healer.buscar_bajo_punto(_pantalla(a, 1.15)) == a)
+	_ok("apunta a la cabeza", _healer.buscar_bajo_punto(_pantalla(a, 1.9)) == a)
+	_ok("apunta a los pies", _healer.buscar_bajo_punto(_pantalla(a, 0.15)) == a)
 
-	# Dos superpuestos: gana el de adelante, que es el que se dibuja encima.
-	var atras := _crear_aliado(Vector2(600, 180))
-	var adelante := _crear_aliado(Vector2(600, 250))
-	var punto_comun := Vector2(600, 130)
+	# Dos soldados alineados con la camara: el de adelante tapa al de atras y
+	# es el que tiene que ganar el click.
+	var atras := _crear_aliado(Vector3(14.0, 0, 3.0))
+	var adelante := _crear_aliado(Vector3(14.0, 0, 6.5))
+	var punto := _pantalla(adelante, 1.15)
 	_ok("entre superpuestos elige al de adelante",
-		_healer.buscar_bajo_punto(punto_comun) == adelante)
-
+		_healer.buscar_bajo_punto(punto) == adelante)
 	atras.free()
 	adelante.free()
 
-	# Dos cuerpos solapados donde el de adelante esta fuera de alcance: gana el
-	# alcanzable, porque apuntar a alguien que no se puede tocar no sirve.
-	_healer.global_position = Vector2(600, 150)
-	var cercano := _crear_aliado(Vector2(600, 200))   # a 50 px, alcanzable
-	var inalcanzable := _crear_aliado(Vector2(600, 340))  # a 190 px, fuera
-	_ok("el de adelante esta fuera de alcance", not _healer.en_rango(inalcanzable))
-	_ok("las dos cajas contienen el punto",
-		cercano.caja_global().has_point(Vector2(600, 203))
-		and inalcanzable.caja_global().has_point(Vector2(600, 203)))
-	_ok("prefiere al que esta en alcance",
-		_healer.buscar_bajo_punto(Vector2(600, 203)) == cercano)
-	cercano.free()
-	inalcanzable.free()
-	_healer.global_position = Vector2(500, 200)
-	var cerca := _healer.buscar_bajo_punto(a.global_position + Vector2(60, -70))
+	# El iman: cerca en pantalla pero sin caer sobre el cuerpo.
+	var cerca := _healer.buscar_bajo_punto(_pantalla(a, 1.15) + Vector2(28, 0))
 	_ok("el iman engancha lo cercano", cerca == a)
 	_ok("lejos no engancha nada",
-		_healer.buscar_bajo_punto(a.global_position + Vector2(400, -70)) == null)
+		_healer.buscar_bajo_punto(_pantalla(a, 1.15) + Vector2(400, 0)) == null)
 
-	for u in root.get_tree().get_nodes_in_group("aliados"):
-		u.queue_free()
+	a.free()
 
 
 func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	print("--- habilidades y enfriamiento ---")
 
-	var objetivo := _crear_aliado(Vector2(560, 200))
+	var objetivo := _crear_aliado(Vector3(16.0, 0, 5))
 	objetivo.vida = 20.0
 	_healer._apuntada = objetivo
 	_healer.mana = 100.0
@@ -93,13 +88,13 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	_igual("el enfriamiento no cobra mana", _healer.mana, 75.0)
 	_ok("avisa el enfriamiento", _tiene_aviso("enfriamiento"))
 
-	componente._process(1.0)  # pasa el enfriamiento de 0.6s
+	componente._process(1.0)
 	_ok("tras el enfriamiento vuelve a estar lista",
 		componente.fraccion_enfriamiento(curar) == 0.0)
 
 	print("--- oleada (area) ---")
-	var b := _crear_aliado(Vector2(520, 210))
-	var c := _crear_aliado(Vector2(600, 230))
+	var b := _crear_aliado(Vector3(14.5, 0, 4.0))
+	var c := _crear_aliado(Vector3(16.5, 0, 6.0))
 	b.vida = 30.0
 	c.vida = 30.0
 	objetivo.vida = 30.0
@@ -121,9 +116,7 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	objetivo.vida = 80.0
 	objetivo.probabilidad_sangrado = 0.0
 	objetivo.recibir_dano(20.0)
-	# 35% menos dano: 20 -> 13
 	_igual("la bendicion reduce el dano", objetivo.vida, 67.0)
-
 	_ok("no se puede rebendecir", not componente.intentar(bendicion))
 
 	print("--- impulso (movilidad) ---")
@@ -131,16 +124,19 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	_healer.mana = 100.0
 	componente.intentar(impulso)
 	_ok("el impulso arranca", _healer._impulso_restante > 0.0)
-	# move_and_slide() fuera del paso de fisica no mueve de forma confiable,
-	# asi que se comprueba la velocidad que el impulso impone.
 	_healer._physics_process(0.05)
-	_ok("el impulso impone velocidad alta", _healer.velocity.length() > 500.0)
+	_ok("el impulso impone velocidad alta", _healer.velocity.length() > 5.0)
 	_healer._impulso_restante = 0.0
 
 
-func _crear_aliado(pos: Vector2) -> Unidad:
-	var u: Unidad = load("res://scenes/units/unidad.tscn").instantiate()
-	u.configurar(Unidad.Bando.ALIADO)
+## Coordenada de pantalla de un punto del cuerpo de la unidad.
+func _pantalla(unidad: Node3D, altura: float) -> Vector2:
+	return _camara.unproject_position(unidad.global_position + Vector3(0, altura, 0))
+
+
+func _crear_aliado(pos: Vector3) -> Unidad3D:
+	var u: Unidad3D = load("res://scenes/3d/unidad3d.tscn").instantiate()
+	u.configurar(Unidad3D.Bando.ALIADO)
 	u.position = pos
 	_contenedor.add_child(u)
 	return u

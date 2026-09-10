@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://w3aas2cfwv0h"
-path.s3tc="res://.godot/imported/idle.png-01358612c2ea348c7c8f6bbf1143927e.s3tc.ctex"
+uid="uid://cq6a153q11dg7"
+path.s3tc="res://.godot/imported/grilla.png-17b9cff0c1b869353bbbad1c1aa38b14.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://assets/sprites/healer/idle.png"
-dest_files=["res://.godot/imported/idle.png-01358612c2ea348c7c8f6bbf1143927e.s3tc.ctex"]
+source_file="res://assets/texturas/grilla.png"
+dest_files=["res://.godot/imported/grilla.png-17b9cff0c1b869353bbbad1c1aa38b14.s3tc.ctex"]
 
 [params]
 

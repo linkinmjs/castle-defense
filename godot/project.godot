@@ -13,7 +13,7 @@ config_version=5
 config/name="castle-defense"
 config/description="Juego 2D de defensa de castillo."
 config/version="0.1.0"
-run/main_scene="res://scenes/battle.tscn"
+run/main_scene="res://scenes/3d/battle3d.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://icon.svg"
 

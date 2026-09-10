@@ -1,13 +1,13 @@
 [gd_resource type="Resource" script_class="HabilidadOleada" format=3]
 
-[ext_resource type="Script" path="res://scripts/abilities/hab_oleada.gd" id="1_eytwr"]
+[ext_resource type="Script" path="res://scripts/abilities/hab_oleada.gd" id="1_xnrcv"]
 
 [resource]
-script = ExtResource("1_eytwr")
+script = ExtResource("1_xnrcv")
+radio = 5.0
 nombre = "Oleada"
 tecla = "1"
 costo = 45.0
 enfriamiento = 14.0
 objetivo = 1
 color = Color(0.2901961, 0.62352943, 0.83137256, 1)
-descripcion = "Cura poco a todos los aliados alrededor."

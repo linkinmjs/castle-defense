@@ -10,8 +10,11 @@ extends Habilidad
 @export var bonus_cadencia: float = 0.30
 
 
+## El objetivo no se tipa: Unidad (2D) y Unidad3D heredan de CharacterBody2D
+## y CharacterBody3D, que no comparten un tipo comun. Se usan por los
+## metodos que ambas exponen.
 func motivo_bloqueo(healer: Node) -> String:
-	var objetivo: Unidad = healer.objetivo_apuntado()
+	var objetivo: Variant = healer.objetivo_apuntado()
 	if objetivo == null:
 		return "Sin objetivo"
 	if not healer.en_rango(objetivo):
@@ -22,7 +25,7 @@ func motivo_bloqueo(healer: Node) -> String:
 
 
 func ejecutar(healer: Node) -> String:
-	var objetivo: Unidad = healer.objetivo_apuntado()
+	var objetivo: Variant = healer.objetivo_apuntado()
 	objetivo.bendecir(duracion, reduccion_dano, bonus_cadencia)
 	healer.lanzar_efecto(objetivo, "shield")
 	return "Bendicion: -%d%% dano por %ds" % [reduccion_dano * 100.0, duracion]

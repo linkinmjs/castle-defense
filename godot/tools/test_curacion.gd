@@ -2,24 +2,24 @@ extends SceneTree
 ## Reglas de curacion y sangrado. Complementa a test_habilidades.gd, que se
 ## ocupa del apuntado y de los enfriamientos.
 
-var _healer: Healer
+var _healer: Healer3D
 var _componente: ComponenteHabilidades
-var _aliado: Unidad
+var _aliado: Unidad3D
 var _avisos: Array[String] = []
 var _fallos := 0
 
 
 func _initialize() -> void:
-	var contenedor := Node2D.new()
+	var contenedor := Node3D.new()
 	root.add_child(contenedor)
 
-	_healer = load("res://scenes/units/healer.tscn").instantiate()
-	_healer.position = Vector2(400, 200)
+	_healer = load("res://scenes/3d/healer3d.tscn").instantiate()
+	_healer.position = Vector3(15, 0, 5)
 	contenedor.add_child(_healer)
 
-	_aliado = load("res://scenes/units/unidad.tscn").instantiate()
-	_aliado.configurar(Unidad.Bando.ALIADO)
-	_aliado.position = Vector2(460, 200)
+	_aliado = load("res://scenes/3d/unidad3d.tscn").instantiate()
+	_aliado.configurar(Unidad3D.Bando.ALIADO)
+	_aliado.position = Vector3(16.2, 0, 5)
 	contenedor.add_child(_aliado)
 
 
@@ -66,12 +66,12 @@ func _process(_delta: float) -> bool:
 	_ok("avisa falta de mana", _tiene_aviso("Sin mana"))
 
 	_preparar(10.0)
-	_aliado.global_position = Vector2(400 + 400, 200)
+	_aliado.global_position = Vector3(25.0, 0, 5)  # lejos del alcance
 	_componente.intentar(curar)
 	_igual("fuera de alcance no cura", _aliado.vida, 10.0)
 	_igual("fuera de alcance no gasta", _healer.mana, 100.0)
 	_ok("avisa fuera de alcance", _tiene_aviso("Fuera de alcance"))
-	_aliado.global_position = Vector2(460, 200)
+	_aliado.global_position = Vector3(16.2, 0, 5)
 
 	print("--- sangrado que mata ---")
 	_preparar(6.0)
@@ -87,7 +87,7 @@ func _process(_delta: float) -> bool:
 ## Deja al aliado y al healer en un estado conocido y sin enfriamientos, para
 ## que cada caso se pueda leer solo.
 func _preparar(vida: float) -> void:
-	_aliado.estado = Unidad.Estado.AVANZANDO
+	_aliado.estado = Unidad3D.Estado.AVANZANDO
 	_aliado.vida = vida
 	_aliado.sangrado_restante = 0.0
 	_healer.mana = 100.0

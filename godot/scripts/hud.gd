@@ -30,7 +30,7 @@ func _ready() -> void:
 
 
 ## La batalla llama a esto cuando el healer ya esta en el arbol.
-func seguir(healer: Healer) -> void:
+func seguir(healer: Node) -> void:
 	healer.mana_cambio.connect(_on_mana_cambio)
 	healer.aviso.connect(_on_aviso)
 	_on_mana_cambio(healer.mana, healer.mana_maximo)

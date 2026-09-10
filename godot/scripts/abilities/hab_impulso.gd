@@ -8,8 +8,7 @@ extends Habilidad
 
 
 func ejecutar(healer: Node) -> String:
-	var direccion: Vector2 = healer.get_global_mouse_position() - healer.global_position
-	if direccion.length() < 4.0:
-		direccion = Vector2.RIGHT if not healer.mirando_izquierda() else Vector2.LEFT
-	healer.impulsar(direccion.normalized(), fuerza, duracion)
+	# El healer decide la direccion: la habilidad no necesita saber en cuantas
+	# dimensiones vive el mundo.
+	healer.impulsar_hacia_mouse(fuerza, duracion)
 	return ""

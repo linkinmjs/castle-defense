@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/3d/healer3d.gd" id="1_a54xa"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/healer/healer_frames.tres" id="2_5yv7t"]
+[ext_resource type="Script" path="res://scripts/abilities/componente_habilidades.gd" id="3_ft11u"]
+[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="4_xj4fx"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="5_24n8x"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/estabilizar.tres" id="6_hah4o"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/oleada.tres" id="7_dscp4"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/bendicion.tres" id="8_p5odk"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/impulso.tres" id="9_ch5vl"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_3ecv4"]
+radius = 0.32
+height = 1.7
+
+[node name="Healer" type="CharacterBody3D" unique_id=656504690]
+script = ExtResource("1_a54xa")
+
+[node name="Sprite" type="AnimatedSprite3D" parent="." unique_id=1241506801]
+offset = Vector2(0, 64)
+modulate = Color(1, 0.88, 0.55, 1)
+pixel_size = 0.029411765
+billboard = 2
+alpha_cut = 1
+texture_filter = 0
+sprite_frames = ExtResource("2_5yv7t")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=468528650]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+shape = SubResource("CapsuleShape3D_3ecv4")
+
+[node name="Habilidades" type="Node" parent="." unique_id=1963729835]
+script = ExtResource("3_ft11u")
+habilidades = Array[ExtResource("4_xj4fx")]([ExtResource("5_24n8x"), ExtResource("6_hah4o"), ExtResource("7_dscp4"), ExtResource("8_p5odk"), ExtResource("9_ch5vl")])

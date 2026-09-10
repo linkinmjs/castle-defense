@@ -9,10 +9,10 @@ const ALTO_SLOT := 62.0
 const SEPARACION := 8.0
 
 var _componente: ComponenteHabilidades
-var _healer: Healer
+var _healer: Node
 
 
-func seguir(healer: Healer, componente: ComponenteHabilidades) -> void:
+func seguir(healer: Node, componente: ComponenteHabilidades) -> void:
 	_healer = healer
 	_componente = componente
 	custom_minimum_size = Vector2(
@@ -36,8 +36,10 @@ func _draw() -> void:
 	for habilidad: Habilidad in _componente.habilidades:
 		var caja := Rect2(x, 0, ANCHO_SLOT, ALTO_SLOT)
 		var enfriando := _componente.fraccion_enfriamiento(habilidad)
-		var sin_mana := _healer != null and _healer.mana < habilidad.costo
-		var disponible := enfriando <= 0.0 and not sin_mana
+		# _healer es Node (sirve para el healer 2D y el 3D), asi que el tipo
+		# de estas dos hay que declararlo a mano.
+		var sin_mana: bool = _healer != null and _healer.mana < habilidad.costo
+		var disponible: bool = enfriando <= 0.0 and not sin_mana
 
 		draw_rect(caja, Color(0, 0, 0, 0.55))
 
