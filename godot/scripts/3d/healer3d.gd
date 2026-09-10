@@ -8,7 +8,10 @@ extends CharacterBody3D
 ## recursos de habilidad se reutilizan tal cual.
 
 signal mana_cambio(actual: float, maximo: float)
+signal vida_cambio(actual: float, maximo: float)
 signal aviso(texto: String)
+signal cayo
+signal se_levanto
 
 const FRAMES_FX := preload("res://assets/sprites/fx/fx_frames.tres")
 ## Radio en pixeles para enganchar una unidad cuando el mouse no cae encima.
@@ -20,6 +23,18 @@ const IMAN_MOUSE := 70.0
 ## La profundidad se recorre mas lento que el frente, igual que en la version
 ## 2D: mantiene la sensacion de campo lateral aunque el mundo sea 3D.
 @export var factor_profundidad: float = 0.7
+
+@export_group("Salto")
+@export var altura_salto: float = 1.1
+@export var gravedad: float = 22.0
+
+@export_group("Vida")
+@export var vida_maxima: float = 60.0
+## Segundos que pasa en el suelo al caer. Caer no termina la partida: una
+## distraccion de dos segundos no puede borrar veinte minutos de juego.
+@export var tiempo_caido: float = 4.0
+## Fraccion de la vida maxima con la que se levanta.
+@export var vida_al_levantarse: float = 0.4
 
 @export_group("Curacion")
 @export var mana_maximo: float = 100.0
@@ -36,6 +51,11 @@ var _impulso_direccion: Vector3 = Vector3.ZERO
 var _impulso_fuerza: float = 0.0
 var _impulso_restante: float = 0.0
 var _casteando: float = 0.0
+var _en_el_aire: bool = false
+var vida: float
+var _caido_restante: float = 0.0
+var _flash: float = 0.0
+var _tinte_base: Color = Color.WHITE
 
 @onready var _sprite: AnimatedSprite3D = $Sprite
 @onready var _habilidades: ComponenteHabilidades = $Habilidades
@@ -44,8 +64,14 @@ var _casteando: float = 0.0
 func _ready() -> void:
 	# Sin gravedad ni suelo fisico: se desliza por el plano.
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+	# En este grupo lo encuentran los enemigos: es un objetivo mas, y el mas
+	# cercano gana. Rodeado de soldados no sos vos; solo, si.
+	add_to_group("healer")
+	_tinte_base = _sprite.modulate
 	mana = mana_maximo
 	mana_cambio.emit(mana, mana_maximo)
+	vida = vida_maxima
+	vida_cambio.emit(vida, vida_maxima)
 
 
 ## La batalla le pasa la camara: sin ella no se puede saber a que apunta el
@@ -55,22 +81,45 @@ func usar_camara(camara: Camera3D) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	_actualizar_flash(delta)
+	if _caido_restante > 0.0:
+		_caido_restante -= delta
+		_impulso_restante = 0.0
+		if _caido_restante <= 0.0:
+			_levantarse()
+
+	# Horizontal y vertical se resuelven por separado: el impulso no tiene que
+	# pisar la gravedad, ni el salto frenar el desplazamiento.
+	var horizontal := Vector3(velocity.x, 0.0, velocity.z)
 	if _impulso_restante > 0.0:
 		_impulso_restante -= delta
-		velocity = _impulso_direccion * _impulso_fuerza
+		horizontal = _impulso_direccion * _impulso_fuerza
 	else:
-		var entrada := Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		var entrada := Vector2.ZERO
+		if esta_viva():
+			entrada = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 		var direccion := Vector3(entrada.x, 0.0, entrada.y * factor_profundidad)
 		if direccion != Vector3.ZERO:
-			velocity = velocity.move_toward(direccion * velocidad_maxima, aceleracion * delta)
+			horizontal = horizontal.move_toward(direccion * velocidad_maxima, aceleracion * delta)
 		else:
-			velocity = velocity.move_toward(Vector3.ZERO, friccion * delta)
+			horizontal = horizontal.move_toward(Vector3.ZERO, friccion * delta)
+
+	var vertical := velocity.y
+	if _en_el_aire:
+		vertical -= gravedad * delta
+	velocity = Vector3(horizontal.x, vertical, horizontal.z)
 
 	move_and_slide()
 
 	global_position.x = clampf(global_position.x, limites.position.x, limites.end.x)
 	global_position.z = clampf(global_position.z, limites.position.y, limites.end.y)
-	global_position.y = 0.0
+
+	# El suelo es el plano y=0: no hay cuerpo fisico debajo.
+	if global_position.y <= 0.0:
+		global_position.y = 0.0
+		if _en_el_aire:
+			_en_el_aire = false
+			velocity.y = 0.0
 
 	if mana < mana_maximo:
 		mana = minf(mana + regeneracion_mana * delta, mana_maximo)
@@ -85,6 +134,8 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(evento: InputEvent) -> void:
+	if not esta_viva():
+		return
 	if evento is InputEventMouseButton and evento.pressed:
 		if evento.button_index == MOUSE_BUTTON_LEFT:
 			_usar(0)
@@ -92,12 +143,28 @@ func _unhandled_input(evento: InputEvent) -> void:
 			_usar(1)
 		return
 
-	if evento.is_action_pressed("habilidad_1"):
+	if evento.is_action_pressed("saltar"):
+		saltar()
+	elif evento.is_action_pressed("dash") or evento.is_action_pressed("habilidad_3"):
+		_usar(4)  # Impulso
+	elif evento.is_action_pressed("habilidad_1"):
 		_usar(2)
 	elif evento.is_action_pressed("habilidad_2"):
 		_usar(3)
-	elif evento.is_action_pressed("habilidad_3"):
-		_usar(4)
+
+
+## Salto fisico: sirve para esquivar lo que pega a ras del suelo. Quien
+## quiera saber si el healer esta a salvo pregunta esta_en_el_aire().
+func saltar() -> void:
+	if _en_el_aire or not esta_viva():
+		return
+	_en_el_aire = true
+	velocity.y = sqrt(2.0 * gravedad * altura_salto)
+	_sprite.play("jump")
+
+
+func esta_en_el_aire() -> bool:
+	return _en_el_aire
 
 
 func _usar(indice: int) -> void:
@@ -107,6 +174,50 @@ func _usar(indice: int) -> void:
 	if habilidad.requiere_objetivo() and objetivo_apuntado() == null:
 		return
 	_habilidades.intentar(habilidad)
+
+
+# --- Vida ----------------------------------------------------------------------
+
+func recibir_dano(cantidad: float) -> void:
+	if not esta_viva():
+		return
+	vida = maxf(vida - cantidad, 0.0)
+	_flash = 0.12
+	vida_cambio.emit(vida, vida_maxima)
+	if vida <= 0.0:
+		_caer()
+
+
+## Mismo nombre que en las unidades: los enemigos preguntan esto a cualquier
+## objetivo sin saber si es soldado o healer. Caido no cuenta como vivo, asi
+## que dejan de pegarle y buscan a otro.
+func esta_viva() -> bool:
+	return _caido_restante <= 0.0
+
+
+func _caer() -> void:
+	_caido_restante = tiempo_caido
+	_impulso_restante = 0.0
+	_casteando = 0.0
+	_sprite.play("dead")
+	cayo.emit()
+	aviso.emit("Caiste")
+
+
+func _levantarse() -> void:
+	_caido_restante = 0.0
+	vida = vida_maxima * vida_al_levantarse
+	vida_cambio.emit(vida, vida_maxima)
+	_sprite.play("idle")
+	se_levanto.emit()
+	aviso.emit("Te levantaste")
+
+
+func _actualizar_flash(delta: float) -> void:
+	if _flash <= 0.0:
+		return
+	_flash -= delta
+	_sprite.modulate = Color.WHITE if _flash > 0.0 else _tinte_base
 
 
 # --- API que usan las habilidades -------------------------------------------
@@ -124,7 +235,9 @@ func en_rango(unidad: Node3D) -> bool:
 func gastar_mana(cantidad: float) -> void:
 	mana = maxf(mana - cantidad, 0.0)
 	mana_cambio.emit(mana, mana_maximo)
-	if cantidad > 0.0:
+	# En el aire la pose de salto manda: si la pisara el cast, al terminar
+	# volveria a arrancar el salto desde el primer frame.
+	if cantidad > 0.0 and not _en_el_aire:
 		_casteando = 0.45
 		_sprite.play("cast")
 
@@ -255,15 +368,17 @@ func _punto_suelo_bajo_mouse() -> Vector3:
 
 
 func _actualizar_animacion() -> void:
+	if not esta_viva():
+		return  # en el suelo se queda con la animacion de caida
 	if velocity.x < -0.05:
 		_sprite.flip_h = true
 	elif velocity.x > 0.05:
 		_sprite.flip_h = false
 
-	if _casteando > 0.0:
-		return
+	if _en_el_aire or _casteando > 0.0:
+		return  # ni el salto ni el cast se interrumpen por caminar
 
-	var rapidez := velocity.length()
+	var rapidez := Vector2(velocity.x, velocity.z).length()
 	var animacion := "idle"
 	if rapidez > velocidad_maxima * 0.7:
 		animacion = "run"

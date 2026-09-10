@@ -1,0 +1,22 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/3d/emergente3d.gd" id="1_as66a"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o75ct"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.72, 0.12, 0.1, 0.7)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_mirkd"]
+top_radius = 0.75
+bottom_radius = 0.75
+height = 0.04
+
+[node name="Emergente" type="Node3D" unique_id=693671855]
+script = ExtResource("1_as66a")
+
+[node name="Marca" type="MeshInstance3D" parent="." unique_id=1070246640]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+material_override = SubResource("StandardMaterial3D_o75ct")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_mirkd")

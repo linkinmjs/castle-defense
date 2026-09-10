@@ -3,17 +3,17 @@
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1_hqnrr"]
 [ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="2_bo48s"]
 
-[node name="HUD" type="CanvasLayer" unique_id=332406480]
+[node name="HUD" type="CanvasLayer" unique_id=437446779]
 script = ExtResource("1_hqnrr")
 
-[node name="Raiz" type="Control" parent="." unique_id=1371665094]
+[node name="Raiz" type="Control" parent="." unique_id=802790415]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=1082181423]
+[node name="Contadores" type="Label" parent="Raiz" unique_id=1356396729]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
@@ -26,34 +26,61 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Aviso" type="Label" parent="Raiz" unique_id=1301342981]
+[node name="Aviso" type="Label" parent="Raiz" unique_id=1341807222]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -170.0
+offset_top = -196.0
 offset_right = 24.0
-offset_bottom = -170.0
+offset_bottom = -196.0
 theme_override_font_sizes/font_size = 22
 theme_override_colors/font_color = Color(1, 0.92, 0.6, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Slots" type="Control" parent="Raiz" unique_id=1648639340]
+[node name="Slots" type="Control" parent="Raiz" unique_id=1753733659]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -140.0
+offset_top = -166.0
 offset_right = 584.0
-offset_bottom = -78.0
+offset_bottom = -104.0
 mouse_filter = 2
 script = ExtResource("2_bo48s")
 
-[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=2008124215]
+[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=688182781]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -88.0
+offset_right = 304.0
+offset_bottom = -61.0
+mouse_filter = 2
+show_percentage = false
+
+[node name="TextoVida" type="Label" parent="Raiz" unique_id=2051234894]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 314.0
+offset_top = -90.0
+offset_right = 314.0
+offset_bottom = -90.0
+theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+
+[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=294307169]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -65,7 +92,7 @@ offset_bottom = -35.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="TextoMana" type="Label" parent="Raiz" unique_id=773449483]
+[node name="TextoMana" type="Label" parent="Raiz" unique_id=1458455727]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -75,12 +102,12 @@ offset_top = -64.0
 offset_right = 314.0
 offset_bottom = -64.0
 theme_override_font_sizes/font_size = 16
-theme_override_colors/font_color = Color(0.8, 0.9, 1, 1)
+theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Ayuda" type="Label" parent="Raiz" unique_id=6422485]
+[node name="Ayuda" type="Label" parent="Raiz" unique_id=1764059616]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -93,4 +120,4 @@ theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-text = "WASD mover      Click sobre un aliado para actuar"
+text = "WASD mover     Shift impulso     Espacio saltar     Click sobre un aliado para actuar"

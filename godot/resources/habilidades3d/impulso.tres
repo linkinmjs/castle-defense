@@ -6,7 +6,7 @@
 script = ExtResource("1_wtyt5")
 fuerza = 9.5
 nombre = "Impulso"
-tecla = "3"
+tecla = "Shift"
 costo = 12.0
 enfriamiento = 4.0
 objetivo = 2

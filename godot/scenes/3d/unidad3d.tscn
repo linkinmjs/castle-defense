@@ -7,12 +7,12 @@
 radius = 0.32
 height = 1.7
 
-[node name="Unidad" type="CharacterBody3D" unique_id=1817810047]
+[node name="Unidad" type="CharacterBody3D" unique_id=501590386]
 collision_layer = 4
 collision_mask = 12
 script = ExtResource("1_d6lq0")
 
-[node name="Sprite" type="AnimatedSprite3D" parent="." unique_id=865379325]
+[node name="Sprite" type="AnimatedSprite3D" parent="." unique_id=1523869948]
 offset = Vector2(0, 64)
 pixel_size = 0.029411765
 billboard = 2
@@ -22,6 +22,6 @@ sprite_frames = ExtResource("2_poaye")
 animation = &"idle"
 autoplay = "idle"
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1286863385]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=732339068]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
 shape = SubResource("CapsuleShape3D_0irii")

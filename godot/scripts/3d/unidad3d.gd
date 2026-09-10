@@ -46,7 +46,8 @@ var bendicion_restante: float = 0.0
 var _reduccion_dano: float = 0.0
 var _bonus_cadencia: float = 0.0
 
-var _objetivo: Unidad3D = null
+## Node3D y no Unidad3D: para un enemigo, el healer tambien es un objetivo.
+var _objetivo: Node3D = null
 var _cooldown: float = 0.0
 var _impacto_pendiente: float = -1.0
 var _flash: float = 0.0
@@ -241,18 +242,38 @@ func _objetivo_valido() -> bool:
 	return _objetivo != null and is_instance_valid(_objetivo) and _objetivo.esta_viva()
 
 
-func _buscar_objetivo() -> Unidad3D:
-	var grupo := "enemigos" if bando == Bando.ALIADO else "aliados"
-	var mejor: Unidad3D = null
+## El mas cercano de los grupos rivales. Para un enemigo, el healer entra en
+## la lista: de ahi sale la cobertura sin programarla aparte. Rodeado de
+## soldados, siempre hay alguien mas cerca que el.
+func _buscar_objetivo() -> Node3D:
+	var grupos: Array[String] = ["enemigos"]
+	if bando == Bando.ENEMIGO:
+		grupos = ["aliados", "healer"]
+	var mejor: Node3D = null
 	var mejor_distancia := INF
-	for candidato: Unidad3D in get_tree().get_nodes_in_group(grupo):
-		if not candidato.esta_viva() or candidato.is_queued_for_deletion():
-			continue
-		var distancia := global_position.distance_squared_to(candidato.global_position)
-		if distancia < mejor_distancia:
-			mejor_distancia = distancia
-			mejor = candidato
+	for grupo in grupos:
+		for candidato in get_tree().get_nodes_in_group(grupo):
+			var nodo := candidato as Node3D
+			if nodo == null or not nodo.esta_viva() or nodo.is_queued_for_deletion():
+				continue
+			var distancia := global_position.distance_squared_to(nodo.global_position)
+			if distancia < mejor_distancia:
+				mejor_distancia = distancia
+				mejor = nodo
 	return mejor
+
+
+## Sale del suelo: sin fisica ni colision hasta que termina de asomar, asi no
+## empuja a nadie desde abajo ni recibe golpes antes de existir del todo.
+func emerger(duracion: float) -> void:
+	set_physics_process(false)
+	_colision.disabled = true
+	global_position.y = -2.1
+	var tween := create_tween()
+	tween.tween_property(self, "global_position:y", 0.0, duracion).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(func() -> void:
+		_colision.disabled = false
+		set_physics_process(true))
 
 
 func _actualizar_flash(delta: float) -> void:

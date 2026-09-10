@@ -5,7 +5,9 @@ extends SceneTree
 func _initialize() -> void:
 	_accion("habilidad_1", [KEY_1, KEY_Q])
 	_accion("habilidad_2", [KEY_2, KEY_E])
-	_accion("habilidad_3", [KEY_3, KEY_SPACE])
+	_accion("habilidad_3", [KEY_3])
+	_accion("dash", [KEY_SHIFT])
+	_accion("saltar", [KEY_SPACE])
 	ProjectSettings.save()
 	print("acciones de habilidades agregadas")
 	quit()

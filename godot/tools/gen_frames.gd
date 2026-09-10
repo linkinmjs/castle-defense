@@ -5,7 +5,7 @@ extends SceneTree
 const PERSONAJE := 128
 const EFECTO := 72
 
-# animacion: [archivo, fps, loop]
+# animacion: [archivo, fps, loop, (desde, hasta) opcional, indices de frame]
 const HEALER := {
 	"idle": ["idle.png", 8.0, true],
 	"walk": ["walk.png", 10.0, true],
@@ -13,6 +13,9 @@ const HEALER := {
 	"cast": ["cast.png", 12.0, false],
 	"hurt": ["hurt.png", 12.0, false],
 	"dead": ["dead.png", 10.0, false],
+	# El sheet trae agachada y aterrizaje; para un salto fisico se usa solo
+	# el tramo en el aire, que dura lo que el cuerpo tarda en subir y bajar.
+	"jump": ["jump.png", 16.0, false, 5, 14],
 }
 
 const COMBATIENTE := {
@@ -52,17 +55,23 @@ func _generar(carpeta: String, animaciones: Dictionary, lado: int, salida: Strin
 			continue
 
 		var cantidad := int(textura.get_width() / float(lado))
+		var desde := 0
+		var hasta := cantidad - 1
+		if datos.size() >= 5:
+			desde = clampi(datos[3], 0, cantidad - 1)
+			hasta = clampi(datos[4], desde, cantidad - 1)
+
 		frames.add_animation(nombre)
 		frames.set_animation_speed(nombre, datos[1])
 		frames.set_animation_loop(nombre, datos[2])
 
-		for i in cantidad:
+		for i in range(desde, hasta + 1):
 			var atlas := AtlasTexture.new()
 			atlas.atlas = textura
 			atlas.region = Rect2(i * lado, 0, lado, lado)
 			frames.add_frame(nombre, atlas)
 
-		print("  %-6s %2d frames" % [nombre, cantidad])
+		print("  %-6s %2d frames" % [nombre, hasta - desde + 1])
 
 	var destino := "%s/%s" % [carpeta, salida]
 	var err := ResourceSaver.save(frames, destino)

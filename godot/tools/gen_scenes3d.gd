@@ -14,6 +14,8 @@ func _initialize() -> void:
 	_crear_habilidades()
 	_crear_healer()
 	_crear_unidad()
+	_crear_emergente()
+	_crear_hud()
 	_crear_battle()
 	quit()
 
@@ -85,7 +87,7 @@ func _crear_habilidades() -> void:
 
 	var impulso := HabilidadImpulso.new()
 	impulso.nombre = "Impulso"
-	impulso.tecla = "3"
+	impulso.tecla = "Shift"
 	impulso.costo = 12.0
 	impulso.enfriamiento = 4.0
 	impulso.objetivo = Habilidad.Objetivo.PROPIA
@@ -186,6 +188,117 @@ func _crear_unidad() -> void:
 	colision.owner = unidad
 
 	_guardar(unidad, "res://scenes/3d/unidad3d.tscn")
+
+
+## Aviso en el suelo: un disco chato, sin luz ni sombra, que la batalla
+## escala mientras late.
+func _crear_emergente() -> void:
+	var raiz := Node3D.new()
+	raiz.name = "Emergente"
+	raiz.set_script(load("res://scripts/3d/emergente3d.gd"))
+
+	var marca := MeshInstance3D.new()
+	marca.name = "Marca"
+	var disco := CylinderMesh.new()
+	disco.top_radius = 0.75
+	disco.bottom_radius = 0.75
+	disco.height = 0.04
+	marca.mesh = disco
+	marca.position = Vector3(0, 0.02, 0)
+	marca.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = Color(0.72, 0.12, 0.1, 0.7)
+	marca.material_override = material
+	raiz.add_child(marca)
+	marca.owner = raiz
+
+	_guardar(raiz, "res://scenes/3d/emergente3d.tscn")
+
+
+func _crear_hud() -> void:
+	var hud := CanvasLayer.new()
+	hud.name = "HUD"
+	hud.set_script(load("res://scripts/hud.gd"))
+
+	var raiz := Control.new()
+	raiz.name = "Raiz"
+	raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
+	# Todo el HUD ignora el mouse: los clicks tienen que llegar al campo.
+	raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud.add_child(raiz)
+	raiz.owner = hud
+
+	var contadores := _etiqueta("Contadores", 20, Color(0.88, 0.9, 1.0))
+	contadores.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	contadores.position = Vector2(24, 16)
+	raiz.add_child(contadores)
+	contadores.owner = hud
+	contadores.unique_name_in_owner = true
+
+	var aviso := _etiqueta("Aviso", 22, Color(1.0, 0.92, 0.6))
+	aviso.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	aviso.position = Vector2(24, -196)
+	raiz.add_child(aviso)
+	aviso.owner = hud
+	aviso.unique_name_in_owner = true
+
+	var slots := Control.new()
+	slots.name = "Slots"
+	slots.set_script(load("res://scripts/slots_habilidades.gd"))
+	slots.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	slots.position = Vector2(24, -166)
+	slots.size = Vector2(560, 62)
+	slots.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	raiz.add_child(slots)
+	slots.owner = hud
+	slots.unique_name_in_owner = true
+
+	_barra(raiz, hud, "BarraVida", "TextoVida", -88)
+	_barra(raiz, hud, "BarraMana", "TextoMana", -62)
+
+	var ayuda := _etiqueta("Ayuda", 15, Color(0.7, 0.75, 0.85))
+	ayuda.text = "WASD mover     Shift impulso     Espacio saltar     Click sobre un aliado para actuar"
+	ayuda.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	ayuda.position = Vector2(24, -34)
+	raiz.add_child(ayuda)
+	ayuda.owner = hud
+
+	_guardar(hud, "res://scenes/ui/hud.tscn")
+
+
+func _barra(raiz: Control, hud: Node, nombre: String, nombre_texto: String, y: float) -> void:
+	var barra := ProgressBar.new()
+	barra.name = nombre
+	barra.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	barra.position = Vector2(24, y)
+	barra.size = Vector2(280, 18)
+	barra.show_percentage = false
+	barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	raiz.add_child(barra)
+	barra.owner = hud
+	barra.unique_name_in_owner = true
+
+	var texto := _etiqueta(nombre_texto, 16, Color(0.9, 0.9, 0.95))
+	texto.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	texto.position = Vector2(314, y - 2)
+	raiz.add_child(texto)
+	texto.owner = hud
+	texto.unique_name_in_owner = true
+
+
+func _etiqueta(nombre: String, tamano: int, color: Color) -> Label:
+	var etiqueta := Label.new()
+	etiqueta.name = nombre
+	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	etiqueta.add_theme_font_size_override("font_size", tamano)
+	etiqueta.add_theme_color_override("font_color", color)
+	etiqueta.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
+	etiqueta.add_theme_constant_override("shadow_offset_x", 1)
+	etiqueta.add_theme_constant_override("shadow_offset_y", 1)
+	return etiqueta
 
 
 func _crear_battle() -> void:
