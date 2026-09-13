@@ -28,9 +28,15 @@ al que este documento hace referencia por sección (§).
 | Oleada | 45 | 14s | +18 HP a todos los aliados en 5 m |
 | Bendición | 35 | 16s | −35% daño recibido y +30% velocidad de ataque, 8s |
 | Impulso | 12 | 4s | Empuja al healer hacia el mouse |
+| Reanimar | 40 | 6s | Levanta a un derribado, con el 35% de su vida |
 
-Son cinco huecos que ya cubren tres arquetipos distintos: curación puntual,
-curación de área y buff preventivo. Lo que sigue es cómo profundizar cada línea.
+Son seis huecos que ya cubren cuatro arquetipos distintos: curación puntual,
+curación de área, buff preventivo y rescate. Lo que sigue es cómo profundizar
+cada línea.
+
+Los encuentros no las entregan todas juntas: cada uno declara qué habilidades
+equipa el healer (ver `mejoras_desde_a_theory_of_fun.md` §5). El catálogo
+describe el techo, no el punto de partida.
 
 ---
 

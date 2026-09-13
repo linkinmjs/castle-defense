@@ -6,7 +6,10 @@ Análisis en tres pasos: **qué personajes tenemos realmente** en los assets, **
 soldados** se pueden armar con eso, y **qué IA** le da a cada uno un estilo de
 pelea reconocible.
 
-Nada de acá está implementado. El inventario de la sección 1 sí es verificado:
+De la §2.1 ya están en el juego el escudero, el lancero y el espadachín, y de
+la §3 la retirada del herido y el objetivo oportunista; los demás soldados y
+comportamientos siguen sin implementar. El inventario de la sección 1 es
+verificado:
 salió de abrir los 32 packs, listar sus animaciones y mirar los sprites para
 identificar las armas — no de suponerlo por el nombre del archivo.
 

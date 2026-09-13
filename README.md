@@ -1,8 +1,17 @@
 # Castle Defense
 
-Juego 2D de defensa de castillo, desarrollado con **Godot 4.7** (renderer GL Compatibility, para que corra en navegador).
+Sos un **médico de guerra** dentro de una batalla 2.5D que no controlás. Dos
+ejércitos automáticos empujan una línea de frente; vos no atacás y podés morir.
+Se gana leyendo mejor qué intervención cambia el destino del frente: a quién
+curar, a quién estabilizar, a quién levantar del suelo y a quién dejar ir.
 
-Cada push a `master` exporta el juego a HTML5 y lo publica automáticamente en itch.io.
+Desarrollado con **Godot 4.7** (renderer GL Compatibility, para que corra en
+navegador). Cada push a `master` exporta el juego a HTML5 y lo publica
+automáticamente en itch.io.
+
+El diseño y hacia dónde va están en [`godot/docs/`](godot/docs/); el documento
+que ordena las prioridades es
+[`mejoras_desde_a_theory_of_fun.md`](godot/docs/mejoras_desde_a_theory_of_fun.md).
 
 ## Estructura del repositorio
 
@@ -12,11 +21,33 @@ Cada push a `master` exporta el juego a HTML5 y lo publica automáticamente en i
 ├── builds/                # Salida de los exports (ignorada por git)
 └── godot/                 # El proyecto de Godot (abrir esta carpeta en el editor)
     ├── assets/            # sprites, audio, fonts
-    ├── autoload/          # singletons (Project Settings > Globals)
-    ├── scenes/            # escenas de gameplay (main.tscn es la escena principal)
+    ├── docs/              # diseño: qué es el juego y hacia dónde va
+    ├── resources/         # encuentros, tipos de soldado y habilidades (.tres)
+    ├── scenes/            # battle3d.tscn es la escena principal
     ├── scripts/           # scripts de GDScript
-    └── ui/                # menús y HUD
+    └── tools/             # pruebas headless y generadores de recursos
 ```
+
+## Cómo está armado
+
+La partida se juega por **encuentros**. Cada uno es un `Resource` que define
+quiénes entran al campo y en qué estado, qué habilidades tiene disponibles el
+healer, cuándo termina y con qué semilla se despliega. Eso permite enseñar una
+cosa por vez y repetir exactamente el mismo problema entre intentos.
+
+- `resources/encuentros/campana.tres` — la serie que se juega, en orden.
+- `resources/soldados/` — los tipos de soldado (stats, sprites, estilo).
+- `resources/habilidades3d/` — las habilidades del healer.
+
+Todo eso lo generan scripts en `tools/` (`gen_encuentros.gd`, `gen_scenes3d.gd`),
+así que el contenido se lee de corrido en un archivo en vez de estar repartido
+por el inspector.
+
+### Controles
+
+`WASD` mover · `Espacio` saltar · click izquierdo y derecho y teclas `1`-`3`
+para las habilidades equipadas · `Shift` impulso · `R` repetir el encuentro ·
+`Enter` pasar al siguiente.
 
 ## Requisitos
 
@@ -27,13 +58,20 @@ Cada push a `master` exporta el juego a HTML5 y lo publica automáticamente en i
 ## Desarrollo local
 
 1. Abrir Godot y elegir **Import** apuntando a la carpeta `godot/`.
-2. `F5` corre la escena principal (`scenes/main.tscn`).
+2. `F5` corre la escena principal (`scenes/3d/battle3d.tscn`).
 
-Configuración base ya incluida en `project.godot`:
+### Pruebas
 
-- Resolución base **1280x720**, stretch `canvas_items` / `expand` (escala a cualquier ventana).
-- Acciones de input: `move_left`, `move_right`, `move_up`, `move_down`, `select`, `cancel`, `pause`.
-- Capas de física 2D nombradas: `world`, `player`, `enemies`, `projectiles`, `buildings`.
+Son scripts headless sin dependencias externas: cada uno corre la parte del
+juego que le toca y termina con código de error si algo falla. Las corre el CI
+antes de exportar, y una a una:
+
+```bash
+godot --headless --path godot --script res://tools/test_encuentro.gd
+```
+
+Están todas en `godot/tools/test_*.gd`. Ninguna instancia el HUD para medir: el
+modelo de combate tiene que poder probarse sin interfaz.
 
 ### Exportar a Web localmente
 
