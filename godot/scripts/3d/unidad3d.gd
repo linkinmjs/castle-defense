@@ -8,9 +8,21 @@ extends CharacterBody3D
 
 enum Bando { ALIADO, ENEMIGO }
 enum Estado { AVANZANDO, COMBATIENDO, RETIRANDOSE, DERRIBADA, MUERTA }
+## Cuanto apura atender a esta unidad. Compartida por todos los estados, para
+## que la lectura del campo no dependa de aprenderse un icono por problema.
+enum Urgencia { ESTABLE, EN_RIESGO, CRITICO }
 
 signal murio(unidad: Unidad3D)
 signal derribada(unidad: Unidad3D)
+## Cuanto se pidio y cuanto entro de verdad. La diferencia es el desperdicio,
+## que es justo lo que el encuentro 2 quiere que el jugador aprenda a ver.
+signal curada(solicitada: float, efectiva: float)
+signal sangrado_iniciado()
+## Cuantos segundos estuvo sangrando antes de que lo cortaran.
+signal sangrado_cortado(segundos: float)
+## Nadie lo corto: el sangrado se agoto solo.
+signal sangrado_expiro(segundos: float)
+signal reanimada()
 
 const FRAMES_ALIADO := preload("res://assets/sprites/soldier/soldier_frames.tres")
 const FRAMES_ENEMIGO := preload("res://assets/sprites/enemy/enemy_frames.tres")
@@ -61,6 +73,16 @@ var vida: float
 var estado: Estado = Estado.AVANZANDO
 var sangrado_restante: float = 0.0
 var derribada_restante: float = 0.0
+## Por que se cayo y por que murio. Sin esto el resumen puede decir cuantos se
+## perdieron pero no si habia algo que hacer al respecto.
+var causa_caida: StringName = &""
+var causa_muerte: StringName = &""
+## Que tipo de unidad le pego por ultima vez.
+var fuente_ultimo_dano: String = ""
+## Segundos acumulados sangrando en el episodio actual.
+var segundos_sangrando: float = 0.0
+## Ultima causa de perdida de vida, para saber de que se cayo.
+var _ultima_causa: StringName = &"golpe"
 
 ## Las marca el healer segun a quien apunte el mouse; las lee el overlay.
 var resaltada: bool = false
@@ -140,7 +162,8 @@ func _physics_process(delta: float) -> void:
 		# En el suelo solo corre el reloj. Si nadie llega, muere de verdad.
 		derribada_restante -= delta
 		if derribada_restante <= 0.0:
-			_morir()
+			# Distinto de morir de un golpe: aca hubo una ventana y se agoto.
+			_morir(&"sin_atencion")
 		return
 
 	_actualizar_bendicion(delta)
@@ -237,32 +260,60 @@ func _conectar_golpe() -> void:
 		return
 	if global_position.distance_to(_objetivo.global_position) > alcance * 1.25:
 		return
-	_objetivo.recibir_dano(dano)
+	_objetivo.recibir_dano(dano, self)
 
 
-func recibir_dano(cantidad: float) -> void:
+## La fuente y la causa llegan con valor por defecto para que quien solo quiera
+## restar vida no tenga que saber de esto.
+func recibir_dano(cantidad: float, fuente: Node = null, causa: StringName = &"golpe") -> void:
 	if estado == Estado.MUERTA or estado == Estado.DERRIBADA:
 		return
 	_flash = 0.12
+	if fuente != null:
+		fuente_ultimo_dano = _nombrar(fuente)
 	var recibido := cantidad * (1.0 - _reduccion_dano) * (1.0 - reduccion_base)
 	if _azar.randf() < probabilidad_sangrado * (1.0 - _reduccion_dano):
-		sangrado_restante = duracion_sangrado
-	_perder_vida(recibido)
+		aplicar_sangrado(duracion_sangrado)
+	_perder_vida(recibido, causa)
+
+
+## Un solo lugar donde empieza un sangrado, para que el aviso salga siempre.
+func aplicar_sangrado(segundos: float) -> void:
+	if estado == Estado.MUERTA or estado == Estado.DERRIBADA:
+		return
+	var ya_sangraba := sangrado_restante > 0.0
+	sangrado_restante = segundos
+	if not ya_sangraba:
+		segundos_sangrando = 0.0
+		sangrado_iniciado.emit()
+
+
+func _nombrar(nodo: Node) -> String:
+	if nodo is Unidad3D and nodo.tipo != null:
+		return nodo.tipo.nombre
+	if nodo.is_in_group("healer"):
+		return "Healer"
+	return nodo.name
 
 
 ## Sobre una derribada no hace nada: a esa hay que reanimarla.
 func curar(cantidad: float) -> float:
 	if estado == Estado.MUERTA or estado == Estado.DERRIBADA:
+		curada.emit(cantidad, 0.0)
 		return 0.0
 	var antes := vida
 	vida = minf(vida + cantidad, vida_maxima)
-	return vida - antes
+	var efectiva := vida - antes
+	curada.emit(cantidad, efectiva)
+	return efectiva
 
 
 func estabilizar() -> bool:
 	if estado == Estado.MUERTA or estado == Estado.DERRIBADA or sangrado_restante <= 0.0:
 		return false
 	sangrado_restante = 0.0
+	sangrado_cortado.emit(segundos_sangrando)
+	segundos_sangrando = 0.0
 	return true
 
 
@@ -286,7 +337,52 @@ func esta_bendecida() -> bool:
 	return bendicion_restante > 0.0
 
 
-func _perder_vida(cantidad: float) -> void:
+## Un solo problema por unidad, el mas grave. Con quince soldados amontonados no
+## hay lugar en pantalla para varios iconos por cabeza, y el detalle completo
+## va en la tarjeta al apuntar.
+func estado_dominante() -> StringName:
+	if estado == Estado.MUERTA:
+		return &"muerta"
+	if estado == Estado.DERRIBADA:
+		return &"derribada"
+	if esta_sangrando():
+		return &"sangrado"
+	if vida < vida_maxima * 0.35:
+		return &"vida_baja"
+	if estado == Estado.RETIRANDOSE:
+		return &"retirada"
+	if esta_bendecida():
+		return &"bendicion"
+	return &"estable"
+
+
+func urgencia() -> Urgencia:
+	match estado_dominante():
+		&"derribada":
+			return Urgencia.CRITICO
+		&"sangrado":
+			# Sangrando y con poca vida ya no hay tiempo de curar y despues ver.
+			return Urgencia.CRITICO if vida < vida_maxima * 0.4 else Urgencia.EN_RIESGO
+		&"vida_baja":
+			return Urgencia.CRITICO if vida < vida_maxima * 0.2 else Urgencia.EN_RIESGO
+		&"retirada":
+			return Urgencia.EN_RIESGO
+	return Urgencia.ESTABLE
+
+
+## Segundos que quedan del estado dominante, o 0 si no corre ningun reloj. Un
+## derribado con tres segundos se lee muy distinto que una fraccion abstracta.
+func segundos_estado() -> float:
+	match estado_dominante():
+		&"derribada":
+			return maxf(derribada_restante, 0.0)
+		&"sangrado":
+			return maxf(sangrado_restante, 0.0)
+	return 0.0
+
+
+func _perder_vida(cantidad: float, causa: StringName = &"golpe") -> void:
+	_ultima_causa = causa
 	vida = maxf(vida - cantidad, 0.0)
 	if vida <= 0.0:
 		_caer()
@@ -295,8 +391,14 @@ func _perder_vida(cantidad: float) -> void:
 func _actualizar_sangrado(delta: float) -> void:
 	if sangrado_restante <= 0.0:
 		return
+	segundos_sangrando += delta
 	sangrado_restante -= delta
-	_perder_vida(dano_sangrado * delta)
+	_perder_vida(dano_sangrado * delta, &"sangrado")
+	# Se agoto sin que nadie lo cortara: es una crisis que quedo sin atender,
+	# aunque el soldado haya sobrevivido.
+	if sangrado_restante <= 0.0 and estado != Estado.DERRIBADA:
+		sangrado_expiro.emit(segundos_sangrando)
+		segundos_sangrando = 0.0
 
 
 func _actualizar_bendicion(delta: float) -> void:
@@ -321,9 +423,15 @@ func derribar() -> void:
 ## documento (4.4): alguien tirado que todavia se puede salvar.
 func _caer() -> void:
 	estado = Estado.DERRIBADA
+	causa_caida = _ultima_causa
 	derribada_restante = tiempo_derribada
 	velocity = Vector3.ZERO
+	# Si cayo sangrando, el sangrado quedo sin tratar aunque no se haya agotado
+	# solo: nadie llego a cortarlo.
+	if sangrado_restante > 0.0:
+		sangrado_expiro.emit(segundos_sangrando)
 	sangrado_restante = 0.0
+	segundos_sangrando = 0.0
 	bendicion_restante = 0.0
 	_reduccion_dano = 0.0
 	_bonus_cadencia = 0.0
@@ -334,8 +442,9 @@ func _caer() -> void:
 	derribada.emit(self)
 
 
-func _morir() -> void:
+func _morir(causa: StringName = &"") -> void:
 	estado = Estado.MUERTA
+	causa_muerte = causa if causa != &"" else causa_caida
 	velocity = Vector3.ZERO
 	resaltada = false
 	_colision.set_deferred("disabled", true)
@@ -353,9 +462,11 @@ func reanimar() -> bool:
 		return false
 	estado = Estado.AVANZANDO
 	derribada_restante = 0.0
+	causa_caida = &""
 	vida = vida_maxima * vida_al_reanimar
 	_colision.set_deferred("disabled", false)
 	_sprite.play("idle")
+	reanimada.emit()
 	return true
 
 
