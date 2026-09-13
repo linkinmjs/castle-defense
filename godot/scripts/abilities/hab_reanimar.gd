@@ -19,7 +19,11 @@ func motivo_bloqueo(healer: Node) -> String:
 
 func ejecutar(healer: Node) -> String:
 	var objetivo: Variant = healer.objetivo_apuntado()
-	objetivo.reanimar()
+	# reanimar() avisa si no habia a quien levantar. Hoy motivo_bloqueo ya lo
+	# filtra, pero devolver "" deja la habilidad sin cobrar en vez de anunciar
+	# algo que no paso, que es como se comportan las demas.
+	if not objetivo.reanimar():
+		return ""
 	healer.lanzar_efecto(objetivo, "heal")
 	return "Reanimado"
 
