@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="TipoSoldado" format=3]
+
+[ext_resource type="SpriteFrames" path="res://assets/sprites/enemy/enemy_frames.tres" id="1_a4vpv"]
+[ext_resource type="Script" path="res://scripts/3d/tipo_soldado.gd" id="2_h4f3c"]
+
+[resource]
+script = ExtResource("2_h4f3c")
+nombre = "Zombi"
+frames = ExtResource("1_a4vpv")
+vida_maxima = 75.0
+cadencia = 1.0
+alcance = 1.3
+velocidad = 0.95

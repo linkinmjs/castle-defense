@@ -8,6 +8,7 @@ func _initialize() -> void:
 	_accion("habilidad_3", [KEY_3])
 	_accion("dash", [KEY_SHIFT])
 	_accion("saltar", [KEY_SPACE])
+	_accion("reiniciar", [KEY_R])
 	ProjectSettings.save()
 	print("acciones de habilidades agregadas")
 	quit()

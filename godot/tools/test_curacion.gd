@@ -77,7 +77,7 @@ func _process(_delta: float) -> bool:
 	_preparar(6.0)
 	_aliado.sangrado_restante = 8.0
 	_aliado._actualizar_sangrado(2.0)  # 3.5/s * 2s = 7 de dano
-	_ok("el sangrado puede matar", not _aliado.esta_viva())
+	_ok("el sangrado puede derribar", _aliado.esta_derribada())
 
 	print("")
 	print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)

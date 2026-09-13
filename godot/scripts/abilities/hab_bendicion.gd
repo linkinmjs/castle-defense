@@ -19,6 +19,8 @@ func motivo_bloqueo(healer: Node) -> String:
 		return "Sin objetivo"
 	if not healer.en_rango(objetivo):
 		return "Fuera de alcance"
+	if objetivo.esta_derribada():
+		return "Esta derribado: hay que reanimarlo"
 	if objetivo.esta_bendecida():
 		return "Ya esta bendecido"
 	return ""

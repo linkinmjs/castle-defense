@@ -6,6 +6,8 @@ extends Node3D
 
 const ESCENA_UNIDAD := preload("res://scenes/3d/unidad3d.tscn")
 
+signal batalla_terminada(victoria: bool)
+
 @export var ancho_campo: float = 30.0
 @export var profundidad_campo: float = 10.0
 
@@ -28,7 +30,13 @@ const ESCENA_UNIDAD := preload("res://scenes/3d/unidad3d.tscn")
 ## bases habria medio minuto de marcha antes de ver el primer golpe.
 @export var unidades_iniciales: int = 6
 @export var refuerzos_por_tanda: int = 2
+## La horda es horda por numero: mas zombis que soldados, mas por tanda.
+@export var enemigos_iniciales: int = 9
+@export var refuerzos_enemigos: int = 3
 @export var intervalo_refuerzos: float = 9.0
+## De estos se elige al azar cada vez que entra un soldado.
+@export var tipos_aliados: Array[TipoSoldado] = []
+@export var tipos_enemigos: Array[TipoSoldado] = []
 
 @export_group("Emergentes")
 ## Cada cuanto sale algo del suelo cerca del healer. Es un evento que
@@ -50,6 +58,8 @@ const ESCENA_UNIDAD := preload("res://scenes/3d/unidad3d.tscn")
 ## la zona muerta, y nunca mas alla de los bordes del campo.
 var _camara_x: float
 var _escena_emergente: PackedScene
+var _terminada: bool = false
+var _relojes: Array[Timer] = []
 
 
 func _ready() -> void:
@@ -65,6 +75,7 @@ func _ready() -> void:
 	_healer.usar_camara(_camara)
 	_overlay.seguir(_camara)
 	_hud.seguir(_healer)
+	_hud.seguir_batalla(self)
 
 	_desplegar_formacion_inicial()
 
@@ -73,6 +84,7 @@ func _ready() -> void:
 	reloj.timeout.connect(_enviar_refuerzos)
 	add_child(reloj)
 	reloj.start()
+	_relojes.append(reloj)
 
 	# Cargado en runtime y no con preload: la escena la genera el mismo script
 	# que genera esta, y un preload rompe el parseo si todavia no existe.
@@ -82,10 +94,62 @@ func _ready() -> void:
 	reloj_emergentes.timeout.connect(_lanzar_emergentes)
 	add_child(reloj_emergentes)
 	reloj_emergentes.start()
+	_relojes.append(reloj_emergentes)
 
 
 func _process(delta: float) -> void:
 	_actualizar_camara(delta)
+	if not _terminada:
+		_revisar_desenlace()
+
+
+func _unhandled_input(evento: InputEvent) -> void:
+	if _terminada and evento.is_action_pressed("reiniciar"):
+		get_tree().reload_current_scene()
+
+
+## Gana quien llega a la base contraria. Los derribados no cuentan: un
+## soldado tirado a un metro de la base enemiga no la tomo.
+func _revisar_desenlace() -> void:
+	for u in get_tree().get_nodes_in_group("aliados"):
+		var n := u as Node3D
+		if n.esta_viva() and not n.esta_derribada() and n.global_position.x >= base_enemiga_x - 1.0:
+			_terminar(true)
+			return
+	for u in get_tree().get_nodes_in_group("enemigos"):
+		var n := u as Node3D
+		if n.esta_viva() and not n.esta_derribada() and n.global_position.x <= base_aliada_x + 1.0:
+			_terminar(false)
+			return
+
+
+func _terminar(victoria: bool) -> void:
+	_terminada = true
+	for reloj in _relojes:
+		reloj.stop()
+	batalla_terminada.emit(victoria)
+
+
+## Donde esta el choque: entre el aliado mas adelantado y el enemigo mas
+## atrasado. Lo lee el indicador del HUD.
+func frente_x() -> float:
+	var max_aliado := -INF
+	var min_enemigo := INF
+	for u in get_tree().get_nodes_in_group("aliados"):
+		var n := u as Node3D
+		if n.esta_viva() and not n.esta_derribada():
+			max_aliado = maxf(max_aliado, n.global_position.x)
+	for u in get_tree().get_nodes_in_group("enemigos"):
+		var n := u as Node3D
+		if n.esta_viva() and not n.esta_derribada():
+			min_enemigo = minf(min_enemigo, n.global_position.x)
+	if max_aliado > -INF and min_enemigo < INF:
+		return (max_aliado + min_enemigo) * 0.5
+	if max_aliado > -INF:
+		return max_aliado
+	if min_enemigo < INF:
+		return min_enemigo
+	return ancho_campo * 0.5
 
 
 ## Sigue solo el avance del frente (X): ni la profundidad ni los saltos mueven
@@ -111,20 +175,32 @@ func _desplegar_formacion_inicial() -> void:
 	var centro := ancho_campo * 0.5
 	for i in unidades_iniciales:
 		_crear_unidad(Unidad3D.Bando.ALIADO, centro - randf_range(1.5, 4.5))
-		_crear_unidad(Unidad3D.Bando.ENEMIGO, centro + randf_range(1.5, 4.5))
+	for i in enemigos_iniciales:
+		_crear_unidad(Unidad3D.Bando.ENEMIGO, centro + randf_range(1.5, 5.5))
 
 
 func _enviar_refuerzos() -> void:
 	for i in refuerzos_por_tanda:
 		_crear_unidad(Unidad3D.Bando.ALIADO, base_aliada_x + randf_range(0.5, 1.5))
+	for i in refuerzos_enemigos:
 		_crear_unidad(Unidad3D.Bando.ENEMIGO, base_enemiga_x - randf_range(0.5, 1.5))
 
 
 func _crear_unidad(bando: Unidad3D.Bando, x: float) -> void:
 	var unidad: Unidad3D = ESCENA_UNIDAD.instantiate()
-	unidad.configurar(bando)
+	unidad.configurar(bando, _tipo_al_azar(bando))
+	unidad.base_x = base_aliada_x if bando == Unidad3D.Bando.ALIADO else base_enemiga_x
 	unidad.position = Vector3(x, 0.0, randf_range(1.5, profundidad_campo - 1.5))
 	_unidades.add_child(unidad)
+
+
+func _tipo_al_azar(bando: Unidad3D.Bando) -> TipoSoldado:
+	var lista: Array[TipoSoldado] = tipos_aliados
+	if bando == Unidad3D.Bando.ENEMIGO:
+		lista = tipos_enemigos
+	if lista.is_empty():
+		return null
+	return lista[randi() % lista.size()]
 
 
 ## Marca el suelo cerca del healer; cuando el aviso termina, sale el enemigo.
@@ -133,7 +209,9 @@ func _lanzar_emergentes() -> void:
 		var angulo := randf() * TAU
 		var radio := randf_range(2.0, radio_emergentes)
 		var pos := _healer.global_position + Vector3(cos(angulo) * radio, 0.0, sin(angulo) * radio)
-		pos.x = clampf(pos.x, 1.5, ancho_campo - 1.5)
+		# Nunca dentro de una base: un zombi que nace en la zona de derrota
+		# la dispararia solo, sin que nadie haya llegado a nada.
+		pos.x = clampf(pos.x, base_aliada_x + 2.5, base_enemiga_x - 2.5)
 		pos.z = clampf(pos.z, 1.5, profundidad_campo - 1.5)
 		pos.y = 0.0
 
@@ -146,7 +224,8 @@ func _lanzar_emergentes() -> void:
 
 func _emerger_enemigo(pos: Vector3) -> void:
 	var unidad: Unidad3D = ESCENA_UNIDAD.instantiate()
-	unidad.configurar(Unidad3D.Bando.ENEMIGO)
+	unidad.configurar(Unidad3D.Bando.ENEMIGO, _tipo_al_azar(Unidad3D.Bando.ENEMIGO))
+	unidad.base_x = base_enemiga_x
 	unidad.position = pos
 	_unidades.add_child(unidad)
 	unidad.emerger(0.5)

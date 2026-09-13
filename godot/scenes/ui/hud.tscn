@@ -1,19 +1,20 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/hud.gd" id="1_hqnrr"]
-[ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="2_bo48s"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_bo48s"]
+[ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="2_8qguk"]
+[ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="3_136eg"]
 
-[node name="HUD" type="CanvasLayer" unique_id=437446779]
-script = ExtResource("1_hqnrr")
+[node name="HUD" type="CanvasLayer" unique_id=1205627051]
+script = ExtResource("1_bo48s")
 
-[node name="Raiz" type="Control" parent="." unique_id=802790415]
+[node name="Raiz" type="Control" parent="." unique_id=2001069206]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=1356396729]
+[node name="Contadores" type="Label" parent="Raiz" unique_id=894483742]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
@@ -26,7 +27,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Aviso" type="Label" parent="Raiz" unique_id=1341807222]
+[node name="Aviso" type="Label" parent="Raiz" unique_id=1326651696]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -41,19 +42,19 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Slots" type="Control" parent="Raiz" unique_id=1753733659]
+[node name="Slots" type="Control" parent="Raiz" unique_id=952509082]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
 offset_top = -166.0
-offset_right = 584.0
+offset_right = 704.0
 offset_bottom = -104.0
 mouse_filter = 2
-script = ExtResource("2_bo48s")
+script = ExtResource("2_8qguk")
 
-[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=688182781]
+[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=30860657]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -65,7 +66,7 @@ offset_bottom = -61.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="TextoVida" type="Label" parent="Raiz" unique_id=2051234894]
+[node name="TextoVida" type="Label" parent="Raiz" unique_id=1007765945]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -80,7 +81,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=294307169]
+[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=707366187]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -92,7 +93,7 @@ offset_bottom = -35.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="TextoMana" type="Label" parent="Raiz" unique_id=1458455727]
+[node name="TextoMana" type="Label" parent="Raiz" unique_id=1256079044]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -107,7 +108,38 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Ayuda" type="Label" parent="Raiz" unique_id=1764059616]
+[node name="Frente" type="Control" parent="Raiz" unique_id=1014014845]
+unique_name_in_owner = true
+anchors_preset = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 14.0
+offset_right = 200.0
+offset_bottom = 40.0
+mouse_filter = 2
+script = ExtResource("3_136eg")
+
+[node name="Desenlace" type="Label" parent="Raiz" unique_id=2027632637]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -60.0
+offset_right = 220.0
+offset_bottom = 60.0
+theme_override_font_sizes/font_size = 48
+theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+horizontal_alignment = 1
+
+[node name="Ayuda" type="Label" parent="Raiz" unique_id=354522314]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0

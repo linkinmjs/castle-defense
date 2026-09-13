@@ -46,6 +46,10 @@ func _dibujar_unidad(unidad: Node3D) -> void:
 	if unidad.resaltada:
 		_dibujar_resaltado(unidad, escala)
 
+	if unidad.esta_derribada():
+		_dibujar_derribada(unidad, escala)
+		return
+
 	var ancho := 44.0 * escala
 	var alto := 6.0 * escala
 	var origen := en_pantalla - Vector2(ancho * 0.5, 0.0)
@@ -88,6 +92,27 @@ func _dibujar_resaltado(unidad: Node3D, escala: float) -> void:
 	draw_colored_polygon(puntos, Color(color.r, color.g, color.b, 0.18))
 	puntos.append(puntos[0])
 	draw_polyline(puntos, color, maxf(1.5, 2.0 * escala))
+
+
+## Una derribada no muestra vida sino el tiempo que le queda: la barra se
+## vacia y, al llegar a cero, muere. Va mas abajo porque el cuerpo esta
+## tirado, y late mas rapido cuanto menos queda.
+func _dibujar_derribada(unidad: Node3D, escala: float) -> void:
+	var punto: Vector3 = unidad.global_position + Vector3(0, 0.9, 0)
+	if _camara.is_position_behind(punto):
+		return
+	var en_pantalla := _camara.unproject_position(punto)
+	var ancho := 44.0 * escala
+	var alto := 6.0 * escala
+	var origen := en_pantalla - Vector2(ancho * 0.5, 0.0)
+	var marco := Rect2(origen, Vector2(ancho, alto))
+	var fraccion: float = unidad.fraccion_derribada()
+	var segundos := Time.get_ticks_msec() / 1000.0
+	var pulso := 0.75 + 0.25 * sin(segundos * (4.0 + 10.0 * (1.0 - fraccion)))
+
+	draw_rect(marco, Color(0, 0, 0, 0.6))
+	draw_rect(Rect2(origen, Vector2(ancho * fraccion, alto)), Color(0.95, 0.62, 0.2, pulso))
+	draw_rect(marco, Color(1.0, 0.85, 0.5, 0.9), false, maxf(1.0, escala))
 
 
 func _color_vida(proporcion: float) -> Color:

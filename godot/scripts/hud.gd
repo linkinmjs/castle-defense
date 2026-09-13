@@ -12,6 +12,8 @@ const DURACION_AVISO := 1.8
 @onready var _contadores: Label = %Contadores
 @onready var _aviso: Label = %Aviso
 @onready var _slots: Control = %Slots
+@onready var _frente: Control = %Frente
+@onready var _desenlace: Label = %Desenlace
 
 var _tiempo_aviso: float = 0.0
 
@@ -20,6 +22,7 @@ func _ready() -> void:
 	_estilizar(_barra_mana, COLOR_MANA)
 	_estilizar(_barra_vida, COLOR_VIDA)
 	_aviso.modulate.a = 0.0
+	_desenlace.visible = false
 
 
 func _estilizar(barra: ProgressBar, color: Color) -> void:
@@ -46,10 +49,17 @@ func seguir(healer: Node) -> void:
 	_slots.seguir(healer, habilidades)
 
 
+func seguir_batalla(battle: Node) -> void:
+	battle.batalla_terminada.connect(_on_batalla_terminada)
+	_frente.seguir(battle)
+
+
 func _process(delta: float) -> void:
-	_contadores.text = "Aliados %d      Enemigos %d" % [
-		_vivos("aliados"), _vivos("enemigos")
-	]
+	var aliados := "Aliados %d" % _vivos("aliados")
+	var caidos := _derribados("aliados")
+	if caidos > 0:
+		aliados += "  (%d en el suelo)" % caidos
+	_contadores.text = "%s      Enemigos %d" % [aliados, _vivos("enemigos")]
 
 	if _tiempo_aviso > 0.0:
 		_tiempo_aviso -= delta
@@ -77,10 +87,25 @@ func _on_habilidad_fallo(_habilidad: Habilidad, motivo: String) -> void:
 	_on_aviso(motivo)
 
 
+func _on_batalla_terminada(victoria: bool) -> void:
+	_desenlace.text = ("VICTORIA" if victoria else "DERROTA") + "\nR para reiniciar"
+	_desenlace.add_theme_color_override("font_color",
+		Color("9fd88f") if victoria else Color("e07a6a"))
+	_desenlace.visible = true
+
+
 func _on_aviso(texto: String) -> void:
 	_aviso.text = texto
 	_tiempo_aviso = DURACION_AVISO
 	_aviso.modulate.a = 1.0
+
+
+func _derribados(grupo: String) -> int:
+	var total := 0
+	for unidad in get_tree().get_nodes_in_group(grupo):
+		if unidad.esta_viva() and unidad.esta_derribada():
+			total += 1
+	return total
 
 
 func _vivos(grupo: String) -> int:

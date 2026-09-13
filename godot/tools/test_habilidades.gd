@@ -55,6 +55,18 @@ func _probar_apuntado() -> void:
 	var punto := _pantalla(adelante, 1.15)
 	_ok("entre superpuestos elige al de adelante",
 		_healer.buscar_bajo_punto(punto) == adelante)
+
+	# Pegajoso: el cursor pasa al torso del de atras, que sigue dentro de la
+	# caja del de adelante. Si el de adelante ya estaba apuntado, se mantiene;
+	# sin nadie apuntado, gana el de atras porque su cuerpo esta mas cerca.
+	var punto_atras := _pantalla(atras, 1.15)
+	_ok("la caja del de adelante cubre el torso del de atras",
+		_healer._caja_pantalla(adelante).has_point(punto_atras))
+	_healer._apuntada = adelante
+	_ok("apuntado, no salta al vecino", _healer.buscar_bajo_punto(punto_atras) == adelante)
+	_healer._apuntada = null
+	_ok("sin nadie apuntado, gana el cuerpo mas cerca del cursor",
+		_healer.buscar_bajo_punto(punto_atras) == atras)
 	atras.free()
 	adelante.free()
 
@@ -63,6 +75,16 @@ func _probar_apuntado() -> void:
 	_ok("el iman engancha lo cercano", cerca == a)
 	_ok("lejos no engancha nada",
 		_healer.buscar_bajo_punto(_pantalla(a, 1.15) + Vector2(400, 0)) == null)
+
+	# Un derribado esta tirado a lo ancho: se lo tiene que poder agarrar por
+	# el cuerpo en el suelo, no solo por donde estaria su torso de pie.
+	var tirado := _crear_aliado(Vector3(18.5, 0, 5))
+	tirado.probabilidad_sangrado = 0.0
+	tirado.recibir_dano(500.0)
+	var sobre_el_cuerpo := _camara.unproject_position(tirado.global_position + Vector3(0.6, 0.3, 0))
+	_ok("un derribado se agarra por el cuerpo tirado",
+		_healer.buscar_bajo_punto(sobre_el_cuerpo) == tirado)
+	tirado.free()
 
 	a.free()
 
@@ -76,7 +98,7 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	_healer.mana = 100.0
 
 	var curar := componente.habilidad_en(0)
-	_ok("hay 5 habilidades", componente.habilidades.size() == 5)
+	_ok("hay 6 habilidades", componente.habilidades.size() == 6)
 
 	_avisos.clear()
 	_ok("curar se usa", componente.intentar(curar))

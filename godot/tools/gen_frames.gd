@@ -38,6 +38,8 @@ func _initialize() -> void:
 	_generar("res://assets/sprites/healer", HEALER, PERSONAJE, "healer_frames.tres")
 	_generar("res://assets/sprites/soldier", COMBATIENTE, PERSONAJE, "soldier_frames.tres")
 	_generar("res://assets/sprites/enemy", COMBATIENTE, PERSONAJE, "enemy_frames.tres")
+	_generar("res://assets/sprites/lancero", COMBATIENTE, PERSONAJE, "lancero_frames.tres")
+	_generar("res://assets/sprites/espadachin", COMBATIENTE, PERSONAJE, "espadachin_frames.tres")
 	_generar("res://assets/sprites/fx", EFECTOS, EFECTO, "fx_frames.tres")
 	quit()
 

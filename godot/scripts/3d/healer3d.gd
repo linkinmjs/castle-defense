@@ -15,7 +15,7 @@ signal se_levanto
 
 const FRAMES_FX := preload("res://assets/sprites/fx/fx_frames.tres")
 ## Radio en pixeles para enganchar una unidad cuando el mouse no cae encima.
-const IMAN_MOUSE := 70.0
+const IMAN_MOUSE := 90.0
 
 @export var velocidad_maxima: float = 4.6
 @export var aceleracion: float = 34.0
@@ -145,8 +145,10 @@ func _unhandled_input(evento: InputEvent) -> void:
 
 	if evento.is_action_pressed("saltar"):
 		saltar()
-	elif evento.is_action_pressed("dash") or evento.is_action_pressed("habilidad_3"):
+	elif evento.is_action_pressed("dash"):
 		_usar(4)  # Impulso
+	elif evento.is_action_pressed("habilidad_3"):
+		_usar(5)  # Reanimar
 	elif evento.is_action_pressed("habilidad_1"):
 		_usar(2)
 	elif evento.is_action_pressed("habilidad_2"):
@@ -193,6 +195,11 @@ func recibir_dano(cantidad: float) -> void:
 ## que dejan de pegarle y buscan a otro.
 func esta_viva() -> bool:
 	return _caido_restante <= 0.0
+
+
+## Mismo nombre que en las unidades, por la misma razon.
+func esta_derribada() -> bool:
+	return _caido_restante > 0.0
 
 
 func _caer() -> void:
@@ -310,15 +317,24 @@ func buscar_bajo_punto(mouse: Vector2) -> Unidad3D:
 			continue
 
 		var alcanzable := en_rango(unidad)
-		var distancia := _camara.global_position.distance_to(unidad.global_position)
-		# Primero los que puedo tocar; entre esos, el mas cercano a la camara,
-		# que es el que el jugador ve adelante.
+		# Primero los que puedo tocar; entre esos, el que tiene el cuerpo mas
+		# cerca del cursor. Con cajas superpuestas, la distancia al torso es lo
+		# que el jugador esta senalando de verdad.
+		var distancia := _centro_pantalla(unidad).distance_to(mouse)
 		if mejor == null \
 				or (alcanzable and not mejor_alcanzable) \
 				or (alcanzable == mejor_alcanzable and distancia < mejor_distancia):
 			mejor = unidad
 			mejor_alcanzable = alcanzable
 			mejor_distancia = distancia
+
+	# Pegajoso: si el cursor sigue sobre el que ya estaba apuntado, no cambia
+	# por un vecino que quedo apenas mas cerca. Sin esto, en la linea
+	# amontonada el objetivo parpadea entre dos y el click cae en cualquiera.
+	if _apuntada != null and is_instance_valid(_apuntada) and _apuntada.esta_viva() \
+			and _apuntada != mejor and _caja_pantalla(_apuntada).has_point(mouse) \
+			and (en_rango(_apuntada) or mejor == null or not mejor_alcanzable):
+		return _apuntada
 
 	if mejor != null:
 		return mejor
@@ -328,6 +344,9 @@ func buscar_bajo_punto(mouse: Vector2) -> Unidad3D:
 ## Caja del cuerpo en coordenadas de pantalla, o una vacia si esta detras.
 func _caja_pantalla(unidad: Unidad3D) -> Rect2:
 	var pies: Vector3 = unidad.global_position
+	if unidad.esta_derribada():
+		return _caja_tirada(pies)
+
 	var cabeza: Vector3 = pies + Vector3(0, 2.0, 0)
 	if _camara.is_position_behind(pies) or _camara.is_position_behind(cabeza):
 		return Rect2()
@@ -335,8 +354,39 @@ func _caja_pantalla(unidad: Unidad3D) -> Rect2:
 	var p := _camara.unproject_position(pies)
 	var c := _camara.unproject_position(cabeza)
 	var alto := absf(p.y - c.y)
-	var ancho := maxf(alto * 0.55, 12.0)
-	return Rect2(Vector2(p.x - ancho * 0.5, c.y), Vector2(ancho, alto))
+	# Mas ancha que el cuerpo: la gente hace click en el arma y en el escudo.
+	var ancho := maxf(alto * 0.7, 14.0)
+	return Rect2(Vector2(p.x - ancho * 0.5, c.y), Vector2(ancho, alto + 6.0))
+
+
+## Un cuerpo tirado ocupa el suelo a lo ancho y casi nada a lo alto: la caja
+## de pie no lo cubre y reanimar se vuelve una prueba de punteria.
+func _caja_tirada(pies: Vector3) -> Rect2:
+	var izq := pies + Vector3(-0.95, 0, 0)
+	var der := pies + Vector3(0.95, 0, 0)
+	var arriba := pies + Vector3(0, 0.75, 0)
+	if _camara.is_position_behind(izq) or _camara.is_position_behind(der) \
+			or _camara.is_position_behind(arriba):
+		return Rect2()
+	var a := _camara.unproject_position(izq)
+	var b := _camara.unproject_position(der)
+	var techo := _camara.unproject_position(arriba)
+	var suelo := _camara.unproject_position(pies)
+	var x0 := minf(a.x, b.x)
+	var x1 := maxf(a.x, b.x)
+	return Rect2(Vector2(x0, techo.y), Vector2(x1 - x0, suelo.y - techo.y + 8.0))
+
+
+## Punto del cuerpo que representa a la unidad para el cursor: el torso si
+## esta de pie, mas abajo si esta tirada.
+func _punto_cuerpo(unidad: Unidad3D) -> Vector3:
+	if unidad.esta_derribada():
+		return unidad.global_position + Vector3(0, 0.35, 0)
+	return unidad.punto_torso()
+
+
+func _centro_pantalla(unidad: Unidad3D) -> Vector2:
+	return _camara.unproject_position(_punto_cuerpo(unidad))
 
 
 func _mas_cercano_al_mouse(mouse: Vector2) -> Unidad3D:
@@ -345,10 +395,10 @@ func _mas_cercano_al_mouse(mouse: Vector2) -> Unidad3D:
 	for unidad: Unidad3D in get_tree().get_nodes_in_group("aliados"):
 		if not unidad.esta_viva() or unidad.is_queued_for_deletion():
 			continue
-		var torso: Vector3 = unidad.punto_torso()
-		if _camara.is_position_behind(torso):
+		var punto := _punto_cuerpo(unidad)
+		if _camara.is_position_behind(punto):
 			continue
-		var distancia := _camara.unproject_position(torso).distance_to(mouse)
+		var distancia := _camara.unproject_position(punto).distance_to(mouse)
 		if distancia < mejor_distancia:
 			mejor_distancia = distancia
 			mejor = unidad

@@ -2,6 +2,10 @@
 /builds/*
 !/builds/.gitkeep
 
+# Material de lectura de referencia: son libros con copyright y pesan decenas de
+# MB. Los documentos de diseno los citan por pagina, pero el PDF no va al repo.
+/godot/docs/pdfs/
+
 # Archivos de sistema
 .DS_Store
 Thumbs.db

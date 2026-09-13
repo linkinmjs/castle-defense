@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="TipoSoldado" format=3]
+
+[ext_resource type="SpriteFrames" path="res://assets/sprites/lancero/lancero_frames.tres" id="1_hmejj"]
+[ext_resource type="Script" path="res://scripts/3d/tipo_soldado.gd" id="2_cqlow"]
+
+[resource]
+script = ExtResource("2_cqlow")
+nombre = "Lancero"
+frames = ExtResource("1_hmejj")
+vida_maxima = 70.0
+dano = 13.0
+alcance = 2.2
+retirada_bajo = 0.3

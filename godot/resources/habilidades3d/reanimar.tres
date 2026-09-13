@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="HabilidadReanimar" format=3]
+
+[ext_resource type="Script" path="res://scripts/abilities/hab_reanimar.gd" id="1_au5vp"]
+
+[resource]
+script = ExtResource("1_au5vp")
+nombre = "Reanimar"
+tecla = "3"
+costo = 40.0
+enfriamiento = 6.0
+color = Color(0.6901961, 0.49803922, 0.8509804, 1)

@@ -7,11 +7,13 @@ const PROFUNDIDAD := 10.0
 const PIXEL_SIZE := 2.0 / 68.0
 const RUTA_GRILLA := "res://assets/texturas/grilla.png"
 const DIR_HABILIDADES := "res://resources/habilidades3d"
+const DIR_SOLDADOS := "res://resources/soldados"
 
 
 func _initialize() -> void:
 	_crear_textura_grilla()
 	_crear_habilidades()
+	_crear_tipos()
 	_crear_healer()
 	_crear_unidad()
 	_crear_emergente()
@@ -96,6 +98,71 @@ func _crear_habilidades() -> void:
 	impulso.duracion = 0.22
 	_guardar_recurso(impulso, "impulso.tres")
 
+	var reanimar := HabilidadReanimar.new()
+	reanimar.nombre = "Reanimar"
+	reanimar.tecla = "3"
+	reanimar.costo = 40.0
+	reanimar.enfriamiento = 6.0
+	reanimar.objetivo = Habilidad.Objetivo.ALIADO
+	reanimar.color = Color("b07fd9")
+	_guardar_recurso(reanimar, "reanimar.tres")
+
+
+## Cada tipo le crea un problema distinto al healer: el escudero es el mejor
+## paciente pero esta en primera linea; el lancero depende de tener a alguien
+## adelante; el espadachin se mete solo en problemas.
+func _crear_tipos() -> void:
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DIR_SOLDADOS))
+
+	var escudero := TipoSoldado.new()
+	escudero.nombre = "Escudero"
+	escudero.frames = load("res://assets/sprites/soldier/soldier_frames.tres")
+	escudero.vida_maxima = 110.0
+	escudero.dano = 9.0
+	escudero.cadencia = 1.4
+	escudero.alcance = 1.3
+	escudero.velocidad = 0.9
+	escudero.reduccion_dano = 0.25
+	_guardar_tipo(escudero, "escudero.tres")
+
+	var lancero := TipoSoldado.new()
+	lancero.nombre = "Lancero"
+	lancero.frames = load("res://assets/sprites/lancero/lancero_frames.tres")
+	lancero.vida_maxima = 70.0
+	lancero.dano = 13.0
+	lancero.cadencia = 1.1
+	lancero.alcance = 2.2
+	lancero.velocidad = 1.0
+	lancero.retirada_bajo = 0.3
+	_guardar_tipo(lancero, "lancero.tres")
+
+	var espadachin := TipoSoldado.new()
+	espadachin.nombre = "Espadachin"
+	espadachin.frames = load("res://assets/sprites/espadachin/espadachin_frames.tres")
+	espadachin.vida_maxima = 65.0
+	espadachin.dano = 16.0
+	espadachin.cadencia = 0.8
+	espadachin.alcance = 1.3
+	espadachin.velocidad = 1.3
+	espadachin.oportunista = true
+	_guardar_tipo(espadachin, "espadachin.tres")
+
+	var zombie := TipoSoldado.new()
+	zombie.nombre = "Zombi"
+	zombie.frames = load("res://assets/sprites/enemy/enemy_frames.tres")
+	zombie.vida_maxima = 75.0
+	zombie.dano = 12.0
+	zombie.cadencia = 1.0
+	zombie.alcance = 1.3
+	zombie.velocidad = 0.95
+	_guardar_tipo(zombie, "zombie.tres")
+
+
+func _guardar_tipo(recurso: Resource, archivo: String) -> void:
+	var ruta := "%s/%s" % [DIR_SOLDADOS, archivo]
+	var err := ResourceSaver.save(recurso, ruta)
+	print("%s -> %s" % [ruta, "OK" if err == OK else "ERROR %d" % err])
+
 
 func _guardar_recurso(recurso: Resource, archivo: String) -> void:
 	var ruta := "%s/%s" % [DIR_HABILIDADES, archivo]
@@ -147,6 +214,7 @@ func _crear_healer() -> void:
 		load(DIR_HABILIDADES + "/oleada.tres"),
 		load(DIR_HABILIDADES + "/bendicion.tres"),
 		load(DIR_HABILIDADES + "/impulso.tres"),
+		load(DIR_HABILIDADES + "/reanimar.tres"),
 	]
 	habilidades.set("habilidades", lista)
 	healer.add_child(habilidades)
@@ -250,7 +318,7 @@ func _crear_hud() -> void:
 	slots.set_script(load("res://scripts/slots_habilidades.gd"))
 	slots.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	slots.position = Vector2(24, -166)
-	slots.size = Vector2(560, 62)
+	slots.size = Vector2(680, 62)
 	slots.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	raiz.add_child(slots)
 	slots.owner = hud
@@ -258,6 +326,28 @@ func _crear_hud() -> void:
 
 	_barra(raiz, hud, "BarraVida", "TextoVida", -88)
 	_barra(raiz, hud, "BarraMana", "TextoMana", -62)
+
+	# Tira y afloja del frente, arriba al centro.
+	var frente := Control.new()
+	frente.name = "Frente"
+	frente.set_script(load("res://scripts/indicador_frente.gd"))
+	frente.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	frente.position = Vector2(-200, 14)
+	frente.size = Vector2(400, 26)
+	frente.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	raiz.add_child(frente)
+	frente.owner = hud
+	frente.unique_name_in_owner = true
+
+	var desenlace := _etiqueta("Desenlace", 48, Color(1.0, 0.95, 0.8))
+	desenlace.set_anchors_preset(Control.PRESET_CENTER)
+	desenlace.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desenlace.position = Vector2(-220, -60)
+	desenlace.size = Vector2(440, 120)
+	desenlace.visible = false
+	raiz.add_child(desenlace)
+	desenlace.owner = hud
+	desenlace.unique_name_in_owner = true
 
 	var ayuda := _etiqueta("Ayuda", 15, Color(0.7, 0.75, 0.85))
 	ayuda.text = "WASD mover     Shift impulso     Espacio saltar     Click sobre un aliado para actuar"
@@ -307,6 +397,14 @@ func _crear_battle() -> void:
 	battle.set_script(load("res://scripts/3d/battle3d.gd"))
 	battle.set("ancho_campo", ANCHO)
 	battle.set("profundidad_campo", PROFUNDIDAD)
+	var aliados: Array[TipoSoldado] = [
+		load(DIR_SOLDADOS + "/escudero.tres"),
+		load(DIR_SOLDADOS + "/lancero.tres"),
+		load(DIR_SOLDADOS + "/espadachin.tres"),
+	]
+	var enemigos: Array[TipoSoldado] = [load(DIR_SOLDADOS + "/zombie.tres")]
+	battle.set("tipos_aliados", aliados)
+	battle.set("tipos_enemigos", enemigos)
 
 	_agregar_entorno(battle)
 	_agregar_suelo(battle)

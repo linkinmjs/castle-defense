@@ -29,5 +29,6 @@ func _process(delta: float) -> void:
 	_marca.scale = Vector3(lado, 1.0, lado)
 
 	if _restante <= 0.0:
+		set_process(false)  # que no vuelva a avisar si el frame se estira
 		termino.emit(global_position)
 		queue_free()
