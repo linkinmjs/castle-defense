@@ -78,6 +78,9 @@ var indice_encuentro: int = 0
 ## recrearlos y no sobrevivian a un reinicio sin recargar la escena.
 var tiempo_encuentro: float = 0.0
 var _actual: Encuentro
+## Creada por codigo y no puesta en la escena: asi no hay que tocar battle3d
+## para medir, y las pruebas pueden armar una a mano sin instanciar el HUD.
+var _telemetria: Telemetria
 var _escena_emergente: PackedScene
 var _terminada: bool = false
 var _bajas_aliadas: int = 0
@@ -91,6 +94,12 @@ func _ready() -> void:
 	# le hiciera look_at cada frame mientras la posicion va con retraso, el
 	# yaw iria corrigiendo y la vista se ladearia al caminar.
 	_camara.rotation_degrees = Vector3(-angulo_camara, 0.0, 0.0)
+
+	_telemetria = Telemetria.new()
+	_telemetria.name = "Telemetria"
+	add_child(_telemetria)
+	_telemetria.observar_batalla(self)
+	_telemetria.observar_healer(_healer)
 
 	# Apuntar y dibujar barras necesitan proyectar el mundo a pantalla.
 	_healer.usar_camara(_camara)
@@ -163,10 +172,12 @@ func iniciar_encuentro(enc: Encuentro, nueva_semilla: int = -1) -> void:
 	_camara_x = _healer.global_position.x
 	_camara.global_position = _posicion_deseada()
 
+	# Antes de desplegar: quien mide arranca en cero justo aca, y asi los
+	# soldados que entran ya sangrando cuentan como crisis del encuentro.
+	encuentro_iniciado.emit(_actual, semilla_actual, indice_encuentro)
+
 	for grupo in _actual.grupos_iniciales:
 		_desplegar_grupo(grupo)
-
-	encuentro_iniciado.emit(_actual, semilla_actual, indice_encuentro)
 
 
 ## Repite el mismo encuentro con la misma semilla: el problema es identico y lo
@@ -414,6 +425,10 @@ func _terminar(victoria: bool) -> void:
 	for unidad in get_tree().get_nodes_in_group("enemigos"):
 		unidad.set_physics_process(false)
 	batalla_terminada.emit(victoria)
+
+
+func telemetria() -> Telemetria:
+	return _telemetria
 
 
 func esta_terminada() -> bool:
