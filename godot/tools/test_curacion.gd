@@ -29,8 +29,8 @@ func _process(_delta: float) -> bool:
 	_componente.habilidad_fallo.connect(func(_h: Habilidad, m: String) -> void: _avisos.append(m))
 	_healer._apuntada = _aliado
 
-	var curar := _componente.habilidad_en(0)
-	var estabilizar := _componente.habilidad_en(1)
+	var curar := _componente.habilidad_por_nombre("Curar")
+	var estabilizar := _componente.habilidad_por_nombre("Estabilizar")
 
 	print("--- overhealing: lo que sobra se pierde ---")
 	_preparar(70.0)  # de 80: solo entran 10

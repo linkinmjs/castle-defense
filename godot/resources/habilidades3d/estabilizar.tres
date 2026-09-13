@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_734j8")
 nombre = "Estabilizar"
+accion = &"cancel"
 tecla = "RMB"
 costo = 10.0
 enfriamiento = 1.2

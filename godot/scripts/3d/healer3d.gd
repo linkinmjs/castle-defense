@@ -136,23 +136,16 @@ func _process(_delta: float) -> void:
 func _unhandled_input(evento: InputEvent) -> void:
 	if not esta_viva():
 		return
-	if evento is InputEventMouseButton and evento.pressed:
-		if evento.button_index == MOUSE_BUTTON_LEFT:
-			_usar(0)
-		elif evento.button_index == MOUSE_BUTTON_RIGHT:
-			_usar(1)
-		return
-
 	if evento.is_action_pressed("saltar"):
 		saltar()
-	elif evento.is_action_pressed("dash"):
-		_usar(4)  # Impulso
-	elif evento.is_action_pressed("habilidad_3"):
-		_usar(5)  # Reanimar
-	elif evento.is_action_pressed("habilidad_1"):
-		_usar(2)
-	elif evento.is_action_pressed("habilidad_2"):
-		_usar(3)
+		return
+
+	# Cada habilidad dice que accion la dispara. Antes esto era una escalera de
+	# indices fijos, y bastaba con que un encuentro entregara media lista para
+	# que una tecla terminara usando la habilidad equivocada.
+	var habilidad := _habilidades.habilidad_para_evento(evento)
+	if habilidad != null:
+		_usar(habilidad)
 
 
 ## Salto fisico: sirve para esquivar lo que pega a ras del suelo. Quien
@@ -169,8 +162,7 @@ func esta_en_el_aire() -> bool:
 	return _en_el_aire
 
 
-func _usar(indice: int) -> void:
-	var habilidad := _habilidades.habilidad_en(indice)
+func _usar(habilidad: Habilidad) -> void:
 	if habilidad == null:
 		return
 	if habilidad.requiere_objetivo() and objetivo_apuntado() == null:

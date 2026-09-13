@@ -61,12 +61,12 @@ func _tick() -> void:
 			_componente._restante.clear()
 			_avisos.clear()
 			_ok("curar no se usa sobre una derribada",
-				not _componente.intentar(_componente.habilidad_en(0)))
+				not _componente.intentar(_componente.habilidad_por_nombre("Curar")))
 			_ok("y avisa que hay que reanimar", _tiene_aviso("reanimar"))
 
 			_ok("hay 6 habilidades", _componente.habilidades.size() == 6)
-			var reanimar := _componente.habilidad_en(5)
-			_ok("la sexta es Reanimar", reanimar != null and reanimar.nombre == "Reanimar")
+			var reanimar := _componente.habilidad_por_nombre("Reanimar")
+			_ok("Reanimar esta equipada", reanimar != null)
 
 			_avisos.clear()
 			_ok("reanimar se usa", _componente.intentar(reanimar))

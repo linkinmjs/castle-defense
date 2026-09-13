@@ -36,14 +36,14 @@ func _process(_delta: float) -> bool:
 		2:
 			if t >= 6.6:
 				_apuntar()
-				_componente.intentar(_componente.habilidad_en(0))
+				_componente.intentar(_componente.habilidad_por_nombre("Curar"))
 				_paso += 1
 		3:
 			if t >= 6.9:
 				_capturar(t, "3d_c_curando.png")
 		4:
 			if t >= 7.6:
-				_componente.intentar(_componente.habilidad_en(2))
+				_componente.intentar(_componente.habilidad_por_nombre("Oleada"))
 				_paso += 1
 		5:
 			if t >= 7.9:

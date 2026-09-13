@@ -40,7 +40,7 @@ func _process(_delta: float) -> bool:
 		2:
 			if t >= 3.2:
 				_healer._apuntada = _aliado
-				_componente.intentar(_componente.habilidad_en(5))
+				_componente.intentar(_componente.habilidad_por_nombre("Reanimar"))
 				_paso += 1
 		3:
 			if t >= 3.5:

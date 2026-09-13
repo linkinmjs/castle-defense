@@ -9,6 +9,8 @@ extends Node
 signal habilidad_usada(habilidad: Habilidad, aviso: String)
 signal habilidad_fallo(habilidad: Habilidad, motivo: String)
 signal enfriamientos_cambiaron
+## Cambio la lista equipada: lo escucha el HUD para redibujar los slots.
+signal loadout_cambio
 
 @export var habilidades: Array[Habilidad] = []
 
@@ -30,10 +32,35 @@ func _process(delta: float) -> void:
 	enfriamientos_cambiaron.emit()
 
 
+## Reemplaza la lista equipada. Un encuentro puede entregar solo Curar al
+## principio y sumar Estabilizar mas tarde.
+func equipar(lista: Array[Habilidad]) -> void:
+	habilidades = lista
+	_restante.clear()
+	loadout_cambio.emit()
+	enfriamientos_cambiaron.emit()
+
+
 func habilidad_en(indice: int) -> Habilidad:
 	if indice < 0 or indice >= habilidades.size():
 		return null
 	return habilidades[indice]
+
+
+## Buscar por nombre en vez de por posicion: la lista cambia entre encuentros.
+func habilidad_por_nombre(nombre: String) -> Habilidad:
+	for habilidad in habilidades:
+		if habilidad != null and habilidad.nombre == nombre:
+			return habilidad
+	return null
+
+
+## La habilidad que dispara este evento de input, o null si ninguna lo hace.
+func habilidad_para_evento(evento: InputEvent) -> Habilidad:
+	for habilidad in habilidades:
+		if habilidad != null and habilidad.accion != &"" 				and evento.is_action_pressed(habilidad.accion):
+			return habilidad
+	return null
 
 
 func intentar(habilidad: Habilidad) -> bool:

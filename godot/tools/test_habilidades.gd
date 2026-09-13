@@ -98,7 +98,7 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	_healer._apuntada = objetivo
 	_healer.mana = 100.0
 
-	var curar := componente.habilidad_en(0)
+	var curar := componente.habilidad_por_nombre("Curar")
 	_ok("hay 6 habilidades", componente.habilidades.size() == 6)
 
 	_avisos.clear()
@@ -122,7 +122,7 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	c.vida = 30.0
 	objetivo.vida = 30.0
 	_healer.mana = 100.0
-	var oleada := componente.habilidad_en(2)
+	var oleada := componente.habilidad_por_nombre("Oleada")
 	_avisos.clear()
 	_ok("oleada se usa", componente.intentar(oleada))
 	_igual("cura al primero", b.vida, 48.0)
@@ -130,7 +130,7 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	_igual("cobra 45", _healer.mana, 55.0)
 
 	print("--- bendicion (buff) ---")
-	var bendicion := componente.habilidad_en(3)
+	var bendicion := componente.habilidad_por_nombre("Bendicion")
 	_healer.mana = 100.0
 	_healer._apuntada = objetivo
 	_ok("bendicion se usa", componente.intentar(bendicion))
@@ -143,7 +143,7 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	_ok("no se puede rebendecir", not componente.intentar(bendicion))
 
 	print("--- impulso (movilidad) ---")
-	var impulso := componente.habilidad_en(4)
+	var impulso := componente.habilidad_por_nombre("Impulso")
 	_healer.mana = 100.0
 	componente.intentar(impulso)
 	_ok("el impulso arranca", _healer._impulso_restante > 0.0)

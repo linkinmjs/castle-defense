@@ -14,6 +14,10 @@ enum Objetivo {
 }
 
 @export var nombre: String = ""
+## Accion de input que la dispara. El healer busca por aca y no por posicion en
+## la lista: un encuentro puede entregar media docena de habilidades o una sola,
+## y la tecla tiene que seguir haciendo lo mismo en los dos casos.
+@export var accion: StringName = &""
 ## Etiqueta de la tecla, solo para mostrar en el HUD.
 @export var tecla: String = ""
 @export var costo: float = 0.0

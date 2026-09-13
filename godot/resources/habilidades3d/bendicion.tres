@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_1qm1k")
 nombre = "Bendicion"
+accion = &"habilidad_2"
 tecla = "2"
 costo = 35.0
 enfriamiento = 16.0

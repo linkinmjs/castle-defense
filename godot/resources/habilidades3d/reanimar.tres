@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_au5vp")
 nombre = "Reanimar"
+accion = &"habilidad_3"
 tecla = "3"
 costo = 40.0
 enfriamiento = 6.0

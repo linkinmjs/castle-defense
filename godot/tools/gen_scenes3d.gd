@@ -48,6 +48,7 @@ func _crear_habilidades() -> void:
 	var curar := HabilidadCurar.new()
 	curar.nombre = "Curar"
 	curar.tecla = "LMB"
+	curar.accion = &"select"
 	curar.costo = 25.0
 	curar.enfriamiento = 0.6
 	curar.objetivo = Habilidad.Objetivo.ALIADO
@@ -58,6 +59,7 @@ func _crear_habilidades() -> void:
 	var estabilizar := HabilidadEstabilizar.new()
 	estabilizar.nombre = "Estabilizar"
 	estabilizar.tecla = "RMB"
+	estabilizar.accion = &"cancel"
 	estabilizar.costo = 10.0
 	estabilizar.enfriamiento = 1.2
 	estabilizar.objetivo = Habilidad.Objetivo.ALIADO
@@ -67,6 +69,7 @@ func _crear_habilidades() -> void:
 	var oleada := HabilidadOleada.new()
 	oleada.nombre = "Oleada"
 	oleada.tecla = "1"
+	oleada.accion = &"habilidad_1"
 	oleada.costo = 45.0
 	oleada.enfriamiento = 14.0
 	oleada.objetivo = Habilidad.Objetivo.AREA
@@ -78,6 +81,7 @@ func _crear_habilidades() -> void:
 	var bendicion := HabilidadBendicion.new()
 	bendicion.nombre = "Bendicion"
 	bendicion.tecla = "2"
+	bendicion.accion = &"habilidad_2"
 	bendicion.costo = 35.0
 	bendicion.enfriamiento = 16.0
 	bendicion.objetivo = Habilidad.Objetivo.ALIADO
@@ -90,6 +94,7 @@ func _crear_habilidades() -> void:
 	var impulso := HabilidadImpulso.new()
 	impulso.nombre = "Impulso"
 	impulso.tecla = "Shift"
+	impulso.accion = &"dash"
 	impulso.costo = 12.0
 	impulso.enfriamiento = 4.0
 	impulso.objetivo = Habilidad.Objetivo.PROPIA
@@ -101,6 +106,7 @@ func _crear_habilidades() -> void:
 	var reanimar := HabilidadReanimar.new()
 	reanimar.nombre = "Reanimar"
 	reanimar.tecla = "3"
+	reanimar.accion = &"habilidad_3"
 	reanimar.costo = 40.0
 	reanimar.enfriamiento = 6.0
 	reanimar.objetivo = Habilidad.Objetivo.ALIADO

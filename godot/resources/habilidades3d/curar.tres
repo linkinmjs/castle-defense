@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_2o8no")
 nombre = "Curar"
+accion = &"select"
 tecla = "LMB"
 costo = 25.0
 enfriamiento = 0.6

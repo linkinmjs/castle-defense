@@ -15,6 +15,13 @@ var _healer: Node
 func seguir(healer: Node, componente: ComponenteHabilidades) -> void:
 	_healer = healer
 	_componente = componente
+	_componente.loadout_cambio.connect(_ajustar_ancho)
+	_ajustar_ancho()
+
+
+## La fila mide lo que ocupan las habilidades equipadas, que cambian de un
+## encuentro a otro.
+func _ajustar_ancho() -> void:
 	custom_minimum_size = Vector2(
 		_componente.habilidades.size() * (ANCHO_SLOT + SEPARACION), ALTO_SLOT)
 	queue_redraw()

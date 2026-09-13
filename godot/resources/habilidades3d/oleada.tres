@@ -6,6 +6,7 @@
 script = ExtResource("1_xnrcv")
 radio = 5.0
 nombre = "Oleada"
+accion = &"habilidad_1"
 tecla = "1"
 costo = 45.0
 enfriamiento = 14.0
