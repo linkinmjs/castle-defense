@@ -9,6 +9,7 @@ func _initialize() -> void:
 	_accion("dash", [KEY_SHIFT])
 	_accion("saltar", [KEY_SPACE])
 	_accion("reiniciar", [KEY_R])
+	_accion("continuar", [KEY_ENTER, KEY_KP_ENTER])
 	ProjectSettings.save()
 	print("acciones de habilidades agregadas")
 	quit()

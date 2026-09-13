@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="Encuentro" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_ou5hr"]
+[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_5bieu"]
+[ext_resource type="Resource" path="res://resources/soldados/lancero.tres" id="3_ca308"]
+[ext_resource type="Resource" path="res://resources/soldados/espadachin.tres" id="4_b2dv6"]
+[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="5_f8gbl"]
+[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="6_y4g1o"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="7_4voeh"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/estabilizar.tres" id="8_rdhp4"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/oleada.tres" id="9_wr4fr"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/bendicion.tres" id="10_74g2e"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/impulso.tres" id="11_k2ifb"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/reanimar.tres" id="12_0gsdf"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="13_73xse"]
+[ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="14_37rm2"]
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="15_43lnx"]
+
+[sub_resource type="Resource" id="Resource_qhgys"]
+script = ExtResource("1_ou5hr")
+tipo = ExtResource("2_5bieu")
+cantidad = 2
+x_min = 10.5
+x_max = 13.5
+
+[sub_resource type="Resource" id="Resource_2fj5s"]
+script = ExtResource("1_ou5hr")
+tipo = ExtResource("3_ca308")
+cantidad = 2
+x_min = 10.5
+x_max = 13.5
+
+[sub_resource type="Resource" id="Resource_hnck3"]
+script = ExtResource("1_ou5hr")
+tipo = ExtResource("4_b2dv6")
+cantidad = 2
+x_min = 10.5
+x_max = 13.5
+
+[sub_resource type="Resource" id="Resource_pyj7y"]
+script = ExtResource("1_ou5hr")
+bando = 1
+tipo = ExtResource("5_f8gbl")
+cantidad = 9
+x_min = 16.5
+x_max = 20.5
+
+[sub_resource type="Resource" id="Resource_scfvi"]
+script = ExtResource("1_ou5hr")
+tipo = ExtResource("2_5bieu")
+cantidad = 2
+x_min = 2.0
+x_max = 3.0
+
+[sub_resource type="Resource" id="Resource_ngmi1"]
+script = ExtResource("1_ou5hr")
+bando = 1
+tipo = ExtResource("5_f8gbl")
+cantidad = 3
+x_min = 27.0
+x_max = 28.0
+
+[sub_resource type="Resource" id="Resource_4i01v"]
+script = ExtResource("14_37rm2")
+valor = 9.0
+repetir = true
+grupos = Array[ExtResource("1_ou5hr")]([SubResource("Resource_scfvi"), SubResource("Resource_ngmi1")])
+
+[resource]
+script = ExtResource("15_43lnx")
+id = &"abierto"
+titulo = "Batalla abierta"
+objetivo_pedagogico = "Todo junto, como estaba antes de la vertical."
+grupos_iniciales = Array[ExtResource("1_ou5hr")]([SubResource("Resource_qhgys"), SubResource("Resource_2fj5s"), SubResource("Resource_hnck3"), SubResource("Resource_pyj7y")])
+oleadas = Array[ExtResource("14_37rm2")]([SubResource("Resource_4i01v")])
+nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
+emergentes_habilitados = true
+habilidades = Array[ExtResource("6_y4g1o")]([ExtResource("7_4voeh"), ExtResource("8_rdhp4"), ExtResource("9_wr4fr"), ExtResource("10_74g2e"), ExtResource("11_k2ifb"), ExtResource("12_0gsdf")])

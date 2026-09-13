@@ -46,6 +46,9 @@ const ALTURA_TORSO := 1.15
 @export var dano_sangrado: float = 3.5
 
 var bando: Bando = Bando.ALIADO
+## Nombre propio, si el encuentro reparte. Un soldado con nombre pesa distinto
+## que uno sin nombre a la hora de elegir a quien salvar.
+var nombre_unidad: String = ""
 ## Tipo de soldado; si es null, la unidad usa sus valores exportados.
 var tipo: TipoSoldado
 ## X de la base propia: hacia donde se retira. Lo asigna la batalla.
@@ -303,6 +306,15 @@ func _actualizar_bendicion(delta: float) -> void:
 	if bendicion_restante <= 0.0:
 		_reduccion_dano = 0.0
 		_bonus_cadencia = 0.0
+
+
+## La tira al suelo sin pasar por el daño. La usa el encuentro que quiere
+## plantear un derribado desde el primer segundo.
+func derribar() -> void:
+	if estado == Estado.MUERTA or estado == Estado.DERRIBADA:
+		return
+	vida = 0.0
+	_caer()
 
 
 ## A cero no muere: queda en el suelo con un reloj. Es la emergencia del

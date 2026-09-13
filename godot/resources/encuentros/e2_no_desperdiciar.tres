@@ -1,0 +1,79 @@
+[gd_resource type="Resource" script_class="Encuentro" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_11vx0"]
+[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_un5yc"]
+[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="3_pb4ot"]
+[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="4_e4n3j"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="5_ofdf1"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="6_qraji"]
+[ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="7_unph0"]
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="8_iy5w5"]
+
+[sub_resource type="Resource" id="Resource_mljck"]
+script = ExtResource("1_11vx0")
+tipo = ExtResource("2_un5yc")
+cantidad = 2
+x_max = 14.5
+vida_inicial = 0.35
+
+[sub_resource type="Resource" id="Resource_x2r3h"]
+script = ExtResource("1_11vx0")
+tipo = ExtResource("2_un5yc")
+cantidad = 2
+x_max = 14.5
+vida_inicial = 0.6
+
+[sub_resource type="Resource" id="Resource_q2kdp"]
+script = ExtResource("1_11vx0")
+tipo = ExtResource("2_un5yc")
+cantidad = 2
+x_max = 14.5
+vida_inicial = 0.95
+
+[sub_resource type="Resource" id="Resource_epmhm"]
+script = ExtResource("1_11vx0")
+bando = 1
+tipo = ExtResource("3_pb4ot")
+cantidad = 6
+x_min = 16.5
+x_max = 18.5
+
+[sub_resource type="Resource" id="Resource_w0ml0"]
+script = ExtResource("6_qraji")
+clave = &"fraccion_desperdiciada"
+comparador = 0
+valor = 0.15
+texto = "Menos del 15% de curacion desperdiciada"
+
+[sub_resource type="Resource" id="Resource_ytp1g"]
+script = ExtResource("1_11vx0")
+bando = 1
+tipo = ExtResource("3_pb4ot")
+cantidad = 2
+x_min = 26.0
+x_max = 28.0
+
+[sub_resource type="Resource" id="Resource_fcfoc"]
+script = ExtResource("7_unph0")
+valor = 14.0
+repetir = true
+grupos = Array[ExtResource("1_11vx0")]([SubResource("Resource_ytp1g")])
+
+[resource]
+script = ExtResource("8_iy5w5")
+id = &"e2_no_desperdiciar"
+titulo = "No desperdiciar"
+objetivo_pedagogico = "Lo que sobra de una curacion se pierde."
+semilla = 71002
+grupos_iniciales = Array[ExtResource("1_11vx0")]([SubResource("Resource_mljck"), SubResource("Resource_x2r3h"), SubResource("Resource_q2kdp"), SubResource("Resource_epmhm")])
+oleadas = Array[ExtResource("7_unph0")]([SubResource("Resource_fcfoc")])
+nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
+sangrado_habilitado = false
+habilidades = Array[ExtResource("4_e4n3j")]([ExtResource("5_ofdf1")])
+mana_maximo = 60.0
+regeneracion_mana = 4.0
+condicion = 1
+duracion = 75.0
+bajas_aliadas_maximas = 2
+frente_derrota_x = 8.0
+metas = Array[ExtResource("6_qraji")]([SubResource("Resource_w0ml0")])

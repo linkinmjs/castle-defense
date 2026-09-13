@@ -1,0 +1,78 @@
+[gd_resource type="Resource" script_class="Encuentro" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_2nxfr"]
+[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_ea7if"]
+[ext_resource type="Resource" path="res://resources/soldados/lancero.tres" id="3_hxdqq"]
+[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="4_w1rst"]
+[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="5_w3lyk"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="6_wu074"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/estabilizar.tres" id="7_in8nv"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="8_seqre"]
+[ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="9_pic07"]
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="10_xngod"]
+
+[sub_resource type="Resource" id="Resource_tqo80"]
+script = ExtResource("1_2nxfr")
+tipo = ExtResource("2_ea7if")
+cantidad = 3
+x_min = 13.5
+
+[sub_resource type="Resource" id="Resource_5ck42"]
+script = ExtResource("1_2nxfr")
+tipo = ExtResource("3_hxdqq")
+cantidad = 2
+x_min = 12.5
+x_max = 13.5
+vida_inicial = 0.7
+sangrado_inicial = 6.0
+
+[sub_resource type="Resource" id="Resource_mwro8"]
+script = ExtResource("1_2nxfr")
+bando = 1
+tipo = ExtResource("4_w1rst")
+cantidad = 6
+x_min = 16.5
+x_max = 18.5
+
+[sub_resource type="Resource" id="Resource_ajeev"]
+script = ExtResource("8_seqre")
+clave = &"sangrados_sin_tratar"
+comparador = 3
+texto = "Ningun sangrado quedo sin tratar"
+
+[sub_resource type="Resource" id="Resource_hlskb"]
+script = ExtResource("8_seqre")
+clave = &"tiempo_hasta_estabilizar"
+valor = 3.0
+texto = "Menos de 3 segundos para cortar un sangrado"
+
+[sub_resource type="Resource" id="Resource_sy51w"]
+script = ExtResource("1_2nxfr")
+bando = 1
+tipo = ExtResource("4_w1rst")
+cantidad = 3
+x_min = 26.0
+x_max = 28.0
+
+[sub_resource type="Resource" id="Resource_0fcs2"]
+script = ExtResource("9_pic07")
+valor = 13.0
+repetir = true
+grupos = Array[ExtResource("1_2nxfr")]([SubResource("Resource_sy51w")])
+
+[resource]
+script = ExtResource("10_xngod")
+id = &"e3_tratar_la_causa"
+titulo = "Tratar la causa"
+objetivo_pedagogico = "Estabilizar corta el daño; curar solo lo repone."
+semilla = 71003
+grupos_iniciales = Array[ExtResource("1_2nxfr")]([SubResource("Resource_tqo80"), SubResource("Resource_5ck42"), SubResource("Resource_mwro8")])
+oleadas = Array[ExtResource("9_pic07")]([SubResource("Resource_0fcs2")])
+nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
+probabilidad_sangrado = 0.7
+habilidades = Array[ExtResource("5_w3lyk")]([ExtResource("6_wu074"), ExtResource("7_in8nv")])
+condicion = 1
+duracion = 80.0
+bajas_aliadas_maximas = 2
+frente_derrota_x = 8.0
+metas = Array[ExtResource("8_seqre")]([SubResource("Resource_ajeev"), SubResource("Resource_hlskb")])

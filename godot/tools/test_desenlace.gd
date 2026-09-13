@@ -6,10 +6,15 @@ var _resultado: Variant = null
 var _fallos := 0
 var _fase := 0
 var _ticks := 0
+var _unidades_al_terminar := 0
 
 
 func _initialize() -> void:
 	_battle = load("res://scenes/3d/battle3d.tscn").instantiate()
+	# La batalla abierta de siempre: victoria por llegar a la base, con los
+	# tres tipos aliados y la horda. No es parte de la campania, existe para
+	# seguir ejercitando este caso.
+	_battle.encuentro = load("res://resources/encuentros/pruebas/abierto.tres")
 	root.add_child(_battle)
 	_battle.batalla_terminada.connect(func(v: bool) -> void: _resultado = v)
 	physics_frame.connect(_tick)
@@ -54,17 +59,34 @@ func _tick() -> void:
 				return
 			_ok("llegar a la base enemiga termina la batalla", _battle._terminada)
 			_ok("y es victoria", _resultado == true)
-			_ok("los relojes se detienen", _battle._relojes.all(func(r: Timer) -> bool: return r.is_stopped()))
+			_ok("las unidades dejan de pelear",
+				_ninguna_procesa("aliados") and _ninguna_procesa("enemigos"))
+			_unidades_al_terminar = _battle.get_node("%Unidades").get_child_count()
+			_ticks = 0
 			_fase = 3
 		3:
+			if _ticks < 40:
+				return
+			# Las oleadas seguian su reloj aunque la batalla hubiera terminado.
+			_ok("y no entran refuerzos nuevos",
+				_battle.get_node("%Unidades").get_child_count() <= _unidades_al_terminar)
+			_fase = 4
+		4:
 			print("")
 			print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
 			quit(1 if _fallos > 0 else 0)
-			_fase = 4
+			_fase = 5
 
 	if _ticks > 600:
 		print("FALLA: el test no termino")
 		quit(1)
+
+
+func _ninguna_procesa(grupo: String) -> bool:
+	for unidad in get_nodes_in_group(grupo):
+		if unidad.is_physics_processing():
+			return false
+	return true
 
 
 func _ok(que: String, condicion: bool) -> void:

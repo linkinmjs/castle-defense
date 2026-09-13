@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="Encuentro" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_ur21h"]
+[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_34vjt"]
+[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="3_7idiy"]
+[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="4_v3tay"]
+[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="5_gcqin"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="6_if4js"]
+[ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="7_cu81y"]
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="8_jcnkd"]
+
+[sub_resource type="Resource" id="Resource_tkyes"]
+script = ExtResource("1_ur21h")
+tipo = ExtResource("2_34vjt")
+cantidad = 4
+
+[sub_resource type="Resource" id="Resource_2lfuf"]
+script = ExtResource("1_ur21h")
+bando = 1
+tipo = ExtResource("3_7idiy")
+cantidad = 5
+x_min = 16.5
+x_max = 18.5
+
+[sub_resource type="Resource" id="Resource_8qwe4"]
+script = ExtResource("1_ur21h")
+bando = 1
+tipo = ExtResource("3_7idiy")
+cantidad = 2
+x_min = 26.0
+x_max = 28.0
+
+[sub_resource type="Resource" id="Resource_kwuqm"]
+script = ExtResource("7_cu81y")
+valor = 12.0
+repetir = true
+grupos = Array[ExtResource("1_ur21h")]([SubResource("Resource_8qwe4")])
+
+[resource]
+script = ExtResource("8_jcnkd")
+id = &"e1_mantener_linea"
+titulo = "Mantener la linea"
+objetivo_pedagogico = "Curar a tiempo sostiene el frente."
+semilla = 71001
+grupos_iniciales = Array[ExtResource("1_ur21h")]([SubResource("Resource_tkyes"), SubResource("Resource_2lfuf")])
+oleadas = Array[ExtResource("7_cu81y")]([SubResource("Resource_kwuqm")])
+nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
+sangrado_habilitado = false
+habilidades = Array[ExtResource("4_v3tay")]([ExtResource("5_gcqin")])
+condicion = 1
+duracion = 75.0
+bajas_aliadas_maximas = 2
+frente_derrota_x = 8.0

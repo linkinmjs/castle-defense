@@ -74,6 +74,29 @@ func _ready() -> void:
 	vida_cambio.emit(vida, vida_maxima)
 
 
+## Lo deja como al principio de un encuentro. Reiniciar recargando la escena
+## seria mas simple, pero perderia la semilla y el indice del encuentro en
+## curso, que es justo lo que hay que conservar para repetir el mismo problema.
+func reiniciar(posicion: Vector3) -> void:
+	global_position = posicion
+	velocity = Vector3.ZERO
+	vida = vida_maxima
+	mana = mana_maximo
+	_caido_restante = 0.0
+	_impulso_restante = 0.0
+	_impulso_fuerza = 0.0
+	_casteando = 0.0
+	_en_el_aire = false
+	_flash = 0.0
+	if _apuntada != null and is_instance_valid(_apuntada):
+		_apuntada.resaltada = false
+	_apuntada = null
+	_sprite.modulate = _tinte_base
+	_sprite.play("idle")
+	vida_cambio.emit(vida, vida_maxima)
+	mana_cambio.emit(mana, mana_maximo)
+
+
 ## La batalla le pasa la camara: sin ella no se puede saber a que apunta el
 ## mouse ni proyectar nada a pantalla.
 func usar_camara(camara: Camera3D) -> void:
