@@ -69,6 +69,10 @@ var _bonus_cadencia: float = 0.0
 
 ## Node3D y no Unidad3D: para un enemigo, el healer tambien es un objetivo.
 var _objetivo: Node3D = null
+## Azar propio y no el global: asi el sangrado de esta unidad depende de su
+## semilla y no del orden en que le tocaron golpes a las demas.
+var _azar := RandomNumberGenerator.new()
+var _sembrada: bool = false
 var _cooldown: float = 0.0
 var _impacto_pendiente: float = -1.0
 var _flash: float = 0.0
@@ -101,9 +105,18 @@ func configurar(nuevo_bando: Bando, nuevo_tipo: TipoSoldado = null) -> void:
 	collision_mask = 12       # allies | enemies
 
 
+## La batalla la siembra al crearla, para que un encuentro con la misma semilla
+## produzca los mismos sangrados. Sin sembrar, el azar es distinto cada vez.
+func sembrar(semilla: int) -> void:
+	_azar.seed = semilla
+	_sembrada = true
+
+
 func _ready() -> void:
 	# Sin gravedad ni suelo fisico: los soldados se deslizan por el plano.
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+	if not _sembrada:
+		_azar.randomize()
 	if vida <= 0.0:
 		vida = vida_maxima
 	if tipo != null and tipo.frames != null:
@@ -229,7 +242,7 @@ func recibir_dano(cantidad: float) -> void:
 		return
 	_flash = 0.12
 	var recibido := cantidad * (1.0 - _reduccion_dano) * (1.0 - reduccion_base)
-	if randf() < probabilidad_sangrado * (1.0 - _reduccion_dano):
+	if _azar.randf() < probabilidad_sangrado * (1.0 - _reduccion_dano):
 		sangrado_restante = duracion_sangrado
 	_perder_vida(recibido)
 

@@ -38,6 +38,11 @@ signal batalla_terminada(victoria: bool)
 @export var tipos_aliados: Array[TipoSoldado] = []
 @export var tipos_enemigos: Array[TipoSoldado] = []
 
+@export_group("Azar")
+## Semilla del despliegue. En 0 se sortea una al empezar y queda guardada en
+## semilla_actual, asi un reinicio repite la misma batalla en vez de armar otra.
+@export var semilla: int = 0
+
 @export_group("Emergentes")
 ## Cada cuanto sale algo del suelo cerca del healer. Es un evento que
 ## interrumpe, no un ritmo de fondo: constante, el juego seria esquivar.
@@ -57,6 +62,11 @@ signal batalla_terminada(victoria: bool)
 ## Punto X que la camara esta mirando. Se mueve solo cuando el healer sale de
 ## la zona muerta, y nunca mas alla de los bordes del campo.
 var _camara_x: float
+## Todo el azar del despliegue sale de aca y no de las funciones globales: es
+## lo que permite repetir una batalla y comparar dos intentos.
+var _rng := RandomNumberGenerator.new()
+## La semilla que se esta usando de verdad, ya sea la configurada o la sorteada.
+var semilla_actual: int = 0
 var _escena_emergente: PackedScene
 var _terminada: bool = false
 var _relojes: Array[Timer] = []
@@ -77,6 +87,7 @@ func _ready() -> void:
 	_hud.seguir(_healer)
 	_hud.seguir_batalla(self)
 
+	sembrar(semilla)
 	_desplegar_formacion_inicial()
 
 	var reloj := Timer.new()
@@ -130,6 +141,13 @@ func _terminar(victoria: bool) -> void:
 	batalla_terminada.emit(victoria)
 
 
+## Fija el azar del despliegue. Con 0 sortea una semilla y la guarda, para que
+## se la pueda leer y repetir.
+func sembrar(nueva_semilla: int) -> void:
+	semilla_actual = nueva_semilla if nueva_semilla != 0 else randi()
+	_rng.seed = semilla_actual
+
+
 ## Donde esta el choque: entre el aliado mas adelantado y el enemigo mas
 ## atrasado. Lo lee el indicador del HUD.
 func frente_x() -> float:
@@ -174,23 +192,24 @@ func _mitad_visible() -> float:
 func _desplegar_formacion_inicial() -> void:
 	var centro := ancho_campo * 0.5
 	for i in unidades_iniciales:
-		_crear_unidad(Unidad3D.Bando.ALIADO, centro - randf_range(1.5, 4.5))
+		_crear_unidad(Unidad3D.Bando.ALIADO, centro - _rng.randf_range(1.5, 4.5))
 	for i in enemigos_iniciales:
-		_crear_unidad(Unidad3D.Bando.ENEMIGO, centro + randf_range(1.5, 5.5))
+		_crear_unidad(Unidad3D.Bando.ENEMIGO, centro + _rng.randf_range(1.5, 5.5))
 
 
 func _enviar_refuerzos() -> void:
 	for i in refuerzos_por_tanda:
-		_crear_unidad(Unidad3D.Bando.ALIADO, base_aliada_x + randf_range(0.5, 1.5))
+		_crear_unidad(Unidad3D.Bando.ALIADO, base_aliada_x + _rng.randf_range(0.5, 1.5))
 	for i in refuerzos_enemigos:
-		_crear_unidad(Unidad3D.Bando.ENEMIGO, base_enemiga_x - randf_range(0.5, 1.5))
+		_crear_unidad(Unidad3D.Bando.ENEMIGO, base_enemiga_x - _rng.randf_range(0.5, 1.5))
 
 
 func _crear_unidad(bando: Unidad3D.Bando, x: float) -> void:
 	var unidad: Unidad3D = ESCENA_UNIDAD.instantiate()
 	unidad.configurar(bando, _tipo_al_azar(bando))
+	unidad.sembrar(_rng.randi())
 	unidad.base_x = base_aliada_x if bando == Unidad3D.Bando.ALIADO else base_enemiga_x
-	unidad.position = Vector3(x, 0.0, randf_range(1.5, profundidad_campo - 1.5))
+	unidad.position = Vector3(x, 0.0, _rng.randf_range(1.5, profundidad_campo - 1.5))
 	_unidades.add_child(unidad)
 
 
@@ -200,14 +219,14 @@ func _tipo_al_azar(bando: Unidad3D.Bando) -> TipoSoldado:
 		lista = tipos_enemigos
 	if lista.is_empty():
 		return null
-	return lista[randi() % lista.size()]
+	return lista[_rng.randi() % lista.size()]
 
 
 ## Marca el suelo cerca del healer; cuando el aviso termina, sale el enemigo.
 func _lanzar_emergentes() -> void:
 	for i in emergentes_por_tanda:
-		var angulo := randf() * TAU
-		var radio := randf_range(2.0, radio_emergentes)
+		var angulo := _rng.randf() * TAU
+		var radio := _rng.randf_range(2.0, radio_emergentes)
 		var pos := _healer.global_position + Vector3(cos(angulo) * radio, 0.0, sin(angulo) * radio)
 		# Nunca dentro de una base: un zombi que nace en la zona de derrota
 		# la dispararia solo, sin que nadie haya llegado a nada.
@@ -225,6 +244,7 @@ func _lanzar_emergentes() -> void:
 func _emerger_enemigo(pos: Vector3) -> void:
 	var unidad: Unidad3D = ESCENA_UNIDAD.instantiate()
 	unidad.configurar(Unidad3D.Bando.ENEMIGO, _tipo_al_azar(Unidad3D.Bando.ENEMIGO))
+	unidad.sembrar(_rng.randi())
 	unidad.base_x = base_enemiga_x
 	unidad.position = pos
 	_unidades.add_child(unidad)
