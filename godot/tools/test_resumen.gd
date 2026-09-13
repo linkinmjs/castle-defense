@@ -39,13 +39,23 @@ func _initialize() -> void:
 
 	tele = _nueva()
 	tele._duracion = 60.0
+	tele._usos_por_habilidad["Curar"] = 3
 	tele._segundos_mana_al_tope = 40.0
 	_contiene("esperar en vez de intervenir",
 		tele.observacion_causal(), "mana lleno")
 
+	# Ganar sin tocar nada es la señal de alarma del documento: si la linea se
+	# sostiene sola, el encuentro no planteo ninguna decision.
+	tele = _nueva()
+	tele._duracion = 60.0
+	tele._victoria = true
+	_contiene("ganar sin usar una habilidad",
+		tele.observacion_causal(), "sin usar una sola habilidad")
+
 	print("--- ganar limpio tambien dice algo ---")
 	tele = _nueva()
 	tele._victoria = true
+	tele._usos_por_habilidad["Estabilizar"] = 3
 	tele._sangrados = 3
 	tele._sangrados_estabilizados = 3
 	tele._tiempo_total_estabilizar = 6.0

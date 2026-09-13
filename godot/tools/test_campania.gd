@@ -114,6 +114,9 @@ func _tick() -> void:
 				return
 			print("--- el tercero suma Estabilizar ---")
 			_ok("es el del sangrado", _battle._actual.id == &"e3_tratar_la_causa")
+			# El segundo recorta el mana a 60 y el tercero no dice nada al
+			# respecto: tiene que volver al de la escena, no heredar el recorte.
+			_igual("el mana vuelve al normal", int(_healer.mana_maximo), 100)
 			_igual("ahora hay dos habilidades", _componente.habilidades.size(), 2)
 			_ok("Estabilizar esta equipada",
 				_componente.habilidad_por_nombre("Estabilizar") != null)

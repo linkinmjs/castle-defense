@@ -83,6 +83,11 @@ var _actual: Encuentro
 var _telemetria: Telemetria
 var _escena_emergente: PackedScene
 var _terminada: bool = false
+## Mana del healer tal como viene en la escena. Un encuentro puede recortarlo,
+## y el siguiente que no diga nada tiene que recuperar este, no heredar el
+## recorte del anterior.
+var _mana_maximo_base: float = 0.0
+var _regeneracion_base: float = 0.0
 var _bajas_aliadas: int = 0
 var _emergente_restante: float = 0.0
 ## Oleadas ya disparadas, por indice, para no repetir las que no se repiten.
@@ -94,6 +99,9 @@ func _ready() -> void:
 	# le hiciera look_at cada frame mientras la posicion va con retraso, el
 	# yaw iria corrigiendo y la vista se ladearia al caminar.
 	_camara.rotation_degrees = Vector3(-angulo_camara, 0.0, 0.0)
+
+	_mana_maximo_base = _healer.mana_maximo
+	_regeneracion_base = _healer.regeneracion_mana
 
 	_telemetria = Telemetria.new()
 	_telemetria.name = "Telemetria"
@@ -161,10 +169,16 @@ func iniciar_encuentro(enc: Encuentro, nueva_semilla: int = -1) -> void:
 	_emergente_restante = intervalo_emergentes
 
 	_healer.limites = Rect2(1.5, 1.5, ancho_campo - 3.0, profundidad_campo - 3.0)
+	# Un encuentro que no declara mana recupera el de la escena, no el que
+	# dejo el encuentro anterior.
 	if _actual.mana_maximo > 0.0:
 		_healer.mana_maximo = _actual.mana_maximo
+	else:
+		_healer.mana_maximo = _mana_maximo_base
 	if _actual.regeneracion_mana >= 0.0:
 		_healer.regeneracion_mana = _actual.regeneracion_mana
+	else:
+		_healer.regeneracion_mana = _regeneracion_base
 	_healer.reiniciar(Vector3(_actual.healer_inicial.x, 0.0, _actual.healer_inicial.y))
 	if not _actual.habilidades.is_empty():
 		_habilidades().equipar(_actual.habilidades)

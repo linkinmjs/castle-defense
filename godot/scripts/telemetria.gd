@@ -282,11 +282,16 @@ func observacion_causal() -> String:
 	if _sangrados_sin_tratar > 0:
 		return "%s sin tratar. El sangrado sigue restando vida aunque el soldado aguante." % 			_contar(_sangrados_sin_tratar, "Quedo un sangrado", "Quedaron %d sangrados")
 
-	# 6. Esperar en vez de intervenir.
+	# 6. Ganar sin haber hecho nada. El documento lo nombra como señal de
+	# alarma: si el encuentro se resuelve solo, no enseño nada.
+	if _usos_por_habilidad.is_empty() and r["duracion"] > 5.0:
+		return "Terminaste el encuentro sin usar una sola habilidad. Si la linea se sostiene sola, todavia no hay una decision que tomar."
+
+	# 7. Esperar en vez de intervenir.
 	if r["duracion"] > 10.0 and _segundos_mana_al_tope > r["duracion"] * 0.3:
 		return "Pasaste %.0f s con el mana lleno. Mana guardado no cura a nadie." % 			_segundos_mana_al_tope
 
-	# 7. Nada que corregir: se nombra que salio bien, que tambien enseña.
+	# 8. Nada que corregir: se nombra que salio bien, que tambien enseña.
 	if r["victoria"]:
 		if _sangrados_estabilizados > 0:
 			return "Cortaste %d sangrados en %.1f s promedio y no perdiste a nadie por esa causa." % [

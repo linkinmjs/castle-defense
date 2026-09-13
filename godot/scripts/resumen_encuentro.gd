@@ -90,6 +90,15 @@ func _armar_metricas(r: Dictionary) -> Array[String]:
 	return lineas
 
 
+## Cuantos renglones ocupa la observacion al ancho del panel.
+func _renglones_observacion(fuente: Font) -> int:
+	if _observacion == "":
+		return 0
+	var util := ANCHO - MARGEN * 2.0
+	var ancho := fuente.get_string_size(_observacion, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+	return maxi(1, ceili(ancho / util))
+
+
 func _nombrar_causa(causa: StringName) -> String:
 	match causa:
 		&"sangrado":
@@ -103,7 +112,12 @@ func _nombrar_causa(causa: StringName) -> String:
 
 func _draw() -> void:
 	var fuente := get_theme_default_font()
-	var cantidad := 2 + _metricas.size() + _metas.size() + (2 if _observacion != "" else 0)
+	# La observacion es una frase entera y puede ocupar mas de un renglon, asi
+	# que el alto se calcula contandolos en vez de suponer uno.
+	var renglones_obs := _renglones_observacion(fuente)
+	var cantidad := 2 + _metricas.size() + _metas.size()
+	if _observacion != "":
+		cantidad += renglones_obs + 1
 	var alto := MARGEN * 2.0 + cantidad * ALTO_LINEA + 30.0
 	custom_minimum_size = Vector2(ANCHO, alto)
 
@@ -132,9 +146,12 @@ func _draw() -> void:
 	# separada y con su propio color para que no se lea como una metrica mas.
 	if _observacion != "":
 		y += ALTO_LINEA * 0.5
-		draw_string(fuente, Vector2(MARGEN, y), _observacion,
-			HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 15, COLOR_OBSERVACION)
-		y += ALTO_LINEA * 1.5
+		# multiline y no draw_string: una frase larga se cortaba a la mitad en
+		# vez de seguir en el renglon siguiente.
+		draw_multiline_string(fuente, Vector2(MARGEN, y), _observacion,
+			HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 15, -1,
+			COLOR_OBSERVACION)
+		y += ALTO_LINEA * (renglones_obs + 0.5)
 
 	draw_string(fuente, Vector2(MARGEN, y), _pie,
 		HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 13, COLOR_TENUE)
