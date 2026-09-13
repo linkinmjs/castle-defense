@@ -14,8 +14,13 @@ const DURACION_AVISO := 1.8
 @onready var _slots: Control = %Slots
 @onready var _frente: Control = %Frente
 @onready var _desenlace: Label = %Desenlace
+@onready var _tarjeta: Control = %Tarjeta
+@onready var _encabezado: Label = %Encabezado
+@onready var _resumen: Control = %Resumen
 
 var _tiempo_aviso: float = 0.0
+var _battle: Node
+var _encuentro: Encuentro
 
 
 func _ready() -> void:
@@ -23,6 +28,7 @@ func _ready() -> void:
 	_estilizar(_barra_vida, COLOR_VIDA)
 	_aviso.modulate.a = 0.0
 	_desenlace.visible = false
+	_resumen.visible = false
 
 
 func _estilizar(barra: ProgressBar, color: Color) -> void:
@@ -47,10 +53,14 @@ func seguir(healer: Node) -> void:
 	habilidades.habilidad_usada.connect(_on_habilidad_usada)
 	habilidades.habilidad_fallo.connect(_on_habilidad_fallo)
 	_slots.seguir(healer, habilidades)
+	_tarjeta.seguir(healer, habilidades)
 
 
 func seguir_batalla(battle: Node) -> void:
+	_battle = battle
 	battle.batalla_terminada.connect(_on_batalla_terminada)
+	battle.encuentro_iniciado.connect(_on_encuentro_iniciado)
+	battle.telemetria().encuentro_cerrado.connect(_on_encuentro_cerrado)
 	_frente.seguir(battle)
 
 
@@ -87,11 +97,35 @@ func _on_habilidad_fallo(_habilidad: Habilidad, motivo: String) -> void:
 	_on_aviso(motivo)
 
 
+func _on_encuentro_iniciado(encuentro: Encuentro, _semilla: int, indice: int) -> void:
+	_encuentro = encuentro
+	_desenlace.visible = false
+	_resumen.ocultar()
+	if encuentro == null:
+		_encabezado.text = ""
+		return
+	_encabezado.text = "%d. %s
+%s" % [
+		indice + 1, encuentro.titulo, encuentro.objetivo_pedagogico]
+
+
 func _on_batalla_terminada(victoria: bool) -> void:
-	_desenlace.text = ("VICTORIA" if victoria else "DERROTA") + "\nR para reiniciar"
+	# Sin el "R para reiniciar": ahora eso lo dice el pie del resumen, que sale
+	# justo debajo y explica ademas que hace Enter.
+	_desenlace.text = "VICTORIA" if victoria else "DERROTA"
 	_desenlace.add_theme_color_override("font_color",
 		Color("9fd88f") if victoria else Color("e07a6a"))
 	_desenlace.visible = true
+
+
+## El desenlace dice como termino; esto, por que. Los datos llegan como
+## Dictionary y texto plano: el HUD no conoce la telemetria.
+func _on_encuentro_cerrado(datos: Dictionary) -> void:
+	var metas: Array[MetaEncuentro] = _encuentro.metas if _encuentro != null else []
+	var titulo: String = _encuentro.titulo if _encuentro != null else "Encuentro"
+	_resumen.mostrar(
+		titulo, datos, _battle.telemetria().observacion_causal(), metas,
+		"R para repetir el mismo     Enter para seguir")
 
 
 func _on_aviso(texto: String) -> void:

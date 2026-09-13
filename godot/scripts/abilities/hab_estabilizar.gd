@@ -29,3 +29,11 @@ func ejecutar(healer: Node) -> String:
 		objetivo.curar(vida_extra)
 	healer.lanzar_efecto(objetivo, "shield")
 	return "Estabilizado"
+
+
+func previsualizar(_healer: Node, objetivo: Node) -> String:
+	if objetivo.esta_derribada() or not objetivo.esta_sangrando():
+		return ""
+	if vida_extra > 0.0:
+		return "%s: corta el sangrado (+%d HP)" % [nombre, vida_extra]
+	return "%s: corta el sangrado" % nombre

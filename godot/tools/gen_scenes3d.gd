@@ -348,15 +348,53 @@ func _crear_hud() -> void:
 	var desenlace := _etiqueta("Desenlace", 48, Color(1.0, 0.95, 0.8))
 	desenlace.set_anchors_preset(Control.PRESET_CENTER)
 	desenlace.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	desenlace.position = Vector2(-220, -60)
+	# Arriba del resumen, que sale en el centro: el cartel dice como termino y
+	# el informe, justo debajo, por que.
+	desenlace.position = Vector2(-220, -172)
 	desenlace.size = Vector2(440, 120)
 	desenlace.visible = false
 	raiz.add_child(desenlace)
 	desenlace.owner = hud
 	desenlace.unique_name_in_owner = true
 
+	# Ficha del apuntado, a la derecha para no taparse con los slots ni con la
+	# linea de combate, que pasa por el centro.
+	var tarjeta := Control.new()
+	tarjeta.name = "Tarjeta"
+	tarjeta.set_script(load("res://scripts/tarjeta_objetivo.gd"))
+	tarjeta.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	tarjeta.position = Vector2(-274, -190)
+	tarjeta.size = Vector2(250, 160)
+	tarjeta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	raiz.add_child(tarjeta)
+	tarjeta.owner = hud
+	tarjeta.unique_name_in_owner = true
+
+	# Titulo y objetivo del encuentro, al empezar.
+	var encabezado := _etiqueta("Encabezado", 17, Color(0.85, 0.88, 1.0))
+	encabezado.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	encabezado.position = Vector2(-300, 46)
+	encabezado.size = Vector2(600, 52)
+	raiz.add_child(encabezado)
+	encabezado.owner = hud
+	encabezado.unique_name_in_owner = true
+
+	# Resumen de fin de encuentro: lo que paso y por que.
+	var resumen := Control.new()
+	resumen.name = "Resumen"
+	resumen.set_script(load("res://scripts/resumen_encuentro.gd"))
+	resumen.set_anchors_preset(Control.PRESET_CENTER)
+	resumen.position = Vector2(-260, -40)
+	resumen.size = Vector2(520, 300)
+	resumen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resumen.visible = false
+	raiz.add_child(resumen)
+	resumen.owner = hud
+	resumen.unique_name_in_owner = true
+
 	var ayuda := _etiqueta("Ayuda", 15, Color(0.7, 0.75, 0.85))
-	ayuda.text = "WASD mover     Shift impulso     Espacio saltar     Click sobre un aliado para actuar"
+	ayuda.text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     R reiniciar"
 	ayuda.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	ayuda.position = Vector2(24, -34)
 	raiz.add_child(ayuda)

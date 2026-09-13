@@ -1,19 +1,14 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/3d/battle3d.gd" id="1_l7i6f"]
-[ext_resource type="Script" path="res://scripts/3d/tipo_soldado.gd" id="2_b02fv"]
-[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="3_ur1wm"]
-[ext_resource type="Resource" path="res://resources/soldados/lancero.tres" id="4_n2h16"]
-[ext_resource type="Resource" path="res://resources/soldados/espadachin.tres" id="5_d38fa"]
-[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="6_q8jvo"]
-[ext_resource type="Texture2D" path="res://assets/texturas/grilla.png" id="7_b1sul"]
-[ext_resource type="PackedScene" path="res://scenes/3d/healer3d.tscn" id="8_shpvq"]
-[ext_resource type="Script" path="res://scripts/3d/healer3d.gd" id="9_ipdr2"]
-[ext_resource type="Script" path="res://scripts/3d/overlay_unidades.gd" id="10_ln2o5"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="11_loeg0"]
-[ext_resource type="Script" path="res://scripts/hud.gd" id="12_vl7ca"]
+[ext_resource type="Script" path="res://scripts/3d/battle3d.gd" id="1_pnf4o"]
+[ext_resource type="Texture2D" path="res://assets/texturas/grilla.png" id="2_dp04r"]
+[ext_resource type="PackedScene" path="res://scenes/3d/healer3d.tscn" id="3_howby"]
+[ext_resource type="Script" path="res://scripts/3d/healer3d.gd" id="4_g13fl"]
+[ext_resource type="Script" path="res://scripts/3d/overlay_unidades.gd" id="5_073nq"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="6_l7i6f"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="7_b02fv"]
 
-[sub_resource type="Environment" id="Environment_ej82q"]
+[sub_resource type="Environment" id="Environment_ur1wm"]
 background_mode = 1
 background_color = Color(0.08627451, 0.101960786, 0.15294118, 1)
 ambient_light_source = 2
@@ -23,80 +18,78 @@ fog_enabled = true
 fog_light_color = Color(0.08627451, 0.101960786, 0.15294118, 1)
 fog_density = 0.03
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pejnj"]
-albedo_texture = ExtResource("7_b1sul")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n2h16"]
+albedo_texture = ExtResource("2_dp04r")
 uv1_scale = Vector3(66, 30, 1)
 texture_filter = 0
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_qwkrd"]
+[sub_resource type="PlaneMesh" id="PlaneMesh_d38fa"]
 size = Vector2(66, 30)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kg0a6"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q8jvo"]
 albedo_color = Color(0.2901961, 0.49803922, 0.83137256, 1)
 roughness = 0.9
 
-[sub_resource type="BoxMesh" id="BoxMesh_anmhl"]
+[sub_resource type="BoxMesh" id="BoxMesh_b1sul"]
 size = Vector3(1.6, 4, 5)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_c2lvq"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_shpvq"]
 albedo_color = Color(0.76862746, 0.33333334, 0.24705882, 1)
 roughness = 0.9
 
-[sub_resource type="BoxMesh" id="BoxMesh_wgud4"]
+[sub_resource type="BoxMesh" id="BoxMesh_ipdr2"]
 size = Vector3(1.6, 4, 5)
 
-[node name="Battle3D" type="Node3D" unique_id=1259696207]
-script = ExtResource("1_l7i6f")
-tipos_aliados = Array[ExtResource("2_b02fv")]([ExtResource("3_ur1wm"), ExtResource("4_n2h16"), ExtResource("5_d38fa")])
-tipos_enemigos = Array[ExtResource("2_b02fv")]([ExtResource("6_q8jvo")])
+[node name="Battle3D" type="Node3D" unique_id=144006436]
+script = ExtResource("1_pnf4o")
 
-[node name="Entorno" type="WorldEnvironment" parent="." unique_id=1344556927]
-environment = SubResource("Environment_ej82q")
+[node name="Entorno" type="WorldEnvironment" parent="." unique_id=125946621]
+environment = SubResource("Environment_ur1wm")
 
-[node name="Sol" type="DirectionalLight3D" parent="." unique_id=479274238]
+[node name="Sol" type="DirectionalLight3D" parent="." unique_id=307427000]
 transform = Transform3D(-0.64278764, 0.6036512, -0.47162408, 0, 0.6156615, 0.7880107, 0.76604444, 0.50652355, -0.39573961, 0, 0, 0)
 light_color = Color(1, 0.9490196, 0.84705883, 1)
 light_energy = 1.1
 shadow_enabled = true
 
-[node name="Suelo" type="MeshInstance3D" parent="." unique_id=979772840]
+[node name="Suelo" type="MeshInstance3D" parent="." unique_id=746861264]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 5)
-material_override = SubResource("StandardMaterial3D_pejnj")
-mesh = SubResource("PlaneMesh_qwkrd")
+material_override = SubResource("StandardMaterial3D_n2h16")
+mesh = SubResource("PlaneMesh_d38fa")
 
-[node name="BaseAliada" type="MeshInstance3D" parent="." unique_id=453411550]
+[node name="BaseAliada" type="MeshInstance3D" parent="." unique_id=2094977824]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 5)
-material_override = SubResource("StandardMaterial3D_kg0a6")
-mesh = SubResource("BoxMesh_anmhl")
+material_override = SubResource("StandardMaterial3D_q8jvo")
+mesh = SubResource("BoxMesh_b1sul")
 
-[node name="BaseEnemiga" type="MeshInstance3D" parent="." unique_id=1041454776]
+[node name="BaseEnemiga" type="MeshInstance3D" parent="." unique_id=826658934]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29, 2, 5)
-material_override = SubResource("StandardMaterial3D_c2lvq")
-mesh = SubResource("BoxMesh_wgud4")
+material_override = SubResource("StandardMaterial3D_shpvq")
+mesh = SubResource("BoxMesh_ipdr2")
 
-[node name="Unidades" type="Node3D" parent="." unique_id=830857643]
+[node name="Unidades" type="Node3D" parent="." unique_id=1408906122]
 unique_name_in_owner = true
 
-[node name="Healer" type="CharacterBody3D" parent="Unidades" unique_id=1006744580 instance=ExtResource("8_shpvq")]
+[node name="Healer" type="CharacterBody3D" parent="Unidades" unique_id=142043309 instance=ExtResource("3_howby")]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 5)
-script = ExtResource("9_ipdr2")
+script = ExtResource("4_g13fl")
 
-[node name="Camara" type="Camera3D" parent="." unique_id=578075646]
+[node name="Camara" type="Camera3D" parent="." unique_id=1934438638]
 unique_name_in_owner = true
 fov = 42.0
 
-[node name="CapaUnidades" type="CanvasLayer" parent="." unique_id=1547764245]
+[node name="CapaUnidades" type="CanvasLayer" parent="." unique_id=1180184331]
 
-[node name="Overlay" type="Control" parent="CapaUnidades" unique_id=1421488946]
+[node name="Overlay" type="Control" parent="CapaUnidades" unique_id=907768822]
 unique_name_in_owner = true
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
-script = ExtResource("10_ln2o5")
+script = ExtResource("5_073nq")
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=1205627051 instance=ExtResource("11_loeg0")]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1449975330 instance=ExtResource("6_l7i6f")]
 unique_name_in_owner = true
-script = ExtResource("12_vl7ca")
+script = ExtResource("7_b02fv")

@@ -1,20 +1,22 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/hud.gd" id="1_bo48s"]
-[ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="2_8qguk"]
-[ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="3_136eg"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_136eg"]
+[ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="2_oj5la"]
+[ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="3_gss2c"]
+[ext_resource type="Script" path="res://scripts/tarjeta_objetivo.gd" id="4_h022r"]
+[ext_resource type="Script" path="res://scripts/resumen_encuentro.gd" id="5_4jqwt"]
 
-[node name="HUD" type="CanvasLayer" unique_id=1205627051]
-script = ExtResource("1_bo48s")
+[node name="HUD" type="CanvasLayer" unique_id=1449975330]
+script = ExtResource("1_136eg")
 
-[node name="Raiz" type="Control" parent="." unique_id=2001069206]
+[node name="Raiz" type="Control" parent="." unique_id=927566370]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=894483742]
+[node name="Contadores" type="Label" parent="Raiz" unique_id=273630886]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
@@ -27,7 +29,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Aviso" type="Label" parent="Raiz" unique_id=1326651696]
+[node name="Aviso" type="Label" parent="Raiz" unique_id=311806400]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -42,7 +44,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Slots" type="Control" parent="Raiz" unique_id=952509082]
+[node name="Slots" type="Control" parent="Raiz" unique_id=444795920]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_top = 1.0
@@ -52,9 +54,9 @@ offset_top = -166.0
 offset_right = 704.0
 offset_bottom = -104.0
 mouse_filter = 2
-script = ExtResource("2_8qguk")
+script = ExtResource("2_oj5la")
 
-[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=30860657]
+[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=1751661712]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -66,7 +68,7 @@ offset_bottom = -61.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="TextoVida" type="Label" parent="Raiz" unique_id=1007765945]
+[node name="TextoVida" type="Label" parent="Raiz" unique_id=1340956894]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -81,7 +83,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=707366187]
+[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=140979428]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -93,7 +95,7 @@ offset_bottom = -35.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="TextoMana" type="Label" parent="Raiz" unique_id=1256079044]
+[node name="TextoMana" type="Label" parent="Raiz" unique_id=1645349628]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -108,7 +110,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Frente" type="Control" parent="Raiz" unique_id=1014014845]
+[node name="Frente" type="Control" parent="Raiz" unique_id=1263397908]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_left = 0.5
@@ -118,9 +120,9 @@ offset_top = 14.0
 offset_right = 200.0
 offset_bottom = 40.0
 mouse_filter = 2
-script = ExtResource("3_136eg")
+script = ExtResource("3_gss2c")
 
-[node name="Desenlace" type="Label" parent="Raiz" unique_id=2027632637]
+[node name="Desenlace" type="Label" parent="Raiz" unique_id=756913574]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -129,9 +131,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -220.0
-offset_top = -60.0
+offset_top = -172.0
 offset_right = 220.0
-offset_bottom = 60.0
+offset_bottom = -52.0
 theme_override_font_sizes/font_size = 48
 theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
@@ -139,7 +141,52 @@ theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 horizontal_alignment = 1
 
-[node name="Ayuda" type="Label" parent="Raiz" unique_id=354522314]
+[node name="Tarjeta" type="Control" parent="Raiz" unique_id=1844467524]
+unique_name_in_owner = true
+anchors_preset = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -274.0
+offset_top = -190.0
+offset_right = -24.0
+offset_bottom = -30.0
+mouse_filter = 2
+script = ExtResource("4_h022r")
+
+[node name="Encabezado" type="Label" parent="Raiz" unique_id=1289644044]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -300.0
+offset_top = 46.0
+offset_right = 300.0
+offset_bottom = 98.0
+theme_override_font_sizes/font_size = 17
+theme_override_colors/font_color = Color(0.85, 0.88, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+horizontal_alignment = 1
+
+[node name="Resumen" type="Control" parent="Raiz" unique_id=853713318]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -260.0
+offset_top = -40.0
+offset_right = 260.0
+offset_bottom = 260.0
+mouse_filter = 2
+script = ExtResource("5_4jqwt")
+
+[node name="Ayuda" type="Label" parent="Raiz" unique_id=75502967]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -152,4 +199,4 @@ theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
-text = "WASD mover     Shift impulso     Espacio saltar     Click sobre un aliado para actuar"
+text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     R reiniciar"

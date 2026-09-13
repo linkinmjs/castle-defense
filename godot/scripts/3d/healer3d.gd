@@ -12,6 +12,8 @@ signal vida_cambio(actual: float, maximo: float)
 signal aviso(texto: String)
 signal cayo
 signal se_levanto
+## Cambio a quien apunta el mouse. Lo escucha la tarjeta del HUD.
+signal apuntada_cambio(unidad: Unidad3D)
 
 const FRAMES_FX := preload("res://assets/sprites/fx/fx_frames.tres")
 ## Radio en pixeles para enganchar una unidad cuando el mouse no cae encima.
@@ -53,6 +55,8 @@ var _impulso_restante: float = 0.0
 var _casteando: float = 0.0
 var _en_el_aire: bool = false
 var vida: float
+## Que tipo de enemigo le pego por ultima vez.
+var fuente_ultimo_dano: String = ""
 var _caido_restante: float = 0.0
 var _flash: float = 0.0
 var _tinte_base: Color = Color.WHITE
@@ -195,9 +199,13 @@ func _usar(habilidad: Habilidad) -> void:
 
 # --- Vida ----------------------------------------------------------------------
 
-func recibir_dano(cantidad: float) -> void:
+## Misma firma que en las unidades: los enemigos golpean a cualquier objetivo
+## sin saber si es soldado o healer, y pasan siempre quien pego.
+func recibir_dano(cantidad: float, fuente: Node = null, _causa: StringName = &"golpe") -> void:
 	if not esta_viva():
 		return
+	if fuente != null and fuente is Unidad3D and fuente.tipo != null:
+		fuente_ultimo_dano = fuente.tipo.nombre
 	vida = maxf(vida - cantidad, 0.0)
 	_flash = 0.12
 	vida_cambio.emit(vida, vida_maxima)
@@ -245,6 +253,15 @@ func _actualizar_flash(delta: float) -> void:
 # --- API que usan las habilidades -------------------------------------------
 
 func objetivo_apuntado() -> Unidad3D:
+	if _apuntada == null or not is_instance_valid(_apuntada) or not _apuntada.esta_viva():
+		return null
+	return _apuntada
+
+
+## A quien apunta el mouse, este o no al alcance. objetivo_apuntado() es para
+## las habilidades y devuelve null si no se puede usar; esta es para mostrar,
+## que es distinto: un herido lejos hay que poder verlo antes de ir.
+func unidad_apuntada() -> Unidad3D:
 	if _apuntada == null or not is_instance_valid(_apuntada) or not _apuntada.esta_viva():
 		return null
 	return _apuntada
@@ -315,6 +332,9 @@ func _actualizar_apuntada() -> void:
 	if _apuntada != null:
 		_apuntada.resaltada = true
 		_apuntada.resaltada_alcanzable = en_rango(_apuntada)
+
+	if anterior != _apuntada:
+		apuntada_cambio.emit(_apuntada)
 
 
 ## Igual que en 2D, pero la caja del cuerpo se calcula proyectando la unidad a

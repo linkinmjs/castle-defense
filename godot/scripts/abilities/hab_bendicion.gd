@@ -31,3 +31,11 @@ func ejecutar(healer: Node) -> String:
 	objetivo.bendecir(duracion, reduccion_dano, bonus_cadencia)
 	healer.lanzar_efecto(objetivo, "shield")
 	return "Bendicion: -%d%% dano por %ds" % [reduccion_dano * 100.0, duracion]
+
+
+func previsualizar(_healer: Node, objetivo: Node) -> String:
+	if objetivo.esta_derribada():
+		return ""
+	if objetivo.esta_bendecida():
+		return "%s: ya la tiene" % nombre
+	return "%s: -%d%% dano por %ds" % [nombre, reduccion_dano * 100.0, duracion]

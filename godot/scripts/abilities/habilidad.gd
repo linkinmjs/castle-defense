@@ -39,3 +39,13 @@ func motivo_bloqueo(_healer: Node) -> String:
 ## Aplica el efecto y devuelve el texto que se muestra en el HUD.
 func ejecutar(_healer: Node) -> String:
 	return ""
+
+
+## Que haria esta habilidad sobre ese objetivo, para la tarjeta al apuntar.
+## Devuelve "" si no aplica.
+##
+## Vive aca y no en el HUD porque cada habilidad es la unica que sabe cuenta
+## hacer. La tarjeta muestra la consecuencia, nunca cual conviene: decidir es
+## del jugador.
+func previsualizar(_healer: Node, _objetivo: Node) -> String:
+	return ""

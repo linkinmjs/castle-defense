@@ -22,3 +22,10 @@ func ejecutar(healer: Node) -> String:
 	objetivo.reanimar()
 	healer.lanzar_efecto(objetivo, "heal")
 	return "Reanimado"
+
+
+func previsualizar(_healer: Node, objetivo: Node) -> String:
+	if not objetivo.esta_derribada():
+		return ""
+	return "%s: lo levanta con %d HP" % [
+		nombre, objetivo.vida_maxima * objetivo.vida_al_reanimar]

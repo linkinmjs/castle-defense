@@ -29,3 +29,13 @@ func ejecutar(healer: Node) -> String:
 	if desperdicio > 1.0:
 		return "+%d  (%d desperdiciado)" % [recuperado, desperdicio]
 	return "+%d" % recuperado
+
+
+func previsualizar(_healer: Node, objetivo: Node) -> String:
+	if objetivo.esta_derribada():
+		return ""
+	var entra: float = minf(cantidad, objetivo.vida_maxima - objetivo.vida)
+	var sobra := cantidad - entra
+	if sobra >= 1.0:
+		return "%s: +%d HP (%d se desperdician)" % [nombre, entra, sobra]
+	return "%s: +%d HP" % [nombre, entra]

@@ -40,3 +40,10 @@ func _alcanzados(healer: Node) -> Array:
 		if healer.global_position.distance_to(unidad.global_position) <= radio:
 			lista.append(unidad)
 	return lista
+
+
+func previsualizar(healer: Node, _objetivo: Node) -> String:
+	var cuantos := _alcanzados(healer).size()
+	if cuantos == 0:
+		return ""
+	return "%s: +%d HP a %d cerca tuyo" % [nombre, cantidad, cuantos]

@@ -26,6 +26,9 @@ var _semilla: int = 0
 var _duracion: float = 0.0
 var _proxima_muestra: float = 0.0
 var _abierto: bool = false
+## Como termino. Se guarda al cerrar para que la observacion causal pueda
+## distinguir "no perdiste a nadie" de "no perdiste a nadie pero perdiste".
+var _victoria: bool = false
 
 var _curacion_emitida: float = 0.0
 var _curacion_efectiva: float = 0.0
@@ -178,12 +181,14 @@ func cerrar(victoria: bool) -> void:
 	if not _abierto:
 		return
 	_abierto = false
+	_victoria = victoria
 	encuentro_cerrado.emit(resumen(victoria))
 
 
 func _reiniciar() -> void:
 	_duracion = 0.0
 	_proxima_muestra = 0.0
+	_victoria = false
 	_curacion_emitida = 0.0
 	_curacion_efectiva = 0.0
 	_mana_gastado = 0.0
@@ -203,7 +208,9 @@ func _reiniciar() -> void:
 
 # --- Salida -------------------------------------------------------------------
 
+## Sin argumento usa el desenlace ya registrado, si el encuentro se cerro.
 func resumen(victoria: bool = false) -> Dictionary:
+	victoria = victoria or _victoria
 	var desperdiciada := maxf(_curacion_emitida - _curacion_efectiva, 0.0)
 	var promedio_estabilizar := 0.0
 	if _sangrados_estabilizados > 0:
@@ -241,3 +248,64 @@ func resumen(victoria: bool = false) -> Dictionary:
 
 func eventos() -> Array[Dictionary]:
 	return _eventos.duplicate()
+
+
+## Una sola observacion, la primera que aplica de una lista ordenada por lo que
+## mas le conviene revisar al jugador.
+##
+## Una sola y no todas: un informe con seis consejos no se lee, y si se lee no
+## deja claro por donde empezar. Habla de conducta, no de resultado, porque el
+## objetivo es que salga con una hipotesis para el proximo intento.
+func observacion_causal() -> String:
+	var r := resumen()
+
+	# 1. Lo mas caro: perder gente por una causa que se podia cortar.
+	var por_sangrado := _muertes_evitables(&"sangrado", "estabilizar_disponible")
+	if por_sangrado > 0:
+		return "%s por sangrado mientras Estabilizar estaba lista. Cortar la causa frena el dano que todavia no ocurrio." % 			_contar(por_sangrado, "Perdiste un soldado", "Perdiste %d soldados")
+
+	# 2. Dejar morir a alguien tirado teniendo con que levantarlo.
+	var sin_atencion := _muertes_evitables(&"sin_atencion", "reanimar_disponible")
+	if sin_atencion > 0:
+		return "%s en el suelo con Reanimar disponible. Un derribado tiene una ventana corta y se agota sola." % 			_contar(sin_atencion, "Se te murio uno", "Se te murieron %d")
+
+	# 3. Derribados que nadie fue a buscar, aunque no hubiera con que.
+	var abandonados: int = _muertes_por_causa.get(&"sin_atencion", 0)
+	if abandonados > 0:
+		return "%s esperando que alguien llegara. Cuando alguien cae, el reloj corre." % 			_contar(abandonados, "Un soldado murio", "%d soldados murieron")
+
+	# 4. Curar sin mirar a quien.
+	if r["fraccion_desperdiciada"] > 0.25 and r["curacion_emitida"] > 60.0:
+		return "Se desperdicio el %d%% de tu curacion: llegaste a soldados que ya estaban casi sanos." % 			(r["fraccion_desperdiciada"] * 100.0)
+
+	# 5. Sangrados que se agotaron solos, sin muertos de por medio.
+	if _sangrados_sin_tratar > 0:
+		return "%s sin tratar. El sangrado sigue restando vida aunque el soldado aguante." % 			_contar(_sangrados_sin_tratar, "Quedo un sangrado", "Quedaron %d sangrados")
+
+	# 6. Esperar en vez de intervenir.
+	if r["duracion"] > 10.0 and _segundos_mana_al_tope > r["duracion"] * 0.3:
+		return "Pasaste %.0f s con el mana lleno. Mana guardado no cura a nadie." % 			_segundos_mana_al_tope
+
+	# 7. Nada que corregir: se nombra que salio bien, que tambien enseña.
+	if r["victoria"]:
+		if _sangrados_estabilizados > 0:
+			return "Cortaste %d sangrados en %.1f s promedio y no perdiste a nadie por esa causa." % [
+				_sangrados_estabilizados, r["tiempo_hasta_estabilizar"]]
+		if _curacion_emitida > 0.0:
+			return "Aprovechaste el %d%% de tu curacion." % 				((1.0 - r["fraccion_desperdiciada"]) * 100.0)
+	return ""
+
+
+## Muertes por esa causa que ocurrieron teniendo la herramienta a mano.
+func _muertes_evitables(causa: StringName, herramienta: String) -> int:
+	var total := 0
+	for evento in _eventos:
+		if evento.get("evento", &"") != &"muerte":
+			continue
+		if evento.get("causa", &"") == causa and evento.get(herramienta, false):
+			total += 1
+	return total
+
+
+func _contar(cantidad: int, singular: String, plural: String) -> String:
+	return singular if cantidad == 1 else plural % cantidad
