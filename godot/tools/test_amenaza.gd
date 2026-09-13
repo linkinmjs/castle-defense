@@ -113,12 +113,12 @@ func _tick() -> void:
 		9:
 			print("")
 			print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
-			quit()
+			quit(1 if _fallos > 0 else 0)
 			_fase = 10
 
 	if _ticks > 2000:
 		print("FALLA: el test no termino")
-		quit()
+		quit(1)
 
 
 func _saltar_funciona() -> bool:

@@ -1,0 +1,64 @@
+name: Pruebas
+
+# Lo invoca deploy-to-itch.yml antes de exportar, asi un build roto no llega a
+# itch.io. No se dispara solo por push: correria dos veces por el mismo commit.
+on:
+  workflow_call:
+  workflow_dispatch:
+
+# Mantener alineada con deploy-to-itch.yml y con config/features en project.godot.
+env:
+  GODOT_VERSION: "4.7.2"
+  GODOT_STATUS: "stable"
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    name: Suites headless
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      # Solo hace falta el binario: las suites corren con --headless y no
+      # exportan nada, asi que las export templates no se descargan.
+      - name: Instalar Godot ${{ env.GODOT_VERSION }}
+        run: |
+          base="https://github.com/godotengine/godot/releases/download"
+          nombre="Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64"
+          curl -sSL -o godot.zip "$base/${GODOT_VERSION}-${GODOT_STATUS}/${nombre}.zip"
+          unzip -q godot.zip
+          mv "$nombre" /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+          godot --version
+
+      # Sin esto la primera suite se encuentra las texturas sin importar y no
+      # puede cargar ningun SpriteFrames.
+      - name: Importar recursos
+        run: godot --headless --path godot --import
+
+      # Se corren todas aunque alguna falle: con una sola no se ve si el
+      # problema es puntual o transversal. El paso falla si fallo cualquiera.
+      - name: Correr las suites
+        run: |
+          fallaron=""
+          for prueba in godot/tools/test_*.gd; do
+            nombre="$(basename "$prueba" .gd)"
+            echo "::group::$nombre"
+            if godot --headless --path godot --script "res://tools/$nombre.gd"; then
+              echo "$nombre OK"
+            else
+              echo "::error::$nombre fallo"
+              fallaron="$fallaron $nombre"
+            fi
+            echo "::endgroup::"
+          done
+          if [ -n "$fallaron" ]; then
+            echo "Suites en rojo:$fallaron"
+            exit 1
+          fi
+          echo "Todas las suites pasaron."

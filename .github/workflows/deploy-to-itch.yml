@@ -23,8 +23,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Si las suites estan en rojo no se exporta ni se publica nada.
+  pruebas:
+    name: Pruebas
+    uses: ./.github/workflows/pruebas.yml
+
   export-web:
     name: Exportar juego (Web)
+    needs: pruebas
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

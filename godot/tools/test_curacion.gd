@@ -81,6 +81,7 @@ func _process(_delta: float) -> bool:
 
 	print("")
 	print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
+	quit(1 if _fallos > 0 else 0)
 	return true
 
 
