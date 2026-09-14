@@ -1,12 +1,14 @@
 [gd_resource type="Resource" script_class="HabilidadBendicion" format=3]
 
-[ext_resource type="Script" path="res://scripts/abilities/hab_bendicion.gd" id="1_1qm1k"]
+[ext_resource type="Texture2D" path="res://assets/ui/habilidades/bendicion.png" id="1_wyywf"]
+[ext_resource type="Script" path="res://scripts/abilities/hab_bendicion.gd" id="2_tq2sa"]
 
 [resource]
-script = ExtResource("1_1qm1k")
+script = ExtResource("2_tq2sa")
 nombre = "Bendicion"
 accion = &"habilidad_2"
 tecla = "2"
+icono = ExtResource("1_wyywf")
 costo = 35.0
 enfriamiento = 16.0
 color = Color(0.43529412, 0.827451, 0.78039217, 1)

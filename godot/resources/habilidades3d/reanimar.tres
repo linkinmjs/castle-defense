@@ -1,12 +1,14 @@
 [gd_resource type="Resource" script_class="HabilidadReanimar" format=3]
 
-[ext_resource type="Script" path="res://scripts/abilities/hab_reanimar.gd" id="1_au5vp"]
+[ext_resource type="Texture2D" path="res://assets/ui/habilidades/reanimar.png" id="1_bjuiu"]
+[ext_resource type="Script" path="res://scripts/abilities/hab_reanimar.gd" id="2_pcjl4"]
 
 [resource]
-script = ExtResource("1_au5vp")
+script = ExtResource("2_pcjl4")
 nombre = "Reanimar"
 accion = &"habilidad_3"
 tecla = "3"
+icono = ExtResource("1_bjuiu")
 costo = 40.0
 enfriamiento = 6.0
 color = Color(0.6901961, 0.49803922, 0.8509804, 1)

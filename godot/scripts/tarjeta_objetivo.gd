@@ -1,4 +1,4 @@
-extends Control
+extends PanelContainer
 ## Ficha del soldado al que apunta el mouse.
 ##
 ## El campo muestra un solo problema por unidad para que se pueda leer de un
@@ -6,14 +6,12 @@ extends Control
 ## que haria cada herramienta sobre ese paciente, pero nunca cual conviene:
 ## elegir es el juego.
 ##
-## Se dibuja a mano, como los slots y el indicador de frente: el contenido
-## cambia todos los frames y asi queda todo el layout en un solo lugar.
+## _armar_lineas() dice que mostrar y los nodos lo reflejan. Los Labels se
+## rehacen solo cuando cambia la cantidad de renglones: recrearlos en cada
+## frame, como se redibujaba antes, seria tirar asignaciones al pedo.
 
-const ANCHO := 250.0
-const MARGEN := 10.0
-const ALTO_LINEA := 17.0
+const ANCHO := 280.0
 
-const COLOR_FONDO := Color(0, 0, 0, 0.72)
 const COLOR_NOMBRE := Color(0.94, 0.95, 1.0)
 const COLOR_TENUE := Color(0.70, 0.74, 0.85)
 const COLOR_LEJOS := Color(1.0, 0.55, 0.42)
@@ -38,6 +36,8 @@ const ETIQUETAS := {
 var _healer: Node
 var _componente: ComponenteHabilidades
 var _apuntada: Unidad3D
+var _columna: VBoxContainer
+var _renglones: Array[Label] = []
 
 
 func seguir(healer: Node, componente: ComponenteHabilidades) -> void:
@@ -50,32 +50,61 @@ func _on_apuntada_cambio(unidad: Unidad3D) -> void:
 	_apuntada = unidad
 
 
+func _ready() -> void:
+	theme_type_variation = &"PanelFicha"
+	custom_minimum_size = Vector2(ANCHO, 0)
+	# Todo el HUD deja pasar los clicks: la tarjeta va abajo a la derecha y
+	# taparia a los soldados que queden debajo.
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	visible = false
+
+	_columna = VBoxContainer.new()
+	_columna.add_theme_constant_override("separation", 3)
+	_columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_columna)
+
+
 func _process(_delta: float) -> void:
 	# La vida y los relojes cambian solos aunque el mouse no se mueva.
 	if _healer != null:
 		_apuntada = _healer.unidad_apuntada()
-	queue_redraw()
 
-
-func _draw() -> void:
 	if _apuntada == null or not is_instance_valid(_apuntada):
+		visible = false
 		return
 
+	visible = true
 	var lineas := _armar_lineas()
-	var alto := MARGEN * 2.0 + lineas.size() * ALTO_LINEA
-	var caja := Rect2(0, 0, ANCHO, alto)
-	custom_minimum_size = Vector2(ANCHO, alto)
+	if lineas.size() != _renglones.size():
+		_rehacer(lineas)
+	else:
+		_refrescar(lineas)
 
-	draw_rect(caja, COLOR_FONDO)
-	draw_rect(caja, Color(1, 1, 1, 0.12), false, 1.0)
 
-	var fuente := get_theme_default_font()
-	var y := MARGEN + 12.0
+## Un Label por renglon. Solo cuando cambia la cantidad: mientras el paciente
+## siga teniendo los mismos datos, alcanza con reescribir el texto.
+func _rehacer(lineas: Array[Dictionary]) -> void:
+	for hijo in _columna.get_children():
+		hijo.queue_free()
+	_renglones.clear()
+
 	for linea: Dictionary in lineas:
-		draw_string(fuente, Vector2(MARGEN, y), linea["texto"],
-			HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0,
-			linea.get("tamano", 13), linea["color"])
-		y += ALTO_LINEA
+		var etiqueta := Label.new()
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_columna.add_child(etiqueta)
+		_renglones.append(etiqueta)
+	_refrescar(lineas)
+
+
+func _refrescar(lineas: Array[Dictionary]) -> void:
+	for i in lineas.size():
+		var linea: Dictionary = lineas[i]
+		var etiqueta := _renglones[i]
+		etiqueta.text = linea["texto"]
+		etiqueta.add_theme_color_override("font_color", linea["color"])
+		etiqueta.add_theme_font_size_override("font_size", linea.get("tamano", 13))
+
 
 
 ## Cuatro bloques: quien es, como esta, cual es su problema, y que puede hacer

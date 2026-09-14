@@ -47,7 +47,35 @@ por el inspector.
 
 `WASD` mover · `Espacio` saltar · click izquierdo y derecho y teclas `1`-`3`
 para las habilidades equipadas · `Shift` impulso · `R` repetir el encuentro ·
-`Enter` pasar al siguiente.
+`Enter` pasar al siguiente · `Esc` pausa.
+
+## Artefactos generados
+
+Las escenas, el tema y los recursos **no se editan a mano**: los produce un
+script de `tools/` y el editor los pisa en la proxima corrida. Si hay que
+cambiar algo, se cambia en el generador.
+
+| Script | Que produce |
+|---|---|
+| `extraer_ui.gd` | `assets/ui/` desde los packs de `assets/_raw/`, escalado x2 |
+| `gen_ui.gd` | `resources/ui/tema.tres` y las escenas de menu |
+| `gen_scenes3d.gd` | escenas 3D, HUD, habilidades y tipos de soldado |
+| `gen_encuentros.gd` | los encuentros y la campania |
+| `gen_frames.gd` | los `SpriteFrames` de cada personaje |
+| `setup_input.gd` | las acciones del Input Map |
+
+El orden importa cuando se tocan los assets de interfaz, porque un PNG escrito
+por un script no se puede cargar hasta que Godot lo importe:
+
+```bash
+godot --headless --path godot --script res://tools/extraer_ui.gd
+godot --headless --path godot --import
+godot --headless --path godot --script res://tools/gen_ui.gd
+godot --headless --path godot --script res://tools/gen_scenes3d.gd
+```
+
+La interfaz usa un pack gratuito de CraftPix; la atribucion y la licencia estan
+en [`godot/assets/ui/LEEME.md`](godot/assets/ui/LEEME.md).
 
 ## Requisitos
 
@@ -58,7 +86,8 @@ para las habilidades equipadas · `Shift` impulso · `R` repetir el encuentro ·
 ## Desarrollo local
 
 1. Abrir Godot y elegir **Import** apuntando a la carpeta `godot/`.
-2. `F5` corre la escena principal (`scenes/3d/battle3d.tscn`).
+2. `F5` abre el menu principal (`scenes/ui/menu_principal.tscn`). Para entrar
+   directo a una batalla, `F6` sobre `scenes/3d/battle3d.tscn`.
 
 ### Pruebas
 

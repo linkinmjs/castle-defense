@@ -1,4 +1,4 @@
-extends Control
+extends PanelContainer
 ## Que paso en el encuentro y por que.
 ##
 ## Es un informe corto, no una planilla, y no da una nota: una puntuacion
@@ -7,23 +7,23 @@ extends Control
 ##
 ## No conoce la clase Telemetria: recibe un Dictionary, un texto y las metas.
 ## Asi la interfaz no ata al modelo, que tiene que poder correr sin ella.
+##
+## contenido() arma los renglones como datos y los nodos los reflejan; el alto
+## lo resuelve el container, que antes habia que calcular a mano contando
+## caracteres para estimar cuantos renglones iba a ocupar la observacion.
 
-const ANCHO := 520.0
-const MARGEN := 22.0
-const ALTO_LINEA := 22.0
+const ANCHO := 560.0
 
-const COLOR_FONDO := Color(0.05, 0.06, 0.09, 0.92)
-const COLOR_TITULO := Color(0.95, 0.96, 1.0)
-const COLOR_TENUE := Color(0.72, 0.76, 0.88)
-const COLOR_CUMPLIDA := Color("9fd88f")
-const COLOR_FALLIDA := Color("e07a6a")
-const COLOR_OBSERVACION := Color(1.0, 0.92, 0.65)
+## Los demas colores vienen del tema. Este no: la observacion tiene que
+## despegarse del resto sin dejar de leerse sobre el panel claro.
+const COLOR_OBSERVACION := Color(0.45, 0.16, 0.08)
 
 var _titulo: String = ""
 var _metricas: Array[String] = []
 var _metas: Array[Dictionary] = []
 var _observacion: String = ""
 var _pie: String = ""
+var _columna: VBoxContainer
 
 
 func mostrar(titulo: String, resumen: Dictionary, observacion: String,
@@ -40,7 +40,7 @@ func mostrar(titulo: String, resumen: Dictionary, observacion: String,
 		_metas.append({"texto": meta.texto, "cumplida": meta.cumplida(resumen)})
 
 	visible = true
-	queue_redraw()
+	_volcar()
 
 
 func ocultar() -> void:
@@ -90,15 +90,6 @@ func _armar_metricas(r: Dictionary) -> Array[String]:
 	return lineas
 
 
-## Cuantos renglones ocupa la observacion al ancho del panel.
-func _renglones_observacion(fuente: Font) -> int:
-	if _observacion == "":
-		return 0
-	var util := ANCHO - MARGEN * 2.0
-	var ancho := fuente.get_string_size(_observacion, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-	return maxi(1, ceili(ancho / util))
-
-
 func _nombrar_causa(causa: StringName) -> String:
 	match causa:
 		&"sangrado":
@@ -110,48 +101,69 @@ func _nombrar_causa(causa: StringName) -> String:
 	return "causa desconocida"
 
 
-func _draw() -> void:
-	var fuente := get_theme_default_font()
-	# La observacion es una frase entera y puede ocupar mas de un renglon, asi
-	# que el alto se calcula contandolos en vez de suponer uno.
-	var renglones_obs := _renglones_observacion(fuente)
-	var cantidad := 2 + _metricas.size() + _metas.size()
-	if _observacion != "":
-		cantidad += renglones_obs + 1
-	var alto := MARGEN * 2.0 + cantidad * ALTO_LINEA + 30.0
-	custom_minimum_size = Vector2(ANCHO, alto)
-
-	var caja := Rect2(0, 0, ANCHO, alto)
-	draw_rect(caja, COLOR_FONDO)
-	draw_rect(caja, Color(1, 1, 1, 0.16), false, 1.0)
-
-	var y := MARGEN + 16.0
-	draw_string(fuente, Vector2(MARGEN, y), _titulo,
-		HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 22, COLOR_TITULO)
-	y += ALTO_LINEA + 10.0
+## Los renglones del informe, en orden, como datos. Cada uno dice de que tipo
+## es para que la vista sepa con que estilo mostrarlo.
+func contenido() -> Array[Dictionary]:
+	var filas: Array[Dictionary] = [{"texto": _titulo, "clase": "titulo"}]
 
 	for linea in _metricas:
-		draw_string(fuente, Vector2(MARGEN, y), linea,
-			HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 14, COLOR_TENUE)
-		y += ALTO_LINEA
+		filas.append({"texto": linea, "clase": "metrica"})
 
 	for meta: Dictionary in _metas:
-		var marca := "OK  " if meta["cumplida"] else "--  "
-		draw_string(fuente, Vector2(MARGEN, y), marca + meta["texto"],
-			HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 14,
-			COLOR_CUMPLIDA if meta["cumplida"] else COLOR_FALLIDA)
-		y += ALTO_LINEA
+		filas.append({
+			"texto": ("[ok] " if meta["cumplida"] else "[--] ") + meta["texto"],
+			"clase": "meta_cumplida" if meta["cumplida"] else "meta_fallida",
+		})
 
 	# La observacion es lo unico que puede cambiar el proximo intento: va
-	# separada y con su propio color para que no se lea como una metrica mas.
+	# aparte para que no se lea como una metrica mas.
 	if _observacion != "":
-		y += ALTO_LINEA * 0.5
-		# multiline y no draw_string: una frase larga se cortaba a la mitad en
-		# vez de seguir en el renglon siguiente.
-		draw_multiline_string(fuente, Vector2(MARGEN, y), _observacion,
-			HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 15, -1,
-			COLOR_OBSERVACION)
-		y += ALTO_LINEA * (renglones_obs + 0.5)
+		filas.append({"texto": _observacion, "clase": "observacion"})
 
-	draw_string(fuente, Vector2(MARGEN, y), _pie,
-		HORIZONTAL_ALIGNMENT_LEFT, ANCHO - MARGEN * 2.0, 13, COLOR_TENUE)
+	filas.append({"texto": _pie, "clase": "pie"})
+	return filas
+
+
+func _ready() -> void:
+	theme_type_variation = &"PanelResumen"
+	custom_minimum_size = Vector2(ANCHO, 0)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	_columna = VBoxContainer.new()
+	_columna.add_theme_constant_override("separation", 6)
+	_columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_columna)
+
+
+func _volcar() -> void:
+	if _columna == null:
+		return
+	for hijo in _columna.get_children():
+		hijo.queue_free()
+
+	for fila: Dictionary in contenido():
+		var etiqueta := Label.new()
+		etiqueta.text = fila["texto"]
+		etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Una frase larga sigue en el renglon siguiente en vez de cortarse: el
+		# container ajusta el alto solo.
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		etiqueta.theme_type_variation = _variacion(fila["clase"])
+		if fila["clase"] == "observacion":
+			etiqueta.add_theme_color_override("font_color", COLOR_OBSERVACION)
+		_columna.add_child(etiqueta)
+
+
+## El panel es de madera clara: el texto va oscuro, salvo las metas y la
+## observacion, que tienen su propio color.
+func _variacion(clase: String) -> StringName:
+	match clase:
+		"titulo":
+			return &"TituloPanel"
+		"meta_cumplida":
+			return &"Exito"
+		"meta_fallida":
+			return &"Fallo"
+		"observacion", "pie":
+			return &"SobrePanel"
+	return &"SobrePanel"

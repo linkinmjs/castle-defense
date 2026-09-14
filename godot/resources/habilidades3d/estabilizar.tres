@@ -1,12 +1,14 @@
 [gd_resource type="Resource" script_class="HabilidadEstabilizar" format=3]
 
-[ext_resource type="Script" path="res://scripts/abilities/hab_estabilizar.gd" id="1_734j8"]
+[ext_resource type="Texture2D" path="res://assets/ui/habilidades/estabilizar.png" id="1_lf5qj"]
+[ext_resource type="Script" path="res://scripts/abilities/hab_estabilizar.gd" id="2_86pf6"]
 
 [resource]
-script = ExtResource("1_734j8")
+script = ExtResource("2_86pf6")
 nombre = "Estabilizar"
 accion = &"cancel"
 tecla = "RMB"
+icono = ExtResource("1_lf5qj")
 costo = 10.0
 enfriamiento = 1.2
 color = Color(0.8235294, 0.3137255, 0.23529412, 1)

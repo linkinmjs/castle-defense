@@ -1,116 +1,33 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/hud.gd" id="1_136eg"]
-[ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="2_oj5la"]
-[ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="3_gss2c"]
-[ext_resource type="Script" path="res://scripts/tarjeta_objetivo.gd" id="4_h022r"]
-[ext_resource type="Script" path="res://scripts/resumen_encuentro.gd" id="5_4jqwt"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="1_oj5la"]
+[ext_resource type="Theme" path="res://resources/ui/tema.tres" id="2_gss2c"]
+[ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="3_h022r"]
+[ext_resource type="Script" path="res://scripts/resumen_encuentro.gd" id="4_4jqwt"]
+[ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="5_kicr4"]
+[ext_resource type="Script" path="res://scripts/tarjeta_objetivo.gd" id="6_mj13f"]
 
-[node name="HUD" type="CanvasLayer" unique_id=200843849]
-script = ExtResource("1_136eg")
+[node name="HUD" type="CanvasLayer" unique_id=2127563573]
+script = ExtResource("1_oj5la")
 
-[node name="Raiz" type="Control" parent="." unique_id=1435158422]
+[node name="Raiz" type="Control" parent="." unique_id=952571032]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
+theme = ExtResource("2_gss2c")
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=588767397]
+[node name="Contadores" type="Label" parent="Raiz" unique_id=1044581615]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
 offset_top = 16.0
 offset_right = 24.0
 offset_bottom = 16.0
-theme_override_font_sizes/font_size = 20
-theme_override_colors/font_color = Color(0.88, 0.9, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
+theme_type_variation = &"Subtitulo"
 
-[node name="Aviso" type="Label" parent="Raiz" unique_id=226049961]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -196.0
-offset_right = 24.0
-offset_bottom = -196.0
-theme_override_font_sizes/font_size = 22
-theme_override_colors/font_color = Color(1, 0.92, 0.6, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-
-[node name="Slots" type="Control" parent="Raiz" unique_id=1212244954]
-unique_name_in_owner = true
-anchors_preset = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -166.0
-offset_right = 704.0
-offset_bottom = -104.0
-mouse_filter = 2
-script = ExtResource("2_oj5la")
-
-[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=56560647]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -88.0
-offset_right = 304.0
-offset_bottom = -61.0
-mouse_filter = 2
-show_percentage = false
-
-[node name="TextoVida" type="Label" parent="Raiz" unique_id=880356252]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 314.0
-offset_top = -90.0
-offset_right = 314.0
-offset_bottom = -90.0
-theme_override_font_sizes/font_size = 16
-theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-
-[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=1749970364]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_top = -62.0
-offset_right = 304.0
-offset_bottom = -35.0
-mouse_filter = 2
-show_percentage = false
-
-[node name="TextoMana" type="Label" parent="Raiz" unique_id=1617086325]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 314.0
-offset_top = -64.0
-offset_right = 314.0
-offset_bottom = -64.0
-theme_override_font_sizes/font_size = 16
-theme_override_colors/font_color = Color(0.9, 0.9, 0.95, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-
-[node name="Frente" type="Control" parent="Raiz" unique_id=1010408338]
+[node name="Frente" type="Control" parent="Raiz" unique_id=1738562935]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_left = 0.5
@@ -120,83 +37,122 @@ offset_top = 14.0
 offset_right = 200.0
 offset_bottom = 40.0
 mouse_filter = 2
-script = ExtResource("3_gss2c")
+script = ExtResource("3_h022r")
 
-[node name="Desenlace" type="Label" parent="Raiz" unique_id=1406161128]
+[node name="Encabezado" type="Label" parent="Raiz" unique_id=1938791506]
 unique_name_in_owner = true
-visible = false
 layout_mode = 0
 anchor_left = 0.5
-anchor_top = 0.5
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -172.0
-offset_right = 220.0
-offset_bottom = -52.0
-theme_override_font_sizes/font_size = 48
-theme_override_colors/font_color = Color(1, 0.95, 0.8, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
+offset_left = -320.0
+offset_top = 46.0
+offset_right = 320.0
+offset_bottom = 98.0
+theme_type_variation = &"Subtitulo"
 horizontal_alignment = 1
 
-[node name="Tarjeta" type="Control" parent="Raiz" unique_id=1103460853]
-unique_name_in_owner = true
-anchors_preset = 0
-anchor_left = 1.0
-anchor_top = 1.0
+[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=2087590389]
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -274.0
-offset_top = -190.0
-offset_right = -24.0
-offset_bottom = -30.0
 mouse_filter = 2
-script = ExtResource("4_h022r")
 
-[node name="Encabezado" type="Label" parent="Raiz" unique_id=1688108099]
-unique_name_in_owner = true
-layout_mode = 0
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -300.0
-offset_top = 46.0
-offset_right = 300.0
-offset_bottom = 98.0
-theme_override_font_sizes/font_size = 17
-theme_override_colors/font_color = Color(0.85, 0.88, 1, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-horizontal_alignment = 1
+[node name="ColumnaCentro" type="VBoxContainer" parent="Raiz/Centro" unique_id=929278715]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+alignment = 1
 
-[node name="Resumen" type="Control" parent="Raiz" unique_id=1900450431]
+[node name="Desenlace" type="Label" parent="Raiz/Centro/ColumnaCentro" unique_id=512010377]
 unique_name_in_owner = true
 visible = false
-anchors_preset = 0
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -260.0
-offset_top = -40.0
-offset_right = 260.0
-offset_bottom = 260.0
-mouse_filter = 2
-script = ExtResource("5_4jqwt")
+layout_mode = 2
+theme_type_variation = &"Titulo"
+theme_override_font_sizes/font_size = 48
+horizontal_alignment = 1
 
-[node name="Ayuda" type="Label" parent="Raiz" unique_id=1491023334]
+[node name="Resumen" type="PanelContainer" parent="Raiz/Centro/ColumnaCentro" unique_id=1223811473]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("4_4jqwt")
+
+[node name="Inferior" type="VBoxContainer" parent="Raiz" unique_id=476593509]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
-offset_top = -34.0
-offset_right = 24.0
-offset_bottom = -34.0
-theme_override_font_sizes/font_size = 15
-theme_override_colors/font_color = Color(0.7, 0.75, 0.85, 1)
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
-theme_override_constants/shadow_offset_x = 1
-theme_override_constants/shadow_offset_y = 1
-text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     R reiniciar"
+offset_bottom = -20.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Aviso" type="Label" parent="Raiz/Inferior" unique_id=911066943]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Aviso"
+
+[node name="Slots" type="PanelContainer" parent="Raiz/Inferior" unique_id=422880075]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 0
+mouse_filter = 2
+script = ExtResource("5_kicr4")
+
+[node name="BarraVidaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=962822876]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="BarraVida" type="ProgressBar" parent="Raiz/Inferior/BarraVidaFila" unique_id=1324546590]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 18)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"BarraVida"
+show_percentage = false
+
+[node name="TextoVida" type="Label" parent="Raiz/Inferior/BarraVidaFila" unique_id=1774326424]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Chico"
+vertical_alignment = 1
+
+[node name="BarraManaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=495985160]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="BarraMana" type="ProgressBar" parent="Raiz/Inferior/BarraManaFila" unique_id=1795449607]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 18)
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"BarraMana"
+show_percentage = false
+
+[node name="TextoMana" type="Label" parent="Raiz/Inferior/BarraManaFila" unique_id=698854730]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Chico"
+vertical_alignment = 1
+
+[node name="Ayuda" type="Label" parent="Raiz/Inferior" unique_id=1649299223]
+layout_mode = 2
+theme_type_variation = &"Chico"
+text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     Esc pausa"
+
+[node name="Tarjeta" type="PanelContainer" parent="Raiz" unique_id=1818204371]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -24.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+script = ExtResource("6_mj13f")

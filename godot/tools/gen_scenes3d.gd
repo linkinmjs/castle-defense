@@ -8,6 +8,7 @@ const PIXEL_SIZE := 2.0 / 68.0
 const RUTA_GRILLA := "res://assets/texturas/grilla.png"
 const DIR_HABILIDADES := "res://resources/habilidades3d"
 const DIR_SOLDADOS := "res://resources/soldados"
+const RUTA_TEMA := "res://resources/ui/tema.tres"
 
 
 func _initialize() -> void:
@@ -49,6 +50,7 @@ func _crear_habilidades() -> void:
 	curar.nombre = "Curar"
 	curar.tecla = "LMB"
 	curar.accion = &"select"
+	curar.icono = _icono("curar")
 	curar.costo = 25.0
 	curar.enfriamiento = 0.6
 	curar.objetivo = Habilidad.Objetivo.ALIADO
@@ -60,6 +62,7 @@ func _crear_habilidades() -> void:
 	estabilizar.nombre = "Estabilizar"
 	estabilizar.tecla = "RMB"
 	estabilizar.accion = &"cancel"
+	estabilizar.icono = _icono("estabilizar")
 	estabilizar.costo = 10.0
 	estabilizar.enfriamiento = 1.2
 	estabilizar.objetivo = Habilidad.Objetivo.ALIADO
@@ -70,6 +73,7 @@ func _crear_habilidades() -> void:
 	oleada.nombre = "Oleada"
 	oleada.tecla = "1"
 	oleada.accion = &"habilidad_1"
+	oleada.icono = _icono("oleada")
 	oleada.costo = 45.0
 	oleada.enfriamiento = 14.0
 	oleada.objetivo = Habilidad.Objetivo.AREA
@@ -82,6 +86,7 @@ func _crear_habilidades() -> void:
 	bendicion.nombre = "Bendicion"
 	bendicion.tecla = "2"
 	bendicion.accion = &"habilidad_2"
+	bendicion.icono = _icono("bendicion")
 	bendicion.costo = 35.0
 	bendicion.enfriamiento = 16.0
 	bendicion.objetivo = Habilidad.Objetivo.ALIADO
@@ -95,6 +100,7 @@ func _crear_habilidades() -> void:
 	impulso.nombre = "Impulso"
 	impulso.tecla = "Shift"
 	impulso.accion = &"dash"
+	impulso.icono = _icono("impulso")
 	impulso.costo = 12.0
 	impulso.enfriamiento = 4.0
 	impulso.objetivo = Habilidad.Objetivo.PROPIA
@@ -107,6 +113,7 @@ func _crear_habilidades() -> void:
 	reanimar.nombre = "Reanimar"
 	reanimar.tecla = "3"
 	reanimar.accion = &"habilidad_3"
+	reanimar.icono = _icono("reanimar")
 	reanimar.costo = 40.0
 	reanimar.enfriamiento = 6.0
 	reanimar.objetivo = Habilidad.Objetivo.ALIADO
@@ -168,6 +175,13 @@ func _guardar_tipo(recurso: Resource, archivo: String) -> void:
 	var ruta := "%s/%s" % [DIR_SOLDADOS, archivo]
 	var err := ResourceSaver.save(recurso, ruta)
 	print("%s -> %s" % [ruta, "OK" if err == OK else "ERROR %d" % err])
+
+
+## El icono es opcional: si todavia no se corrio extraer_ui.gd, la habilidad se
+## guarda sin el y el slot cae al nombre en texto.
+func _icono(nombre: String) -> Texture2D:
+	var ruta := "res://assets/ui/habilidades/%s.png" % nombre
+	return load(ruta) if ResourceLoader.exists(ruta) else null
 
 
 func _guardar_recurso(recurso: Resource, archivo: String) -> void:
@@ -296,44 +310,33 @@ func _crear_hud() -> void:
 	var hud := CanvasLayer.new()
 	hud.name = "HUD"
 	hud.set_script(load("res://scripts/hud.gd"))
+	# Explicito: el menu de pausa va en la 10 y tiene que quedar por encima.
+	hud.layer = 1
 
 	var raiz := Control.new()
 	raiz.name = "Raiz"
 	raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
 	# Todo el HUD ignora el mouse: los clicks tienen que llegar al campo.
 	raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	raiz.theme = load(RUTA_TEMA)
 	hud.add_child(raiz)
 	raiz.owner = hud
 
-	var contadores := _etiqueta("Contadores", 20, Color(0.88, 0.9, 1.0))
+	_hud_superior(raiz, hud)
+	_hud_centro(raiz, hud)
+	_hud_inferior(raiz, hud)
+	_hud_tarjeta(raiz, hud)
+
+	_guardar(hud, "res://scenes/ui/hud.tscn")
+
+
+## Arriba: los conteos a la izquierda y el frente al centro.
+func _hud_superior(raiz: Control, hud: Node) -> void:
+	var contadores := _etiqueta("Contadores", &"Subtitulo")
 	contadores.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	contadores.position = Vector2(24, 16)
-	raiz.add_child(contadores)
-	contadores.owner = hud
-	contadores.unique_name_in_owner = true
+	_colgar(raiz, contadores, hud, true)
 
-	var aviso := _etiqueta("Aviso", 22, Color(1.0, 0.92, 0.6))
-	aviso.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	aviso.position = Vector2(24, -196)
-	raiz.add_child(aviso)
-	aviso.owner = hud
-	aviso.unique_name_in_owner = true
-
-	var slots := Control.new()
-	slots.name = "Slots"
-	slots.set_script(load("res://scripts/slots_habilidades.gd"))
-	slots.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	slots.position = Vector2(24, -166)
-	slots.size = Vector2(680, 62)
-	slots.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	raiz.add_child(slots)
-	slots.owner = hud
-	slots.unique_name_in_owner = true
-
-	_barra(raiz, hud, "BarraVida", "TextoVida", -88)
-	_barra(raiz, hud, "BarraMana", "TextoMana", -62)
-
-	# Tira y afloja del frente, arriba al centro.
 	var frente := Control.new()
 	frente.name = "Frente"
 	frente.set_script(load("res://scripts/indicador_frente.gd"))
@@ -341,98 +344,136 @@ func _crear_hud() -> void:
 	frente.position = Vector2(-200, 14)
 	frente.size = Vector2(400, 26)
 	frente.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	raiz.add_child(frente)
-	frente.owner = hud
-	frente.unique_name_in_owner = true
+	_colgar(raiz, frente, hud, true)
 
-	var desenlace := _etiqueta("Desenlace", 48, Color(1.0, 0.95, 0.8))
-	desenlace.set_anchors_preset(Control.PRESET_CENTER)
+	# Titulo del encuentro y que enseña, debajo del indicador de frente.
+	var encabezado := _etiqueta("Encabezado", &"Subtitulo")
+	encabezado.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	encabezado.position = Vector2(-320, 46)
+	encabezado.size = Vector2(640, 52)
+	_colgar(raiz, encabezado, hud, true)
+
+
+## El centro se usa solo al terminar: el cartel y, debajo, el informe.
+func _hud_centro(raiz: Control, hud: Node) -> void:
+	var centro := CenterContainer.new()
+	centro.name = "Centro"
+	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
+	centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_colgar(raiz, centro, hud)
+
+	var columna := VBoxContainer.new()
+	columna.name = "ColumnaCentro"
+	columna.add_theme_constant_override("separation", 12)
+	columna.alignment = BoxContainer.ALIGNMENT_CENTER
+	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_colgar(centro, columna, hud)
+
+	var desenlace := _etiqueta("Desenlace", &"Titulo")
 	desenlace.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	# Arriba del resumen, que sale en el centro: el cartel dice como termino y
-	# el informe, justo debajo, por que.
-	desenlace.position = Vector2(-220, -172)
-	desenlace.size = Vector2(440, 120)
+	desenlace.add_theme_font_size_override("font_size", 48)
 	desenlace.visible = false
-	raiz.add_child(desenlace)
-	desenlace.owner = hud
-	desenlace.unique_name_in_owner = true
+	_colgar(columna, desenlace, hud, true)
 
-	# Ficha del apuntado, a la derecha para no taparse con los slots ni con la
-	# linea de combate, que pasa por el centro.
-	var tarjeta := Control.new()
+	var resumen := PanelContainer.new()
+	resumen.name = "Resumen"
+	resumen.set_script(load("res://scripts/resumen_encuentro.gd"))
+	resumen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	resumen.visible = false
+	_colgar(columna, resumen, hud, true)
+
+
+## Abajo a la izquierda: estado del healer, sus acciones y la ayuda.
+func _hud_inferior(raiz: Control, hud: Node) -> void:
+	var columna := VBoxContainer.new()
+	columna.name = "Inferior"
+	# Anclado abajo a la izquierda y creciendo hacia arriba: asi el bloque se
+	# acomoda solo cuando un encuentro equipa mas o menos habilidades.
+	columna.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	columna.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	# Offsets y no position: con position el contenedor arranca ahi y se apila
+	# hacia abajo, saliendose de la pantalla. Fijando el borde de abajo, crece
+	# hacia arriba y el bloque entero queda apoyado sobre el margen inferior.
+	columna.offset_left = 24
+	columna.offset_bottom = -20
+	columna.add_theme_constant_override("separation", 6)
+	columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_colgar(raiz, columna, hud)
+
+	var aviso := _etiqueta("Aviso", &"Aviso")
+	_colgar(columna, aviso, hud, true)
+
+	var slots := PanelContainer.new()
+	slots.name = "Slots"
+	slots.set_script(load("res://scripts/slots_habilidades.gd"))
+	# Que mida lo que ocupan sus slots y no todo el ancho de la columna, que lo
+	# fija el renglon de ayuda.
+	slots.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	slots.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_colgar(columna, slots, hud, true)
+
+	_barra(columna, hud, "BarraVida", "TextoVida", &"BarraVida")
+	_barra(columna, hud, "BarraMana", "TextoMana", &"BarraMana")
+
+	var ayuda := _etiqueta("Ayuda", &"Chico")
+	ayuda.text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     Esc pausa"
+	_colgar(columna, ayuda, hud)
+
+
+## La ficha del apuntado, abajo a la derecha: lejos de los slots y del centro,
+## que es por donde pasa la linea de combate.
+func _hud_tarjeta(raiz: Control, hud: Node) -> void:
+	var tarjeta := PanelContainer.new()
 	tarjeta.name = "Tarjeta"
 	tarjeta.set_script(load("res://scripts/tarjeta_objetivo.gd"))
 	tarjeta.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	tarjeta.position = Vector2(-274, -190)
-	tarjeta.size = Vector2(250, 160)
+	tarjeta.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	tarjeta.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	tarjeta.offset_right = -24
+	tarjeta.offset_bottom = -20
 	tarjeta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	raiz.add_child(tarjeta)
-	tarjeta.owner = hud
-	tarjeta.unique_name_in_owner = true
-
-	# Titulo y objetivo del encuentro, al empezar.
-	var encabezado := _etiqueta("Encabezado", 17, Color(0.85, 0.88, 1.0))
-	encabezado.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	encabezado.position = Vector2(-300, 46)
-	encabezado.size = Vector2(600, 52)
-	raiz.add_child(encabezado)
-	encabezado.owner = hud
-	encabezado.unique_name_in_owner = true
-
-	# Resumen de fin de encuentro: lo que paso y por que.
-	var resumen := Control.new()
-	resumen.name = "Resumen"
-	resumen.set_script(load("res://scripts/resumen_encuentro.gd"))
-	resumen.set_anchors_preset(Control.PRESET_CENTER)
-	resumen.position = Vector2(-260, -40)
-	resumen.size = Vector2(520, 300)
-	resumen.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	resumen.visible = false
-	raiz.add_child(resumen)
-	resumen.owner = hud
-	resumen.unique_name_in_owner = true
-
-	var ayuda := _etiqueta("Ayuda", 15, Color(0.7, 0.75, 0.85))
-	ayuda.text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     R reiniciar"
-	ayuda.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	ayuda.position = Vector2(24, -34)
-	raiz.add_child(ayuda)
-	ayuda.owner = hud
-
-	_guardar(hud, "res://scenes/ui/hud.tscn")
+	_colgar(raiz, tarjeta, hud, true)
 
 
-func _barra(raiz: Control, hud: Node, nombre: String, nombre_texto: String, y: float) -> void:
+## Una barra con su numero al lado.
+func _barra(columna: Control, hud: Node, nombre: String, nombre_texto: String,
+		variacion: StringName) -> void:
+	var fila := HBoxContainer.new()
+	fila.name = nombre + "Fila"
+	fila.add_theme_constant_override("separation", 10)
+	fila.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_colgar(columna, fila, hud)
+
 	var barra := ProgressBar.new()
 	barra.name = nombre
-	barra.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	barra.position = Vector2(24, y)
-	barra.size = Vector2(280, 18)
+	barra.theme_type_variation = variacion
+	barra.custom_minimum_size = Vector2(280, 18)
 	barra.show_percentage = false
 	barra.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	raiz.add_child(barra)
-	barra.owner = hud
-	barra.unique_name_in_owner = true
+	_colgar(fila, barra, hud, true)
 
-	var texto := _etiqueta(nombre_texto, 16, Color(0.9, 0.9, 0.95))
-	texto.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	texto.position = Vector2(314, y - 2)
-	raiz.add_child(texto)
-	texto.owner = hud
-	texto.unique_name_in_owner = true
+	var texto := _etiqueta(nombre_texto, &"Chico")
+	texto.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_colgar(fila, texto, hud, true)
 
 
-func _etiqueta(nombre: String, tamano: int, color: Color) -> Label:
+## Los colores y tamanos ya no se repiten por nodo: los pone el tema, y la
+## variacion dice para que sirve cada etiqueta.
+func _etiqueta(nombre: String, variacion: StringName) -> Label:
 	var etiqueta := Label.new()
 	etiqueta.name = nombre
+	etiqueta.theme_type_variation = variacion
 	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	etiqueta.add_theme_font_size_override("font_size", tamano)
-	etiqueta.add_theme_color_override("font_color", color)
-	etiqueta.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
-	etiqueta.add_theme_constant_override("shadow_offset_x", 1)
-	etiqueta.add_theme_constant_override("shadow_offset_y", 1)
 	return etiqueta
+
+
+func _colgar(padre: Node, nodo: Node, duenio: Node, unico: bool = false) -> void:
+	padre.add_child(nodo)
+	nodo.owner = duenio
+	if unico:
+		nodo.unique_name_in_owner = true
+
 
 
 func _crear_battle() -> void:

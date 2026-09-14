@@ -20,6 +20,9 @@ enum Objetivo {
 @export var accion: StringName = &""
 ## Etiqueta de la tecla, solo para mostrar en el HUD.
 @export var tecla: String = ""
+## Dibujo del slot. Opcional: sin icono el slot muestra el nombre y listo, asi
+## el juego sigue armandose aunque no se hayan extraido los assets de UI.
+@export var icono: Texture2D
 @export var costo: float = 0.0
 @export var enfriamiento: float = 1.0
 @export var objetivo: Objetivo = Objetivo.ALIADO
