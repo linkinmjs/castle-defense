@@ -1,0 +1,131 @@
+[gd_scene format=3]
+
+[ext_resource type="Theme" path="res://resources/ui/tema.tres" id="1_fh6ra"]
+[ext_resource type="Script" path="res://scripts/ui/menu_principal.gd" id="2_g2cyh"]
+[ext_resource type="Script" path="res://scripts/ui/panel_opciones.gd" id="3_3exxb"]
+
+[node name="MenuPrincipal" type="Control" unique_id=668022463]
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme = ExtResource("1_fh6ra")
+script = ExtResource("2_g2cyh")
+
+[node name="Fondo" type="ColorRect" parent="." unique_id=172427352]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.08627451, 0.101960786, 0.15294118, 1)
+
+[node name="Centro" type="CenterContainer" parent="." unique_id=762868910]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Centro" unique_id=1958394307]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+theme_type_variation = &"PanelMenu"
+
+[node name="Columna" type="VBoxContainer" parent="Centro/Panel" unique_id=6230079]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Titulo" type="Label" parent="Centro/Panel/Columna" unique_id=1951231512]
+layout_mode = 2
+theme_type_variation = &"TituloPanel"
+text = "CASTLE DEFENSE"
+horizontal_alignment = 1
+
+[node name="Bajada" type="Label" parent="Centro/Panel/Columna" unique_id=807575971]
+layout_mode = 2
+theme_type_variation = &"SobrePanel"
+text = "Sos el medico de una batalla que no controlas.
+No podes salvar a todos."
+horizontal_alignment = 1
+
+[node name="Botonera" type="VBoxContainer" parent="Centro/Panel/Columna" unique_id=160227866]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Jugar" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=1364621224]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Jugar"
+
+[node name="Lecciones_boton" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=1877355297]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Lecciones"
+
+[node name="Opciones_boton" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=456886617]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Opciones"
+
+[node name="Salir" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=1105343820]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Salir"
+
+[node name="Lecciones" type="VBoxContainer" parent="Centro/Panel/Columna" unique_id=771745213]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ListaLecciones" type="VBoxContainer" parent="Centro/Panel/Columna/Lecciones" unique_id=2080918964]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="VolverLecciones" type="Button" parent="Centro/Panel/Columna/Lecciones" unique_id=994514222]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Volver"
+
+[node name="Opciones" type="VBoxContainer" parent="Centro/Panel/Columna" unique_id=27341310]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 10
+script = ExtResource("3_3exxb")
+
+[node name="PantallaCompleta" type="Button" parent="Centro/Panel/Columna/Opciones" unique_id=409432584]
+unique_name_in_owner = true
+layout_mode = 2
+toggle_mode = true
+text = "Pantalla completa: no"
+
+[node name="FilaResolucion" type="HBoxContainer" parent="Centro/Panel/Columna/Opciones" unique_id=1702949488]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Anterior" type="Button" parent="Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=710097401]
+unique_name_in_owner = true
+layout_mode = 2
+text = "<"
+
+[node name="Resolucion" type="Label" parent="Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=2132772511]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+theme_type_variation = &"SobrePanel"
+text = "1280 x 720"
+horizontal_alignment = 1
+
+[node name="Siguiente" type="Button" parent="Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=1350612630]
+unique_name_in_owner = true
+layout_mode = 2
+text = ">"
+
+[node name="Volver" type="Button" parent="Centro/Panel/Columna/Opciones" unique_id=1177074437]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Volver"

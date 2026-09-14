@@ -122,6 +122,13 @@ func _ready() -> void:
 	if campana == null and encuentro == null and ResourceLoader.exists(RUTA_CAMPANA):
 		campana = load(RUTA_CAMPANA)
 
+	var pausa := get_node_or_null("%MenuPausa")
+	if pausa != null:
+		pausa.seguir_batalla(self)
+
+	# Por que leccion arrancar lo deja anotado el menu. Sin anotacion (pruebas,
+	# F6 sobre esta escena) arranca por la primera, como siempre.
+	indice_encuentro = Navegacion.encuentro_pedido(get_tree())
 	iniciar_encuentro(_primer_encuentro())
 
 

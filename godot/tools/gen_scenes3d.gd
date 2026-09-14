@@ -499,6 +499,17 @@ func _crear_battle() -> void:
 	hud.owner = battle
 	hud.unique_name_in_owner = true
 
+	# El menu de pausa va por encima del HUD y arranca invisible. Si todavia no
+	# se genero (proyecto recien clonado, sin correr gen_ui), la batalla se
+	# arma igual y simplemente no hay pausa.
+	if ResourceLoader.exists("res://scenes/ui/menu_pausa.tscn"):
+		var escena_pausa: PackedScene = load("res://scenes/ui/menu_pausa.tscn")
+		var pausa := escena_pausa.instantiate()
+		pausa.name = "MenuPausa"
+		battle.add_child(pausa)
+		pausa.owner = battle
+		pausa.unique_name_in_owner = true
+
 	_guardar(battle, "res://scenes/3d/battle3d.tscn")
 
 

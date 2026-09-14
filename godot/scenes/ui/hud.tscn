@@ -6,17 +6,17 @@
 [ext_resource type="Script" path="res://scripts/tarjeta_objetivo.gd" id="4_h022r"]
 [ext_resource type="Script" path="res://scripts/resumen_encuentro.gd" id="5_4jqwt"]
 
-[node name="HUD" type="CanvasLayer" unique_id=1449975330]
+[node name="HUD" type="CanvasLayer" unique_id=200843849]
 script = ExtResource("1_136eg")
 
-[node name="Raiz" type="Control" parent="." unique_id=927566370]
+[node name="Raiz" type="Control" parent="." unique_id=1435158422]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=273630886]
+[node name="Contadores" type="Label" parent="Raiz" unique_id=588767397]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
@@ -29,7 +29,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Aviso" type="Label" parent="Raiz" unique_id=311806400]
+[node name="Aviso" type="Label" parent="Raiz" unique_id=226049961]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -44,7 +44,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Slots" type="Control" parent="Raiz" unique_id=444795920]
+[node name="Slots" type="Control" parent="Raiz" unique_id=1212244954]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_top = 1.0
@@ -56,7 +56,7 @@ offset_bottom = -104.0
 mouse_filter = 2
 script = ExtResource("2_oj5la")
 
-[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=1751661712]
+[node name="BarraVida" type="ProgressBar" parent="Raiz" unique_id=56560647]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -68,7 +68,7 @@ offset_bottom = -61.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="TextoVida" type="Label" parent="Raiz" unique_id=1340956894]
+[node name="TextoVida" type="Label" parent="Raiz" unique_id=880356252]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -83,7 +83,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=140979428]
+[node name="BarraMana" type="ProgressBar" parent="Raiz" unique_id=1749970364]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -95,7 +95,7 @@ offset_bottom = -35.0
 mouse_filter = 2
 show_percentage = false
 
-[node name="TextoMana" type="Label" parent="Raiz" unique_id=1645349628]
+[node name="TextoMana" type="Label" parent="Raiz" unique_id=1617086325]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_top = 1.0
@@ -110,7 +110,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 
-[node name="Frente" type="Control" parent="Raiz" unique_id=1263397908]
+[node name="Frente" type="Control" parent="Raiz" unique_id=1010408338]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_left = 0.5
@@ -122,7 +122,7 @@ offset_bottom = 40.0
 mouse_filter = 2
 script = ExtResource("3_gss2c")
 
-[node name="Desenlace" type="Label" parent="Raiz" unique_id=756913574]
+[node name="Desenlace" type="Label" parent="Raiz" unique_id=1406161128]
 unique_name_in_owner = true
 visible = false
 layout_mode = 0
@@ -141,7 +141,7 @@ theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 horizontal_alignment = 1
 
-[node name="Tarjeta" type="Control" parent="Raiz" unique_id=1844467524]
+[node name="Tarjeta" type="Control" parent="Raiz" unique_id=1103460853]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_left = 1.0
@@ -155,7 +155,7 @@ offset_bottom = -30.0
 mouse_filter = 2
 script = ExtResource("4_h022r")
 
-[node name="Encabezado" type="Label" parent="Raiz" unique_id=1289644044]
+[node name="Encabezado" type="Label" parent="Raiz" unique_id=1688108099]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_left = 0.5
@@ -171,7 +171,7 @@ theme_override_constants/shadow_offset_x = 1
 theme_override_constants/shadow_offset_y = 1
 horizontal_alignment = 1
 
-[node name="Resumen" type="Control" parent="Raiz" unique_id=853713318]
+[node name="Resumen" type="Control" parent="Raiz" unique_id=1900450431]
 unique_name_in_owner = true
 visible = false
 anchors_preset = 0
@@ -186,7 +186,7 @@ offset_bottom = 260.0
 mouse_filter = 2
 script = ExtResource("5_4jqwt")
 
-[node name="Ayuda" type="Label" parent="Raiz" unique_id=75502967]
+[node name="Ayuda" type="Label" parent="Raiz" unique_id=1491023334]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
