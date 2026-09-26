@@ -1,136 +1,246 @@
 [gd_scene format=3]
 
-[ext_resource type="Theme" path="res://resources/ui/tema.tres" id="1_fh6ra"]
-[ext_resource type="Script" path="res://scripts/ui/menu_principal.gd" id="2_g2cyh"]
-[ext_resource type="Script" path="res://scripts/ui/panel_opciones.gd" id="3_3exxb"]
+[ext_resource type="Theme" path="res://resources/ui/tema.tres" id="1_5xhmr"]
+[ext_resource type="Script" path="res://scripts/ui/menu_principal.gd" id="2_imway"]
+[ext_resource type="Texture2D" path="res://assets/fondos/cielo.png" id="3_0glb0"]
+[ext_resource type="Texture2D" path="res://assets/fondos/montanas.png" id="4_jotn3"]
+[ext_resource type="Texture2D" path="res://assets/fondos/castillo.png" id="5_pkfpr"]
+[ext_resource type="Texture2D" path="res://assets/fondos/arboles.png" id="6_nh8uh"]
+[ext_resource type="Script" path="res://scripts/ui/panel_opciones.gd" id="7_h1hbe"]
 
-[node name="MenuPrincipal" type="Control" unique_id=1569449044]
+[node name="MenuPrincipal" type="Control" unique_id=1771738435]
 layout_mode = 3
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-theme = ExtResource("1_fh6ra")
-script = ExtResource("2_g2cyh")
+theme = ExtResource("1_5xhmr")
+script = ExtResource("2_imway")
 
-[node name="Fondo" type="ColorRect" parent="." unique_id=1554271712]
+[node name="Fondo" type="Control" parent="." unique_id=533220306]
+unique_name_in_owner = true
+clip_contents = true
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Base" type="ColorRect" parent="Fondo" unique_id=555571748]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 color = Color(0.08627451, 0.101960786, 0.15294118, 1)
 
-[node name="Centro" type="CenterContainer" parent="." unique_id=2090672176]
+[node name="Cielo" type="TextureRect" parent="Fondo" unique_id=961319255]
+unique_name_in_owner = true
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
+texture = ExtResource("3_0glb0")
+expand_mode = 1
 
-[node name="Panel" type="PanelContainer" parent="Centro" unique_id=1473356569]
-custom_minimum_size = Vector2(460, 0)
-layout_mode = 2
-theme_type_variation = &"PanelMenu"
+[node name="Montanas" type="TextureRect" parent="Fondo" unique_id=1942260878]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -352.0
+offset_right = 1024.0
+offset_bottom = -96.0
+scale = Vector2(2, 2)
+pivot_offset_ratio = Vector2(0, 1)
+mouse_filter = 2
+texture = ExtResource("4_jotn3")
+expand_mode = 1
+stretch_mode = 1
 
-[node name="Columna" type="VBoxContainer" parent="Centro/Panel" unique_id=1515349045]
-layout_mode = 2
-theme_override_constants/separation = 14
+[node name="Castillo" type="TextureRect" parent="Fondo" unique_id=1469295301]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -312.0
+offset_right = 1024.0
+offset_bottom = -56.0
+scale = Vector2(2, 2)
+pivot_offset_ratio = Vector2(0, 1)
+mouse_filter = 2
+texture = ExtResource("5_pkfpr")
+expand_mode = 1
+stretch_mode = 1
 
-[node name="Titulo" type="Label" parent="Centro/Panel/Columna" unique_id=1622922830]
+[node name="Arboles" type="TextureRect" parent="Fondo" unique_id=1302400961]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -192.0
+offset_right = 1024.0
+scale = Vector2(2, 2)
+pivot_offset_ratio = Vector2(0, 1)
+mouse_filter = 2
+texture = ExtResource("6_nh8uh")
+expand_mode = 1
+stretch_mode = 1
+
+[node name="Contenido" type="VBoxContainer" parent="." unique_id=1728823465]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 36.0
+offset_bottom = -24.0
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Titulo" type="Label" parent="Contenido" unique_id=1521878349]
+unique_name_in_owner = true
 layout_mode = 2
-theme_type_variation = &"TituloPanel"
+theme_type_variation = &"TituloGrande"
 text = "CASTLE DEFENSE"
 horizontal_alignment = 1
 
-[node name="Bajada" type="Label" parent="Centro/Panel/Columna" unique_id=89722513]
+[node name="Bajada" type="Label" parent="Contenido" unique_id=653836681]
+unique_name_in_owner = true
 layout_mode = 2
-theme_type_variation = &"SobrePanel"
-text = "Sos el medico de una batalla que no controlas.
-No podes salvar a todos."
+theme_type_variation = &"Subtitulo"
+text = "Sos el medico de una batalla que no controlas. No podes salvar a todos."
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="Botonera" type="VBoxContainer" parent="Centro/Panel/Columna" unique_id=1481266065]
+[node name="Centro" type="CenterContainer" parent="Contenido" unique_id=194961267]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Contenido/Centro" unique_id=667899430]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_type_variation = &"PanelMenu"
+
+[node name="Columna" type="VBoxContainer" parent="Contenido/Centro/Panel" unique_id=190553695]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Botonera" type="VBoxContainer" parent="Contenido/Centro/Panel/Columna" unique_id=765355261]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Jugar" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=922272050]
+[node name="Jugar" type="Button" parent="Contenido/Centro/Panel/Columna/Botonera" unique_id=340313458]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Jugar"
 
-[node name="Jugadores" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=11345414]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Jugadores: 1"
-
-[node name="Lecciones_boton" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=796103196]
+[node name="Lecciones_boton" type="Button" parent="Contenido/Centro/Panel/Columna/Botonera" unique_id=2036838583]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Lecciones"
 
-[node name="Opciones_boton" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=1296224018]
+[node name="Jugadores" type="Button" parent="Contenido/Centro/Panel/Columna/Botonera" unique_id=453394366]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Jugadores: 1"
+
+[node name="Controles_boton" type="Button" parent="Contenido/Centro/Panel/Columna/Botonera" unique_id=541911057]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Controles"
+
+[node name="Opciones_boton" type="Button" parent="Contenido/Centro/Panel/Columna/Botonera" unique_id=827107330]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Opciones"
 
-[node name="Salir" type="Button" parent="Centro/Panel/Columna/Botonera" unique_id=206058960]
+[node name="Salir" type="Button" parent="Contenido/Centro/Panel/Columna/Botonera" unique_id=895501572]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Salir"
 
-[node name="Lecciones" type="VBoxContainer" parent="Centro/Panel/Columna" unique_id=978122834]
+[node name="Lecciones" type="VBoxContainer" parent="Contenido/Centro/Panel/Columna" unique_id=638634958]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="ListaLecciones" type="VBoxContainer" parent="Centro/Panel/Columna/Lecciones" unique_id=63154956]
+[node name="ListaLecciones" type="VBoxContainer" parent="Contenido/Centro/Panel/Columna/Lecciones" unique_id=2125567696]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="VolverLecciones" type="Button" parent="Centro/Panel/Columna/Lecciones" unique_id=831349633]
+[node name="VolverLecciones" type="Button" parent="Contenido/Centro/Panel/Columna/Lecciones" unique_id=21728198]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Volver"
 
-[node name="Opciones" type="VBoxContainer" parent="Centro/Panel/Columna" unique_id=1568950924]
+[node name="Controles" type="VBoxContainer" parent="Contenido/Centro/Panel/Columna" unique_id=540572495]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TablaControles" type="GridContainer" parent="Contenido/Centro/Panel/Columna/Controles" unique_id=387361510]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/h_separation = 18
+theme_override_constants/v_separation = 6
+columns = 3
+
+[node name="PieControles" type="Label" parent="Contenido/Centro/Panel/Columna/Controles" unique_id=1722746542]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"ChicoPanel"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="VolverControles" type="Button" parent="Contenido/Centro/Panel/Columna/Controles" unique_id=347890053]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Volver"
+
+[node name="Opciones" type="VBoxContainer" parent="Contenido/Centro/Panel/Columna" unique_id=2101073812]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
-script = ExtResource("3_3exxb")
+script = ExtResource("7_h1hbe")
 
-[node name="PantallaCompleta" type="Button" parent="Centro/Panel/Columna/Opciones" unique_id=153918060]
+[node name="PantallaCompleta" type="Button" parent="Contenido/Centro/Panel/Columna/Opciones" unique_id=1778371300]
 unique_name_in_owner = true
 layout_mode = 2
 toggle_mode = true
 text = "Pantalla completa: no"
 
-[node name="FilaResolucion" type="HBoxContainer" parent="Centro/Panel/Columna/Opciones" unique_id=1348323889]
+[node name="FilaResolucion" type="HBoxContainer" parent="Contenido/Centro/Panel/Columna/Opciones" unique_id=426681382]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Anterior" type="Button" parent="Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=1522691702]
+[node name="Anterior" type="Button" parent="Contenido/Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=1768418911]
 unique_name_in_owner = true
 layout_mode = 2
 text = "<"
 
-[node name="Resolucion" type="Label" parent="Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=562046746]
+[node name="Resolucion" type="Label" parent="Contenido/Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=831344488]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(176, 0)
 layout_mode = 2
 theme_type_variation = &"SobrePanel"
 text = "1280 x 720"
 horizontal_alignment = 1
 
-[node name="Siguiente" type="Button" parent="Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=88079744]
+[node name="Siguiente" type="Button" parent="Contenido/Centro/Panel/Columna/Opciones/FilaResolucion" unique_id=2058182231]
 unique_name_in_owner = true
 layout_mode = 2
 text = ">"
 
-[node name="Volver" type="Button" parent="Centro/Panel/Columna/Opciones" unique_id=1658629082]
+[node name="Volver" type="Button" parent="Contenido/Centro/Panel/Columna/Opciones" unique_id=120716851]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Volver"

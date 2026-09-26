@@ -26,6 +26,21 @@ const PANEL_OPCIONES := "res://assets/ui/panel_opciones.png"
 const PANEL_DESENLACE := "res://assets/ui/panel_desenlace.png"
 const PANEL_FICHA := "res://assets/ui/panel_ficha.png"
 
+# --- Cuerpos de letra ---------------------------------------------------------
+# Pixelify Sans esta dibujada en una grilla de 11 pixeles por em (el pixel de
+# diseno mide ~90.5 unidades de 1000). Sin suavizado, solo los multiplos de
+# 11 caen enteros en esa grilla: a 16 o a 24 cada pixel de la letra sale de
+# uno o de dos pixeles de pantalla segun donde caiga, y la letra se ve
+# despareja. A 1920x1080 el lienzo escala 1.5, asi que los multiplos de 22
+# siguen enteros alla tambien (22 -> 33, 44 -> 66).
+const CHICO := 11
+const NORMAL := 22
+const GRANDE := 44
+const ENORME := 66
+## Un pixel de la fuente, para las sombras: la sombra corre un pixel de
+## diseno, sea cual sea el cuerpo.
+const PIXEL_FUENTE := 11
+
 # --- Regiones en 1x -----------------------------------------------------------
 # Los botones del pack traen el texto en ingles dibujado encima (RESUME, QUIT).
 # Estos cuatro son los que estan en blanco: el texto lo pone el Button.
@@ -62,7 +77,31 @@ const TINTA := Color(0.94, 0.95, 1.0)
 const TINTA_TENUE := Color(0.72, 0.76, 0.88)
 ## El texto sobre los paneles de madera va oscuro: el relleno es crema.
 const TINTA_PANEL := Color(0.13, 0.09, 0.05)
+const TINTA_PANEL_TENUE := Color(0.13, 0.09, 0.05, 0.7)
+## Las metas del resumen, sobre el crema: el verde y el rojo claros del HUD
+## ahi no se leen.
+const META_CUMPLIDA := Color("2e6a2a")
+const META_FALLIDA := Color("8e2e1e")
 const SOMBRA := Color(0, 0, 0, 0.8)
+## Borde de barras y paneles del HUD: un pixel de la hoja del pack (2 px).
+const BORDE_HUD := 2
+const BORDE_OSCURO := Color(0, 0, 0, 0.85)
+
+# --- Menu principal -----------------------------------------------------------
+## El panel de madera mide lo mismo en todas sus vistas: si cambiara de ancho
+## al pasar de la botonera a los controles, el menu saltaria. Lo que manda es
+## la tabla de controles, la vista mas ancha.
+const ANCHO_PANEL_MENU := 560.0
+## El atardecer del campo, en capas: el cielo se estira y las demas se
+## repiten en X. Cada una se dibuja al doble, como todo el pixel art del
+## juego, y se apoya a `base` px del borde de abajo.
+const CIELO := "res://assets/fondos/cielo.png"
+const CAPAS_FONDO: Array[Dictionary] = [
+	{"nombre": "Montanas", "ruta": "res://assets/fondos/montanas.png", "base": 96.0},
+	{"nombre": "Castillo", "ruta": "res://assets/fondos/castillo.png", "base": 56.0},
+	{"nombre": "Arboles", "ruta": "res://assets/fondos/arboles.png", "base": 0.0},
+]
+const ESCALA_FONDO := 2.0
 
 
 func _initialize() -> void:
@@ -90,6 +129,9 @@ func _initialize() -> void:
 
 # --- Escenas ------------------------------------------------------------------
 
+## Titulo y bajada arriba, sobre el cielo; debajo el panel de madera, donde se
+## turnan las vistas (botonera, lecciones, controles, opciones). Detras, el
+## atardecer del campo en capas que menu_principal.gd corre despacio.
 func _crear_menu_principal(tema: Theme) -> void:
 	var raiz := Control.new()
 	raiz.name = "MenuPrincipal"
@@ -97,55 +139,61 @@ func _crear_menu_principal(tema: Theme) -> void:
 	raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
 	raiz.theme = tema
 
-	var fondo := ColorRect.new()
-	fondo.name = "Fondo"
-	fondo.color = FONDO
-	fondo.set_anchors_preset(Control.PRESET_FULL_RECT)
-	fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hijo(raiz, fondo, raiz)
+	_fondo_vivo(raiz)
 
-	var centro := CenterContainer.new()
-	centro.name = "Centro"
-	centro.set_anchors_preset(Control.PRESET_FULL_RECT)
-	centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_hijo(raiz, centro, raiz)
-
-	var panel := PanelContainer.new()
-	panel.name = "Panel"
-	panel.theme_type_variation = &"PanelMenu"
-	panel.custom_minimum_size = Vector2(460, 0)
-	_hijo(centro, panel, raiz)
-
-	var columna := VBoxContainer.new()
-	columna.name = "Columna"
-	columna.add_theme_constant_override("separation", 14)
-	_hijo(panel, columna, raiz)
+	var contenido := VBoxContainer.new()
+	contenido.name = "Contenido"
+	contenido.set_anchors_preset(Control.PRESET_FULL_RECT)
+	contenido.offset_top = 36
+	contenido.offset_bottom = -24
+	contenido.add_theme_constant_override("separation", 4)
+	contenido.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hijo(raiz, contenido, raiz)
 
 	var titulo := Label.new()
 	titulo.name = "Titulo"
 	titulo.text = "CASTLE DEFENSE"
-	titulo.theme_type_variation = &"TituloPanel"
+	titulo.theme_type_variation = &"TituloGrande"
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hijo(columna, titulo, raiz)
+	_hijo(contenido, titulo, raiz, true)
 
 	var bajada := Label.new()
 	bajada.name = "Bajada"
-	bajada.text = "Sos el medico de una batalla que no controlas.
-No podes salvar a todos."
-	bajada.theme_type_variation = &"SobrePanel"
+	bajada.text = "Sos el medico de una batalla que no controlas. No podes salvar a todos."
+	bajada.theme_type_variation = &"Subtitulo"
 	bajada.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_hijo(columna, bajada, raiz)
+	bajada.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hijo(contenido, bajada, raiz, true)
 
-	# Las tres vistas se turnan en el mismo hueco: botonera, lecciones, opciones.
+	var centro := CenterContainer.new()
+	centro.name = "Centro"
+	centro.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hijo(contenido, centro, raiz)
+
+	var panel := PanelContainer.new()
+	panel.name = "Panel"
+	panel.theme_type_variation = &"PanelMenu"
+	panel.custom_minimum_size = Vector2(ANCHO_PANEL_MENU, 0)
+	_hijo(centro, panel, raiz, true)
+
+	var columna := VBoxContainer.new()
+	columna.name = "Columna"
+	columna.add_theme_constant_override("separation", 10)
+	_hijo(panel, columna, raiz)
+
+	# Las vistas se turnan en el mismo hueco: botonera, lecciones, controles y
+	# opciones.
 	var botonera := VBoxContainer.new()
 	botonera.name = "Botonera"
 	botonera.add_theme_constant_override("separation", 8)
 	_hijo(columna, botonera, raiz, true)
 	_boton(botonera, raiz, "Jugar", "Jugar")
-	# Cuantos juegan, al lado de Jugar: es lo que se decide antes de arrancar.
-	# El texto lo pone menu_principal.gd con lo que este anotado.
-	_boton(botonera, raiz, "Jugadores", "Jugadores: 1")
 	_boton(botonera, raiz, "Lecciones_boton", "Lecciones")
+	# Cuantos juegan, antes de los controles: es lo que se decide antes de
+	# arrancar. El texto lo pone menu_principal.gd con lo que este anotado.
+	_boton(botonera, raiz, "Jugadores", "Jugadores: 1")
+	_boton(botonera, raiz, "Controles_boton", "Controles")
 	_boton(botonera, raiz, "Opciones_boton", "Opciones")
 	_boton(botonera, raiz, "Salir", "Salir")
 
@@ -160,9 +208,92 @@ No podes salvar a todos."
 	_hijo(lecciones, lista, raiz, true)
 	_boton(lecciones, raiz, "VolverLecciones", "Volver")
 
+	_armar_controles(columna, raiz)
 	_armar_opciones(columna, raiz, "Opciones")
 
 	_guardar_escena(raiz, "%s/menu_principal.tscn" % DIR_ESCENAS)
+
+
+## El atardecer del campo detras del menu: el cielo estirado y, delante, las
+## montanas, el castillo y los arboles repetidos en X. Cada capa esta anclada
+## abajo con el alto de su hoja y se agranda al doble desde su esquina de
+## abajo; el ancho le sobra una repeticion entera, que es lo que
+## menu_principal.gd va corriendo para el parallax.
+func _fondo_vivo(raiz: Control) -> void:
+	var fondo := Control.new()
+	fondo.name = "Fondo"
+	fondo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fondo.clip_contents = true
+	fondo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hijo(raiz, fondo, raiz, true)
+
+	# Detras de todo, el color del pie de los arboles: si una capa quedara
+	# corta, lo que asoma es noche y no gris.
+	var base := ColorRect.new()
+	base.name = "Base"
+	base.color = FONDO
+	base.set_anchors_preset(Control.PRESET_FULL_RECT)
+	base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hijo(fondo, base, raiz)
+
+	var cielo := TextureRect.new()
+	cielo.name = "Cielo"
+	cielo.texture = load(CIELO)
+	cielo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	cielo.stretch_mode = TextureRect.STRETCH_SCALE
+	cielo.set_anchors_preset(Control.PRESET_FULL_RECT)
+	cielo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_hijo(fondo, cielo, raiz, true)
+
+	for capa: Dictionary in CAPAS_FONDO:
+		var textura: Texture2D = load(capa["ruta"])
+		var rect := TextureRect.new()
+		rect.name = capa["nombre"]
+		rect.texture = textura
+		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		rect.stretch_mode = TextureRect.STRETCH_TILE
+		rect.anchor_left = 0.0
+		rect.anchor_right = 1.0
+		rect.anchor_top = 1.0
+		rect.anchor_bottom = 1.0
+		var alto := float(textura.get_height())
+		var levantada: float = capa["base"]
+		rect.offset_top = -alto - levantada
+		rect.offset_bottom = -levantada
+		rect.offset_left = 0.0
+		rect.offset_right = float(textura.get_width())
+		rect.scale = Vector2(ESCALA_FONDO, ESCALA_FONDO)
+		rect.pivot_offset_ratio = Vector2(0.0, 1.0)
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_hijo(fondo, rect, raiz, true)
+
+
+## La tabla de controles de los dos jugadores. La llena menu_principal.gd con
+## Jugadores.etiquetas(), el mismo lugar que arma la leyenda del HUD: si
+## cambia el mapa, cambian las dos.
+func _armar_controles(padre: Node, duenio: Node) -> void:
+	var vista := VBoxContainer.new()
+	vista.name = "Controles"
+	vista.add_theme_constant_override("separation", 12)
+	vista.visible = false
+	_hijo(padre, vista, duenio, true)
+
+	var tabla := GridContainer.new()
+	tabla.name = "TablaControles"
+	tabla.columns = 3
+	tabla.add_theme_constant_override("h_separation", 18)
+	tabla.add_theme_constant_override("v_separation", 6)
+	tabla.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_hijo(vista, tabla, duenio, true)
+
+	var pie := Label.new()
+	pie.name = "PieControles"
+	pie.theme_type_variation = &"ChicoPanel"
+	pie.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pie.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hijo(vista, pie, duenio, true)
+
+	_boton(vista, duenio, "VolverControles", "Volver")
 
 
 func _crear_menu_pausa(tema: Theme) -> void:
@@ -183,7 +314,7 @@ func _crear_menu_pausa(tema: Theme) -> void:
 
 	var velo := ColorRect.new()
 	velo.name = "Velo"
-	velo.color = Color(0, 0, 0, 0.6)
+	velo.color = Color(0.03, 0.02, 0.07, 0.68)
 	velo.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_hijo(raiz, velo, capa)
 
@@ -196,7 +327,7 @@ func _crear_menu_pausa(tema: Theme) -> void:
 	var panel := PanelContainer.new()
 	panel.name = "Panel"
 	panel.theme_type_variation = &"PanelMenu"
-	panel.custom_minimum_size = Vector2(420, 0)
+	panel.custom_minimum_size = Vector2(440, 0)
 	_hijo(centro, panel, capa)
 
 	var columna := VBoxContainer.new()
@@ -255,7 +386,7 @@ func _armar_opciones(padre: Node, duenio: Node, nombre: String) -> Control:
 	resolucion.text = "1280 x 720"
 	resolucion.theme_type_variation = &"SobrePanel"
 	resolucion.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	resolucion.custom_minimum_size = Vector2(150, 0)
+	resolucion.custom_minimum_size = Vector2(176, 0)
 	_hijo(fila, resolucion, duenio, true)
 	_boton(fila, duenio, "Siguiente", ">")
 
@@ -286,13 +417,16 @@ func _guardar_escena(nodo: Node, ruta: String) -> void:
 	if err == OK:
 		err = ResourceSaver.save(empaquetada, ruta)
 	print("  %s -> %s" % [ruta, "OK" if err == OK else "ERROR %d" % err])
+	# Ya empaquetado: el arbol armado no se usa mas, y sin liberarlo queda
+	# colgado hasta que el proceso se va (y avisa la fuga al salir).
+	nodo.free()
 
 
 # --- Tema ---------------------------------------------------------------------
 
 func _crear_tema() -> Theme:
 	var tema := Theme.new()
-	tema.default_font_size = 16
+	tema.default_font_size = NORMAL
 	if ResourceLoader.exists(RUTA_FUENTE):
 		tema.default_font = load(RUTA_FUENTE)
 		print("  fuente: %s" % RUTA_FUENTE)
@@ -322,32 +456,60 @@ func _tema_botones(tema: Theme) -> void:
 	tema.set_color("font_pressed_color", "Button", TINTA_PANEL)
 	tema.set_color("font_focus_color", "Button", TINTA_PANEL)
 	tema.set_color("font_disabled_color", "Button", Color(0.13, 0.09, 0.05, 0.45))
-	tema.set_font_size("font_size", "Button", 16)
+	tema.set_font_size("font_size", "Button", NORMAL)
 
 
 func _tema_etiquetas(tema: Theme) -> void:
 	tema.set_color("font_color", "Label", TINTA)
 	tema.set_color("font_shadow_color", "Label", SOMBRA)
-	tema.set_constant("shadow_offset_x", "Label", ESCALA)
-	tema.set_constant("shadow_offset_y", "Label", ESCALA)
-	tema.set_font_size("font_size", "Label", 16)
+	_sombra(tema, "Label", NORMAL)
+	tema.set_font_size("font_size", "Label", NORMAL)
 
 	# Variaciones: el nombre dice para que sirve, no como se ve.
-	_variacion_etiqueta(tema, "Titulo", 34, TINTA)
-	_variacion_etiqueta(tema, "Subtitulo", 20, TINTA)
-	_variacion_etiqueta(tema, "Chico", 13, TINTA_TENUE)
-	_variacion_etiqueta(tema, "Aviso", 22, AVISO)
-	_variacion_etiqueta(tema, "Exito", 16, EXITO)
-	_variacion_etiqueta(tema, "Fallo", 16, FALLO)
+	_variacion_etiqueta(tema, "Titulo", GRANDE, TINTA)
+	# El titulo del juego en el menu y el cartel del final.
+	_variacion_etiqueta(tema, "TituloGrande", ENORME, AVISO)
+	_variacion_etiqueta(tema, "Subtitulo", NORMAL, TINTA)
+	_variacion_etiqueta(tema, "Chico", CHICO, TINTA_TENUE)
+	# Chico pero para leer, no de reojo: el renglon del encuentro.
+	_variacion_etiqueta(tema, "ChicoClaro", CHICO, TINTA)
+	_variacion_etiqueta(tema, "Aviso", NORMAL, AVISO)
+	_variacion_etiqueta(tema, "Exito", NORMAL, EXITO)
+	_variacion_etiqueta(tema, "Fallo", NORMAL, FALLO)
 	# Sobre el relleno crema de los paneles el texto claro no se lee.
-	_variacion_etiqueta(tema, "SobrePanel", 16, TINTA_PANEL, false)
-	_variacion_etiqueta(tema, "TituloPanel", 26, TINTA_PANEL, false)
-	# La ficha de cada jugador (FichaJugador): mas chica que el aviso de antes,
-	# porque ahora son dos y van en las esquinas. El color del titulo y el del
+	_variacion_etiqueta(tema, "SobrePanel", NORMAL, TINTA_PANEL, false)
+	_variacion_etiqueta(tema, "ChicoPanel", CHICO, TINTA_PANEL, false)
+	_variacion_etiqueta(tema, "PiePanel", NORMAL, TINTA_PANEL_TENUE, false)
+	_variacion_etiqueta(tema, "TituloPanel", GRANDE, TINTA_PANEL, false)
+	_variacion_etiqueta(tema, "MetaCumplida", NORMAL, META_CUMPLIDA, false)
+	_variacion_etiqueta(tema, "MetaFallida", NORMAL, META_FALLIDA, false)
+	# La ficha de cada jugador (FichaJugador). El color del titulo y el del
 	# combo los pone la ficha: son del jugador y del movimiento.
-	_variacion_etiqueta(tema, "TituloFicha", 16, TINTA)
-	_variacion_etiqueta(tema, "ComboFicha", 18, AVISO)
-	_variacion_etiqueta(tema, "AvisoFicha", 16, AVISO)
+	_variacion_etiqueta(tema, "TituloFicha", NORMAL, TINTA)
+	_variacion_etiqueta(tema, "ComboFicha", NORMAL, AVISO)
+	_variacion_etiqueta(tema, "AvisoFicha", NORMAL, AVISO)
+	# La letra dentro de la tecla dibujada: la tecla ya la despega del fondo.
+	_variacion_etiqueta(tema, "LetraTecla", NORMAL, TINTA, false)
+	# "¡AVANZAR →!": grande y del color de los avisos.
+	_variacion_etiqueta(tema, "Cartel", GRANDE, AVISO)
+
+	var chica := _fuente_chica(tema.default_font)
+	if chica != null:
+		for nombre in ["Chico", "ChicoClaro", "ChicoPanel"]:
+			tema.set_font("font", nombre, chica)
+
+
+## La misma fuente con mas aire entre palabras, para el cuerpo chico. El
+## espacio de Pixelify Sans mide 200 unidades: a 11 px son 2 pixeles, casi lo
+## mismo que separa dos letras, y "el frente" se leia "elfrente". A 22 ya son
+## 4, y ahi no hace falta.
+func _fuente_chica(base: Font) -> Font:
+	if base == null:
+		return null
+	var variacion := FontVariation.new()
+	variacion.base_font = base
+	variacion.spacing_space = 2
+	return variacion
 
 
 func _variacion_etiqueta(tema: Theme, nombre: String, tamano: int, color: Color,
@@ -356,8 +518,21 @@ func _variacion_etiqueta(tema: Theme, nombre: String, tamano: int, color: Color,
 	tema.set_font_size("font_size", nombre, tamano)
 	tema.set_color("font_color", nombre, color)
 	tema.set_color("font_shadow_color", nombre, SOMBRA if con_sombra else Color(0, 0, 0, 0))
-	tema.set_constant("shadow_offset_x", nombre, ESCALA if con_sombra else 0)
-	tema.set_constant("shadow_offset_y", nombre, ESCALA if con_sombra else 0)
+	if con_sombra:
+		_sombra(tema, nombre, tamano)
+	else:
+		tema.set_constant("shadow_offset_x", nombre, 0)
+		tema.set_constant("shadow_offset_y", nombre, 0)
+		tema.set_constant("shadow_outline_size", nombre, 0)
+
+
+## La sombra corre un pixel de la fuente hacia abajo y a la derecha, sin
+## contorno: con contorno la sombra engorda y la letra de pixeles se empasta.
+func _sombra(tema: Theme, tipo: String, tamano: int) -> void:
+	var corrimiento := maxi(floori(float(tamano) / PIXEL_FUENTE), 1)
+	tema.set_constant("shadow_offset_x", tipo, corrimiento)
+	tema.set_constant("shadow_offset_y", tipo, corrimiento)
+	tema.set_constant("shadow_outline_size", tipo, 0)
 
 
 func _tema_paneles(tema: Theme) -> void:
@@ -372,48 +547,79 @@ func _tema_paneles(tema: Theme) -> void:
 
 	_variacion_panel(tema, "PanelMenu", load(PANEL_MENU), MARCO_MENU)
 	_variacion_panel(tema, "PanelOpciones", load(PANEL_OPCIONES), MARCO_OPCIONES)
-	_variacion_panel(tema, "PanelResumen", load(PANEL_DESENLACE), MARCO_DESENLACE)
+	# El informe lleva menos margen: entra entre las dos fichas, y con el del
+	# menu sus renglones se partian en dos.
+	_variacion_panel(tema, "PanelResumen", load(PANEL_DESENLACE), MARCO_DESENLACE, 10)
 
 	# Las fichas de los jugadores y la fila de acciones siguen oscuras y
 	# translucidas: van encima del campo y un panel de madera opaco taparia la
-	# batalla.
-	_variacion_panel_plano(tema, "PanelFicha", Color(0, 0, 0, 0.72), 10)
-	_variacion_panel_plano(tema, "PanelAcciones", Color(0, 0, 0, 0.45), 8)
+	# batalla. El marco de la ficha lo tine despues la ficha con el color de
+	# su jugador.
+	_variacion_panel_plano(tema, "PanelFicha", Color(0.02, 0.03, 0.06, 0.78), 8, BORDE_HUD)
+	_variacion_panel_plano(tema, "PanelAcciones", Color(0, 0, 0, 0.45), 8, 1)
+
+	# La tecla dibujada de la tarjeta: oscura, con borde claro y mas gruesa
+	# abajo, que es lo que la hace leer como una tecla.
+	tema.set_type_variation("TeclaFicha", "PanelContainer")
+	var tecla := StyleBoxFlat.new()
+	tecla.bg_color = Color(0.1, 0.11, 0.16, 0.95)
+	tecla.border_color = Color(0.86, 0.88, 0.95, 0.8)
+	tecla.set_border_width_all(BORDE_HUD)
+	tecla.border_width_bottom = BORDE_HUD * 2
+	tecla.content_margin_left = 5
+	tecla.content_margin_right = 5
+	tecla.content_margin_top = 0
+	tecla.content_margin_bottom = BORDE_HUD * 2
+	tema.set_stylebox("panel", "TeclaFicha", tecla)
 
 
-func _variacion_panel(tema: Theme, nombre: String, textura: Texture2D, region: Rect2i) -> void:
+func _variacion_panel(tema: Theme, nombre: String, textura: Texture2D, region: Rect2i,
+		margen: int = 18) -> void:
 	tema.set_type_variation(nombre, "PanelContainer")
-	tema.set_stylebox("panel", nombre, _marco(textura, region, BORDE_MARCO, 18))
+	tema.set_stylebox("panel", nombre, _marco(textura, region, BORDE_MARCO, margen))
 
 
-func _variacion_panel_plano(tema: Theme, nombre: String, color: Color, margen: int) -> void:
+func _variacion_panel_plano(tema: Theme, nombre: String, color: Color, margen: int,
+		borde: int) -> void:
 	tema.set_type_variation(nombre, "PanelContainer")
 	var caja := StyleBoxFlat.new()
 	caja.bg_color = color
-	caja.border_color = Color(1, 1, 1, 0.12)
-	caja.set_border_width_all(1)
+	caja.border_color = Color(1, 1, 1, 0.14)
+	caja.set_border_width_all(borde)
 	caja.set_content_margin_all(margen)
 	tema.set_stylebox("panel", nombre, caja)
 
 
+## Las barras son rectangulos planos con un borde oscuro de un pixel del pack
+## (2 px) y sin esquinas redondeadas: con radio, a este tamano, las esquinas
+## salian con medio pixel suavizado al lado de todo lo demas duro.
 func _tema_barras(tema: Theme) -> void:
-	var fondo := StyleBoxFlat.new()
-	fondo.bg_color = Color(0, 0, 0, 0.55)
-	fondo.set_corner_radius_all(2)
+	var fondo := _caja(Color(0, 0, 0, 0.6), BORDE_HUD)
 	tema.set_stylebox("background", "ProgressBar", fondo)
-	tema.set_stylebox("fill", "ProgressBar", _relleno(VIDA))
+	tema.set_stylebox("fill", "ProgressBar", _caja(VIDA, BORDE_HUD))
 
-	# Una variación por barra: el color dice cual es sin leer el numero.
-	tema.set_type_variation("BarraVida", "ProgressBar")
-	tema.set_stylebox("fill", "BarraVida", _relleno(VIDA))
-	tema.set_type_variation("BarraMana", "ProgressBar")
-	tema.set_stylebox("fill", "BarraMana", _relleno(MANA))
+	# La vida va adelante de su fantasma: sin fondo propio, o lo taparia.
+	_variacion_barra(tema, "BarraVida", StyleBoxEmpty.new(), _caja(VIDA, BORDE_HUD))
+	# Detras, el fantasma del golpe: el rojo de la vida, oscurecido.
+	_variacion_barra(tema, "BarraFantasma", fondo, _caja(VIDA.darkened(0.4), BORDE_HUD))
+	_variacion_barra(tema, "BarraMana", fondo, _caja(MANA, BORDE_HUD))
+	# La ventana del combo es una raya: sin borde, que en 4 px no entra.
+	_variacion_barra(tema, "BarraVentana", _caja(Color(0, 0, 0, 0.5), 0), _caja(AVISO, 0))
+	_variacion_barra(tema, "BarraCarga", fondo, _caja(AVISO, BORDE_HUD))
 
 
-func _relleno(color: Color) -> StyleBoxFlat:
+func _variacion_barra(tema: Theme, nombre: String, fondo: StyleBox, relleno: StyleBox) -> void:
+	tema.set_type_variation(nombre, "ProgressBar")
+	tema.set_stylebox("background", nombre, fondo)
+	tema.set_stylebox("fill", nombre, relleno)
+
+
+func _caja(color: Color, borde: int) -> StyleBoxFlat:
 	var caja := StyleBoxFlat.new()
 	caja.bg_color = color
-	caja.set_corner_radius_all(2)
+	caja.border_color = BORDE_OSCURO
+	caja.set_border_width_all(borde)
+	caja.anti_aliasing = false
 	return caja
 
 

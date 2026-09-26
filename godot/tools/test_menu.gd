@@ -1,6 +1,8 @@
 extends SceneTree
 ## Menu principal: que esten los botones, que la lista de lecciones salga de la
 ## campaña, que el tema este aplicado y que se pueda elegir cuantos juegan.
+## Tambien el fondo vivo (las capas del atardecer, que se corren), el titulo
+## con la fuente del tema y la tabla de controles de los dos jugadores.
 
 var _menu: Control
 var _pedidos: Array[int] = []
@@ -23,7 +25,8 @@ func _tick() -> void:
 			if _ticks < 3:
 				return
 			print("--- los botones estan ---")
-			for nombre in ["Jugar", "Jugadores", "Lecciones_boton", "Opciones_boton", "Salir"]:
+			for nombre in ["Jugar", "Lecciones_boton", "Jugadores", "Controles_boton",
+					"Opciones_boton", "Salir"]:
 				_ok("boton %s" % nombre, _menu.get_node_or_null("%" + nombre) != null)
 
 			print("--- el tema esta aplicado ---")
@@ -76,12 +79,25 @@ func _tick() -> void:
 			remove_meta(Navegacion.ENCUENTRO_INICIAL)
 
 			_cuantos_juegan()
+			_controles()
+			_fondo()
 			_fase = 1
 		1:
+			# El parallax corre en _process: se mira un rato despues.
+			if _ticks < 90:
+				return
+			print("--- el fondo se mueve, cada capa a su velocidad ---")
+			var montanas: float = _menu.corrimiento_capa(&"Montanas")
+			var arboles: float = _menu.corrimiento_capa(&"Arboles")
+			_ok("las capas se corrieron (montanas %.0f, arboles %.0f)" % [montanas, arboles],
+				arboles > 0.0)
+			_ok("y las de adelante mas rapido que las de atras", arboles > montanas)
+			_fase = 2
+		2:
 			print("")
 			print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
 			quit(1 if _fallos > 0 else 0)
-			_fase = 2
+			_fase = 3
 
 	if _ticks > 600:
 		print("FALLA: el test no termino")
@@ -110,6 +126,49 @@ func _cuantos_juegan() -> void:
 	_ok("un menu nuevo arranca con lo anotado (%s)" % suyo.text, suyo.text == "Jugadores: 2")
 	otro.queue_free()
 	remove_meta(Jugadores.CANTIDAD)
+
+
+## La vista de controles: una tabla con las dos columnas de jugadores, que
+## sale de Jugadores.etiquetas(), y su boton para volver.
+func _controles() -> void:
+	print("--- los controles de los dos jugadores ---")
+	_ok("la vista existe y arranca oculta",
+		_menu.get_node_or_null("%Controles") != null and not _menu.get_node("%Controles").visible)
+	_ok("con su boton en la botonera",
+		_menu.get_node("%Controles_boton").get_parent() == _menu.get_node("%Botonera"))
+	_menu.get_node("%Controles_boton").pressed.emit()
+	_ok("al pedirla se ve", _menu.get_node("%Controles").visible)
+	_ok("y la botonera se esconde", not _menu.get_node("%Botonera").visible)
+	var tabla: GridContainer = _menu.get_node("%TablaControles")
+	var textos: Array[String] = []
+	for celda in tabla.get_children():
+		textos.append((celda as Label).text)
+	_ok("tres columnas: la accion y un jugador en cada una", tabla.columns == 3)
+	_ok("con los dos jugadores de cabecera", textos.has("Jugador 1") and textos.has("Jugador 2"))
+	_ok("y sus teclas, de Jugadores.etiquetas() (%s)" % Jugadores.etiquetas(2)["ligera"],
+		textos.has(Jugadores.etiquetas(1)["ligera"]) and textos.has(Jugadores.etiquetas(2)["ligera"]))
+	_igual("una fila por accion mas la cabecera", textos.size(), 3 * 5)
+	_menu.get_node("%VolverControles").pressed.emit()
+	_ok("volver trae la botonera", _menu.get_node("%Botonera").visible
+		and not _menu.get_node("%Controles").visible)
+
+
+## El atardecer del campo detras del panel, y el titulo con la fuente del
+## tema.
+func _fondo() -> void:
+	print("--- el fondo y el titulo ---")
+	for nombre in ["Cielo", "Montanas", "Castillo", "Arboles"]:
+		var capa := _menu.get_node_or_null("%" + nombre) as TextureRect
+		_ok("la capa %s esta, con su textura" % nombre, capa != null and capa.texture != null)
+	var arboles: TextureRect = _menu.get_node("%Arboles")
+	_ok("las capas se repiten en X", arboles.stretch_mode == TextureRect.STRETCH_TILE)
+	_ok("al doble, como el pixel art del juego", arboles.scale == Vector2(2, 2))
+	var titulo: Label = _menu.get_node("%Titulo")
+	_ok("el titulo dice CASTLE DEFENSE", titulo.text == "CASTLE DEFENSE")
+	_ok("con la fuente del tema", titulo.get_theme_font(&"font") == _menu.theme.default_font
+		and _menu.theme.default_font != null)
+	_ok("y grande (%d)" % titulo.get_theme_font_size(&"font_size"),
+		titulo.get_theme_font_size(&"font_size") >= 44)
 
 
 func _ok(que: String, condicion: bool) -> void:

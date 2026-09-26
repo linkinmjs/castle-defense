@@ -76,7 +76,7 @@ func _tick() -> void:
 	print("--- sin healer, la tarjeta no inventa nada ---")
 	var vacia := TarjetaObjetivo.lineas(null)
 	_igual("nadie al frente", vacia[0], TarjetaObjetivo.NADIE)
-	_igual("y ningun boton hace nada", vacia[1] + " | " + vacia[2], "L · — | P · —")
+	_igual("y ningun boton hace nada", vacia[1] + " | " + vacia[2], "J · — | K · —")
 
 	print("--- tres renglones: quien es y que sale con cada boton ---")
 	var paciente := _crear()
@@ -93,13 +93,13 @@ func _tick() -> void:
 	var lineas := TarjetaObjetivo.lineas(_healer)
 	_ok("son tres renglones, no uno por movimiento equipado", lineas.size() == 3)
 	_igual("pone el nombre, el rol y la vida", lineas[0], "Mara · Lancero · 35 / 70 HP")
-	_igual("que hace la ligera", lineas[1], "L · Toque: +18 HP")
-	_igual("y una raya si la pesada no tiene nada", lineas[2], "P · —")
+	_igual("que hace la ligera", lineas[1], "J · Toque: +18 HP")
+	_igual("y una raya si la pesada no tiene nada", lineas[2], "K · —")
 
 	_combos.equipar([toque, vendaje, plegaria, bendicion, reanimar] as Array[Movimiento])
 	lineas = TarjetaObjetivo.lineas(_healer)
 	_igual("sin combo, la pesada es la Plegaria, con lo que se pierde", lineas[2],
-		"P · Plegaria: +35 HP (5 se desperdician)")
+		"K · Plegaria: +35 HP (5 se desperdician)")
 	_ok("el Vendaje todavia no aparece: no es lo que sale", not _texto(lineas).contains("Vendaje"))
 	_ok("ni se habla de alcance: si esta en la tarjeta, esta al frente",
 		not _texto(lineas).contains("alcance"))
@@ -108,10 +108,10 @@ func _tick() -> void:
 	_ok("la ligera sale", _healer.pulsar(&"ligera"))
 	lineas = TarjetaObjetivo.lineas(_healer)
 	_contiene("la ligera ya es el Vendaje, que corta el sangrado", lineas[1],
-		"L · Vendaje: corta el sangrado")
-	_contiene("y la pesada, la Bendicion", lineas[2], "P · Bendicion")
+		"J · Vendaje: corta el sangrado")
+	_contiene("y la pesada, la Bendicion", lineas[2], "K · Bendicion")
 	_combos.cortar_combo(&"tiempo")
-	_contiene("cortado el combo, vuelve el Toque", TarjetaObjetivo.lineas(_healer)[1], "L · Toque")
+	_contiene("cortado el combo, vuelve el Toque", TarjetaObjetivo.lineas(_healer)[1], "J · Toque")
 
 	print("--- con un caido adelante, la pesada es para el ---")
 	var caido := _crear()
@@ -119,7 +119,7 @@ func _tick() -> void:
 	lineas = TarjetaObjetivo.lineas(_healer)
 	_igual("el de arriba sigue siendo el que esta en pie", lineas[0].get_slice(" · ", 0), "Mara")
 	_contiene("y la pesada dice con cuanto levanta al caido", lineas[2],
-		"P · Reanimar: lo levanta con")
+		"K · Reanimar: lo levanta con")
 	caido.free()
 
 	print("--- sin nadie adelante, solo los nombres ---")
@@ -129,12 +129,49 @@ func _tick() -> void:
 	_ok("fuera de la caja ya no es el de la tarjeta", _healer.unidad_apuntada() == null)
 	lineas = TarjetaObjetivo.lineas(_healer)
 	_igual("nadie al frente", lineas[0], TarjetaObjetivo.NADIE)
-	_igual("la ligera, sin numeros", lineas[1], "L · Toque")
-	_igual("la pesada, igual", lineas[2], "P · Plegaria")
+	_igual("la ligera, sin numeros", lineas[1], "J · Toque")
+	_igual("la pesada, igual", lineas[2], "K · Plegaria")
+
+	_teclas()
+	_icono_y_mana(plegaria)
 
 	print("")
 	print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
 	quit(1 if _fallos > 0 else 0)
+
+
+## Cada boton se nombra con lo que ese jugador tiene bajo el dedo.
+func _teclas() -> void:
+	print("--- cada boton con la tecla de su jugador ---")
+	_igual("la ligera del 1 es la J", TarjetaObjetivo.boton(1, &"ligera"), "J")
+	_igual("la pesada del 1 es la K", TarjetaObjetivo.boton(1, &"pesada"), "K")
+	_igual("la ligera del 2 es la coma", TarjetaObjetivo.boton(2, &"ligera"), ",")
+	_igual("la pesada del 2 es el punto", TarjetaObjetivo.boton(2, &"pesada"), ".")
+	_igual("con joystick, la ligera es la X", TarjetaObjetivo.boton(1, &"ligera", true), "X")
+	_igual("y la pesada la Y", TarjetaObjetivo.boton(2, &"pesada", true), "Y")
+	_igual("un boton que no existe no tiene tecla", TarjetaObjetivo.boton(1, &"inventado"), "")
+	_healer.jugador = 2
+	var del_dos := TarjetaObjetivo.lineas(_healer)
+	_contiene("la tarjeta del 2 nombra sus teclas", del_dos[1], ", · ")
+	_healer.jugador = 1
+
+
+## Los renglones de los botones traen lo que la ficha dibuja al lado del
+## texto: el icono, el enfriamiento y si alcanza el mana.
+func _icono_y_mana(plegaria: Movimiento) -> void:
+	print("--- icono, enfriamiento y mana en cada renglon ---")
+	var renglones := TarjetaObjetivo.renglones(_healer)
+	var pesada: Dictionary = renglones[2]
+	_ok("la pesada trae el icono de la Plegaria", pesada["icono"] == plegaria.icono
+		and pesada["icono"] != null)
+	_ok("y la tecla", pesada["boton"] == "K")
+	_ok("lista: sin enfriamiento ni falta de mana",
+		pesada["enfriamiento"] == 0.0 and not pesada["sin_mana"])
+	_healer.mana = plegaria.costo - 1.0
+	renglones = TarjetaObjetivo.renglones(_healer)
+	_ok("sin mana para pagarla, lo dice", renglones[2]["sin_mana"])
+	_igual("y el texto es solo eso", renglones[2]["texto"], "Plegaria: sin mana")
+	_healer.mana = _healer.mana_maximo
 
 
 ## Lancero sin azar ni fisica, a 0.8 m al frente del healer.

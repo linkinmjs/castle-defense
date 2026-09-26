@@ -4,107 +4,107 @@
 [ext_resource type="Theme" path="res://resources/ui/tema.tres" id="2_a0umu"]
 [ext_resource type="Script" path="res://scripts/ui/panel_opciones.gd" id="3_dktfg"]
 
-[node name="MenuPausa" type="CanvasLayer" unique_id=803733551]
+[node name="MenuPausa" type="CanvasLayer" unique_id=854504346]
 layer = 10
 script = ExtResource("1_inbmx")
 
-[node name="Raiz" type="Control" parent="." unique_id=289265780]
+[node name="Raiz" type="Control" parent="." unique_id=2084356651]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 theme = ExtResource("2_a0umu")
 
-[node name="Velo" type="ColorRect" parent="Raiz" unique_id=2026044822]
+[node name="Velo" type="ColorRect" parent="Raiz" unique_id=1606011836]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.6)
+color = Color(0.03, 0.02, 0.07, 0.68)
 
-[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=668918273]
+[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=1358144580]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="Raiz/Centro" unique_id=1650136281]
-custom_minimum_size = Vector2(420, 0)
+[node name="Panel" type="PanelContainer" parent="Raiz/Centro" unique_id=1424547539]
+custom_minimum_size = Vector2(440, 0)
 layout_mode = 2
 theme_type_variation = &"PanelMenu"
 
-[node name="Columna" type="VBoxContainer" parent="Raiz/Centro/Panel" unique_id=1750058662]
+[node name="Columna" type="VBoxContainer" parent="Raiz/Centro/Panel" unique_id=1618557469]
 layout_mode = 2
 theme_override_constants/separation = 14
 
-[node name="Titulo" type="Label" parent="Raiz/Centro/Panel/Columna" unique_id=1229289892]
+[node name="Titulo" type="Label" parent="Raiz/Centro/Panel/Columna" unique_id=1822762629]
 layout_mode = 2
 theme_type_variation = &"TituloPanel"
 text = "EN PAUSA"
 horizontal_alignment = 1
 
-[node name="BotoneraPausa" type="VBoxContainer" parent="Raiz/Centro/Panel/Columna" unique_id=1555630099]
+[node name="BotoneraPausa" type="VBoxContainer" parent="Raiz/Centro/Panel/Columna" unique_id=226257158]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Continuar" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=420454986]
+[node name="Continuar" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=921239294]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Continuar"
 
-[node name="Reiniciar" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=432834039]
+[node name="Reiniciar" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=1343088607]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Reiniciar encuentro"
 
-[node name="OpcionesBoton" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=814132068]
+[node name="OpcionesBoton" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=398779203]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Opciones"
 
-[node name="AlMenu" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=1617590262]
+[node name="AlMenu" type="Button" parent="Raiz/Centro/Panel/Columna/BotoneraPausa" unique_id=1384557346]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Volver al menu"
 
-[node name="OpcionesPausa" type="VBoxContainer" parent="Raiz/Centro/Panel/Columna" unique_id=515452571]
+[node name="OpcionesPausa" type="VBoxContainer" parent="Raiz/Centro/Panel/Columna" unique_id=495368403]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 10
 script = ExtResource("3_dktfg")
 
-[node name="PantallaCompleta" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa" unique_id=2029975816]
+[node name="PantallaCompleta" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa" unique_id=391114911]
 unique_name_in_owner = true
 layout_mode = 2
 toggle_mode = true
 text = "Pantalla completa: no"
 
-[node name="FilaResolucion" type="HBoxContainer" parent="Raiz/Centro/Panel/Columna/OpcionesPausa" unique_id=1262353593]
+[node name="FilaResolucion" type="HBoxContainer" parent="Raiz/Centro/Panel/Columna/OpcionesPausa" unique_id=790145746]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Anterior" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa/FilaResolucion" unique_id=2007606119]
+[node name="Anterior" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa/FilaResolucion" unique_id=1402354972]
 unique_name_in_owner = true
 layout_mode = 2
 text = "<"
 
-[node name="Resolucion" type="Label" parent="Raiz/Centro/Panel/Columna/OpcionesPausa/FilaResolucion" unique_id=124195981]
+[node name="Resolucion" type="Label" parent="Raiz/Centro/Panel/Columna/OpcionesPausa/FilaResolucion" unique_id=2131312449]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 0)
+custom_minimum_size = Vector2(176, 0)
 layout_mode = 2
 theme_type_variation = &"SobrePanel"
 text = "1280 x 720"
 horizontal_alignment = 1
 
-[node name="Siguiente" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa/FilaResolucion" unique_id=2067613818]
+[node name="Siguiente" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa/FilaResolucion" unique_id=1310061664]
 unique_name_in_owner = true
 layout_mode = 2
 text = ">"
 
-[node name="Volver" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa" unique_id=1749706458]
+[node name="Volver" type="Button" parent="Raiz/Centro/Panel/Columna/OpcionesPausa" unique_id=1709035618]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Volver"

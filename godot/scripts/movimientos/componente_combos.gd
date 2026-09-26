@@ -242,6 +242,33 @@ func movimiento_en_curso() -> Movimiento:
 	return _wind_up_mov if _wind_up_mov != null else _pendiente_aterrizaje
 
 
+## Cuanto le falta a lo que esta en curso, de 0 (recien apretado) a 1 (sale
+## ya); 0 si no hay nada en curso. Es lo que llena la barra de carga del HUD.
+##
+## La plegaria se mide contra su wind_up. La caida no tiene un tiempo fijo:
+## sale al tocar el suelo, asi que se mide sobre la parabola del salto con la
+## velocidad vertical del healer, que baja a ritmo constante: subiendo a
+## pleno es 0, en la cima 0.5 y al llegar al piso 1. Asi la barra se llena
+## justo cuando la caida cura, sin guardar un reloj mas. Al healer se le
+## pregunta por nombre, como en el resto del componente: sin esos datos, 0.
+func progreso_en_curso() -> float:
+	if _wind_up_mov != null:
+		if _wind_up_mov.wind_up <= 0.0:
+			return 1.0
+		return clampf(1.0 - _wind_up_restante / _wind_up_mov.wind_up, 0.0, 1.0)
+	if _pendiente_aterrizaje == null or _healer == null:
+		return 0.0
+	var velocidad: Variant = _healer.get(&"velocity")
+	var gravedad: Variant = _healer.get(&"gravedad")
+	var altura: Variant = _healer.get(&"altura_salto")
+	if not (velocidad is Vector3) or gravedad == null or altura == null:
+		return 0.0
+	var inicial := sqrt(maxf(2.0 * float(gravedad) * float(altura), 0.0))
+	if inicial <= 0.0:
+		return 0.0
+	return clampf((inicial - (velocidad as Vector3).y) / (2.0 * inicial), 0.0, 1.0)
+
+
 # --- Ejecucion ---------------------------------------------------------------
 
 ## Mana y objetivo. Se revisan al apretar y otra vez al soltar un movimiento
