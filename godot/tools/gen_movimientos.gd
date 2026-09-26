@@ -13,6 +13,10 @@ extends SceneTree
 ##   P con un derribado al frente -> Reanimar, venga de donde venga
 ##   aire + L   -> Impulso      aire + P   -> Caida sanadora
 ##
+## Cada fila dice tambien como se ve (ver _verse): la pose del healer al
+## soltarlo, el efecto de fx_frames sobre lo que alcanza y, si se prepara, la
+## pose mientras carga o espera el suelo.
+##
 ## Los iconos salen de extraer_ui.gd. Si todavia no se extrajeron (o no se
 ## importaron), el movimiento se guarda sin icono y el HUD cae al nombre:
 ##   godot --headless --path godot --script res://tools/extraer_ui.gd
@@ -57,6 +61,7 @@ func _toque() -> void:
 	var m := MovimientoCurar.new()
 	_base(m, "Toque", LIGERA, 10.0, 0.35, VERDE,
 		"Curas 18 al que tenes enfrente: primero al que sangra, despues al mas golpeado.")
+	_verse(m, "healing", "toque")
 	m.cantidad = 18.0
 	_guardar(m, "toque")
 
@@ -67,6 +72,7 @@ func _vendaje() -> void:
 	_base(m, "Vendaje", LIGERA, 10.0, 0.35, VERDE,
 		"Segunda ligera sobre el mismo: le curas 18 y le cortas el sangrado.")
 	m.secuencia_previa = [LIGERA] as Array[StringName]
+	_verse(m, "healing", "toque")
 	m.cantidad = 18.0
 	m.corta_sangrado = true
 	m.preferir_ultimo_objetivo = true
@@ -80,6 +86,7 @@ func _oleada() -> void:
 	_base(m, "Oleada", PESADA, 35.0, 6.0, DORADO,
 		"Remate de ligera, ligera, pesada: curas 30 a todos los que tenes a 4 m.")
 	m.secuencia_previa = [LIGERA, LIGERA] as Array[StringName]
+	_verse(m, "energy_wave", "oleada")
 	m.termina_combo = true
 	m.forma = MovimientoArea.Forma.ALREDEDOR
 	m.cantidad = 30.0
@@ -94,18 +101,20 @@ func _bendicion() -> void:
 	_base(m, "Bendicion", PESADA, 30.0, 8.0, TURQUESA,
 		"Pesada despues de una ligera: bendecis al que tocaste, 35% menos de dano y mas ritmo por 8 s.")
 	m.secuencia_previa = [LIGERA] as Array[StringName]
-	m.efecto = "shield"
+	_verse(m, "magic_shield", "bendicion")
 	m.duracion = 8.0
 	m.reduccion = 0.35
 	m.bonus = 0.30
 	_guardar(m, "bendicion")
 
 
-## La cura grande sin combo se paga con medio segundo quieto y expuesto.
+## La cura grande sin combo se paga con medio segundo quieto y expuesto. Se
+## ve juntar la luz mientras carga y soltarla al salir.
 func _plegaria() -> void:
 	var m := MovimientoArea.new()
 	_base(m, "Plegaria", PESADA, 30.0, 1.5, DORADO,
 		"Pesada sola: rezas medio segundo y curas 40 a todos los que tenes adelante.")
+	_verse(m, "energy_wave", "plegaria", "power_boost")
 	m.wind_up = 0.5
 	m.forma = MovimientoArea.Forma.CAJA_FRONTAL
 	m.cantidad = 40.0
@@ -117,6 +126,10 @@ func _reanimar() -> void:
 	var m := MovimientoReanimar.new()
 	_base(m, "Reanimar", PESADA, 40.0, 4.0, NARANJA,
 		"Pesada con un caido adelante: lo levantas, venga de donde venga el combo.")
+	_verse(m, "resurrection", "reanimar")
+	# resurrection es levantarse del suelo y arranca tirado: como gesto alcanza
+	# desde que se arrodilla junto al caido hasta que se incorpora.
+	m.cuadro_inicial = 5
 	m.requiere_derribado = true
 	_guardar(m, "reanimar")
 
@@ -127,23 +140,24 @@ func _impulso() -> void:
 	_base(m, "Impulso", LIGERA, 12.0, 2.5, CELESTE,
 		"Ligera en el aire: te lanzas hacia adelante y curas 12 al primer herido que cruzas.")
 	m.en_el_aire = true
-	m.animacion = "jump"
+	_verse(m, "aerial_strike", "impulso")
 	m.fuerza = 9.5
 	m.duracion = 0.22
 	m.cura_al_cruzar = 12.0
 	_guardar(m, "impulso")
 
 
-## Se aprieta en el aire y se resuelve al tocar el suelo. No hace dano: el
-## aturdido es para frenar a los que estan encima, y solo pega a quien sepa
-## aturdirse (hoy nadie).
+## Se aprieta en el aire y se resuelve al tocar el suelo: en el aire toma la
+## pose del golpe y al aterrizar suelta la onda. No hace dano: el aturdido es
+## para frenar a los enemigos que estan encima (Unidad3D.aturdir), que pierden
+## el golpe que tenian en marcha.
 func _caida() -> void:
 	var m := MovimientoArea.new()
 	_base(m, "Caida sanadora", PESADA, 30.0, 5.0, DORADO,
 		"Pesada en el aire: al tocar el suelo curas 25 a todos los que tenes a 3 m.")
 	m.en_el_aire = true
 	m.al_aterrizar = true
-	m.animacion = "jump"
+	_verse(m, "energy_wave", "caida", "aerial_strike")
 	m.forma = MovimientoArea.Forma.ALREDEDOR
 	m.cantidad = 25.0
 	m.radio = 3.0
@@ -163,6 +177,18 @@ func _base(m: Movimiento, nombre: String, entrada: StringName, costo: float,
 	m.recuperacion = RECUPERACION_PESADA if entrada == PESADA else RECUPERACION_LIGERA
 	m.color = color
 	m.descripcion = descripcion
+
+
+## Como se ve: la animacion del healer al soltarlo, la de fx_frames sobre lo que
+## alcanza y, si se prepara (carga o espera el suelo), la pose mientras tanto.
+## Todas tienen que existir en healer_frames y fx_frames (lo mira
+## test_enganche.gd): una que falte no rompe nada, pero se ve otra ("cast", o
+## el salto si es en el aire, y "heal").
+func _verse(m: Movimiento, animacion: String, efecto: String,
+		animacion_carga: String = "") -> void:
+	m.animacion = animacion
+	m.efecto = efecto
+	m.animacion_carga = animacion_carga
 
 
 ## El icono es opcional: sin extraer_ui.gd (o sin importar) el movimiento se

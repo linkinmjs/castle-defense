@@ -32,8 +32,9 @@ signal reanimada()
 ## la escena.
 signal golpe_anunciado(punto: Vector3, radio: float, segundos: float)
 ## Cayo un golpe telegrafiado. `alcanzados` es a cuantos les pego: los que se
-## salieron de la marca o la saltaron no cuentan. Es el momento para sacudir
-## la camara, no el anuncio.
+## salieron de la marca o la saltaron no cuentan. La camara ya la sacude la
+## unidad cuando alcanza a alguien (_hacer_pesar_golpe): esto es para un
+## sonido o para contar esquivas.
 signal golpe_cayo(punto: Vector3, alcanzados: int)
 
 const FRAMES_ALIADO := preload("res://assets/sprites/soldier/soldier_frames.tres")
@@ -50,6 +51,39 @@ const PROPORCION_CAPSULA := 0.85
 ## Radio minimo de la marca: un golpe telegrafiado a un solo objetivo tambien
 ## tiene que verse en el suelo, aunque no pegue en area.
 const RADIO_MARCA_MINIMO := 0.8
+## A que altura de los pies salen las chispas de un golpe: el pecho.
+const ALTURA_CHISPAS := 1.1
+## Cuanto se adelantan hacia la camara (que mira desde +Z): en el plano del
+## sprite del golpeado, la mitad saldria por detras y la taparia su cuerpo.
+const HACIA_CAMARA_CHISPAS := 0.3
+## Cuanto por encima de la barra de vida va la base del primer numero (la
+## cura). Pegado, el overlay dibuja la barra por encima del mundo y lo tapa.
+const ALTURA_NUMEROS := 0.25
+## Entre un renglon de numeros y el siguiente. Los que nacen juntos suben
+## juntos, asi que alcanza con que no se pisen al nacer.
+const SEPARACION_NUMEROS := 0.45
+## Cuantos renglones puede subir un numero para no nacer encima de otro. Con
+## la camara de la batalla, mas arriba se mete al subir en la franja del
+## encabezado del HUD.
+const RENGLONES_EXTRA := 2
+## Si no queda renglon libre (una cura en area sobre muchos soldados juntos),
+## el numero espera esto y vuelve a buscar: para entonces los de la primera
+## tanda subieron y dejaron lugar abajo.
+const ESPERA_NUMERO := 0.25
+## Ancho de un caracter de NumeroFlotante, como fraccion de su alto. Es una
+## aproximacion: alcanza para saber si dos numeros se pisan.
+const ANCHO_POR_CARACTER := 0.6
+## Lo que el alto de la letra tiene de aire arriba y abajo, como fraccion: dos
+## renglones seguidos se tocan apenas en ese aire, y eso no es pisarse.
+const AIRE_DE_LA_LETRA := 0.12
+## Segundos en que se apaga un numero viejo al llegar uno nuevo a la misma
+## unidad.
+const APAGADO_NUMERO := 0.08
+
+## Los numeros de todas las unidades que pueden seguir en pantalla: con ellos
+## se busca lugar para uno nuevo (ver _renglon_libre). Sin tipo: uno ya
+## liberado no se puede leer de un arreglo tipado.
+static var _numeros_en_pantalla: Array = []
 
 @export var vida_maxima: float = 80.0
 @export var dano: float = 12.0
@@ -148,6 +182,9 @@ var _punto_golpe: Vector3 = Vector3.ZERO
 var _factor_golpe: float = 1.0
 ## La marca en el suelo del golpe telegrafiado en curso, si hay.
 var _marca: MarcaTelegrafo = null
+## Los numeros de esta unidad que pueden seguir en pantalla. Sin tipo: uno ya
+## liberado no se puede leer de un arreglo tipado.
+var _numeros: Array = []
 
 @onready var _sprite: AnimatedSprite3D = $Sprite
 @onready var _colision: CollisionShape3D = $CollisionShape3D
@@ -493,9 +530,32 @@ func _conectar_golpe() -> void:
 			and global_position.distance_to(_objetivo.global_position) <= alcance * 1.25 \
 			and not (barrido and _en_el_aire(_objetivo)):
 		_objetivo.recibir_dano(cantidad, self)
+		_chispas_en(_objetivo)
 		alcanzados = 1
+	if alcanzados > 0 and (anunciado or es_jefe):
+		_hacer_pesar_golpe()
 	if anunciado:
 		golpe_cayo.emit(_punto_golpe, alcanzados)
+
+
+## Chispas en el pecho del que recibio el golpe. Cuelgan del padre y no del
+## golpeado, que puede estar cayendo o por irse del arbol.
+func _chispas_en(nodo: Node3D) -> void:
+	if is_inside_tree():
+		Particulas.chispas(get_parent(),
+			nodo.global_position + Vector3(0.0, ALTURA_CHISPAS, HACIA_CAMARA_CHISPAS))
+
+
+## El golpe que se vio venir (o el del jefe) pesa cuando alcanza a alguien: la
+## camara tiembla y el juego se frena un instante. El que no alcanzo a nadie
+## no: salirse de la marca tiene que sentirse como zafar, no como un golpe.
+func _hacer_pesar_golpe() -> void:
+	if not is_inside_tree():
+		return
+	var camara := get_viewport().get_camera_3d() as CamaraBatalla
+	if camara != null:
+		camara.sacudir(0.18, 0.25)
+	Presentacion.hit_stop(get_tree(), 0.04)
 
 
 ## Pega donde cayo el golpe y no a quien apuntaba: el que salio de la marca se
@@ -516,6 +576,7 @@ func _golpear_area(cantidad: float) -> int:
 			if barrido and _en_el_aire(nodo):
 				continue
 			nodo.recibir_dano(cantidad, self)
+			_chispas_en(nodo)
 			alcanzados += 1
 	return alcanzados
 
@@ -572,6 +633,114 @@ func punto_cabeza() -> Vector3:
 	return global_position + Vector3(0.0, altura_barra, 0.0)
 
 
+## Donde va la base de un numero que sale de esta unidad, por renglon: el 0 es
+## la cura y los siguientes se apilan arriba (lo desperdiciado, el nombre de
+## un estado). Salen sobre la barra, a la altura que pide el tipo.
+func punto_numero(renglon: int = 0) -> Vector3:
+	return _base_del_renglon(punto_cabeza(), renglon)
+
+
+## Muestra un texto sobre esta unidad, en el renglon pedido o en el primero
+## libre de ahi para arriba (ver _renglon_libre): con una cura en area sobre
+## soldados amontonados nacerian uno encima del otro y no se leeria ninguno.
+## Si no queda renglon libre, espera a que los de adelante suban. Sin pantalla
+## no muestra nada y devuelve null.
+func mostrar_numero(texto: String, color: Color, tamano: float = 1.0,
+		renglon: int = 0) -> NumeroFlotante:
+	return _mostrar_numero(texto, color, tamano, renglon, true)
+
+
+func _mostrar_numero(texto: String, color: Color, tamano: float, renglon: int,
+		puede_esperar: bool) -> NumeroFlotante:
+	if not is_inside_tree() or not Presentacion.activa():
+		return null
+	var libre := renglon
+	var camara := get_viewport().get_camera_3d()
+	if camara != null:
+		libre = _renglon_libre(camara, punto_cabeza(), renglon, texto, tamano,
+			_cajas_en_pantalla(camara))
+		if libre < 0 and puede_esperar:
+			# Con la fisica y respetando la pausa, como los demas relojes.
+			get_tree().create_timer(ESPERA_NUMERO, false, true).timeout.connect(
+				_mostrar_numero.bind(texto, color, tamano, renglon, false))
+			return null
+		if libre < 0:
+			libre = renglon + RENGLONES_EXTRA
+	var numero := NumeroFlotante.mostrar(get_parent(), punto_numero(libre), texto, color, tamano)
+	if numero != null:
+		_numeros.append(numero)
+		_numeros_en_pantalla.append(numero)
+	return numero
+
+
+## Apaga enseguida los numeros que esta unidad todavia mostraba, y deja de
+## contarlos como ocupando lugar.
+func _apagar_numeros() -> void:
+	for numero: Variant in _numeros:
+		if not is_instance_valid(numero):
+			continue
+		_numeros_en_pantalla.erase(numero)
+		var viejo := numero as NumeroFlotante
+		if viejo == null or viejo.is_queued_for_deletion():
+			continue
+		var tween := viejo.create_tween().set_parallel(true)
+		tween.tween_property(viejo, ^"modulate:a", 0.0, APAGADO_NUMERO)
+		tween.tween_property(viejo, ^"outline_modulate:a", 0.0, APAGADO_NUMERO)
+		tween.chain().tween_callback(viejo.queue_free)
+	_numeros.clear()
+
+
+static func _base_del_renglon(cabeza: Vector3, renglon: int) -> Vector3:
+	return cabeza + Vector3(0.0, ALTURA_NUMEROS + SEPARACION_NUMEROS * renglon, 0.0)
+
+
+## El primer renglon, desde el pedido y hasta RENGLONES_EXTRA mas arriba, en el
+## que la letra de un numero no pisa ninguna de las cajas ocupadas; -1 si no
+## hay. Mide en pantalla y no en el mundo: dos soldados a distinta profundidad
+## tienen la cabeza a la misma altura en el mundo y a casi la misma en la
+## pantalla.
+static func _renglon_libre(camara: Camera3D, cabeza: Vector3, renglon: int,
+		texto: String, tamano: float, ocupadas: Array[Rect2]) -> int:
+	for extra in RENGLONES_EXTRA + 1:
+		var caja := _caja_en_pantalla(camara, _base_del_renglon(cabeza, renglon + extra),
+			texto, tamano)
+		if not ocupadas.any(func(otra: Rect2) -> bool: return caja.intersects(otra)):
+			return renglon + extra
+	return -1
+
+
+## Donde estan ahora en pantalla los numeros de las unidades que todavia se
+## leen: van subiendo, y los que ya se apagan no ocupan. De paso saca de la
+## lista a los que ya no estan.
+static func _cajas_en_pantalla(camara: Camera3D) -> Array[Rect2]:
+	var cajas: Array[Rect2] = []
+	for i in range(_numeros_en_pantalla.size() - 1, -1, -1):
+		var numero: Variant = _numeros_en_pantalla[i]
+		if not is_instance_valid(numero) or (numero as Node).is_queued_for_deletion():
+			_numeros_en_pantalla.remove_at(i)
+			continue
+		var etiqueta := numero as NumeroFlotante
+		if etiqueta.modulate.a < 0.5:
+			continue
+		cajas.append(_caja_en_pantalla(camara, etiqueta.global_position, etiqueta.text,
+			etiqueta.pixel_size / NumeroFlotante.METROS_POR_PIXEL))
+	return cajas
+
+
+## Lo que ocuparia en pantalla la letra de un numero con la base en pos: de
+## alto, el de NumeroFlotante proyectado y sin su aire; de ancho, lo que dan sus
+## caracteres.
+static func _caja_en_pantalla(camara: Camera3D, pos: Vector3, texto: String,
+		tamano: float) -> Rect2:
+	var alto_mundo := NumeroFlotante.TAMANO_FUENTE * NumeroFlotante.METROS_POR_PIXEL * tamano
+	var base := camara.unproject_position(pos)
+	var arriba := camara.unproject_position(pos + Vector3(0.0, alto_mundo, 0.0))
+	var alto := absf(base.y - arriba.y)
+	var ancho := alto * ANCHO_POR_CARACTER * texto.length()
+	var caja := Rect2(base.x - ancho * 0.5, minf(base.y, arriba.y), ancho, alto)
+	return caja.grow(-alto * AIRE_DE_LA_LETRA)
+
+
 ## Un solo lugar donde empieza un sangrado, para que el aviso salga siempre.
 func aplicar_sangrado(segundos: float) -> void:
 	if estado == Estado.MUERTA or estado == Estado.DERRIBADA:
@@ -600,7 +769,27 @@ func curar(cantidad: float) -> float:
 	vida = minf(vida + cantidad, vida_maxima)
 	var efectiva := vida - antes
 	curada.emit(cantidad, efectiva)
+	_mostrar_cura(cantidad, efectiva)
 	return efectiva
+
+
+## Lo que entro, en verde sobre la barra, y lo que sobro, en gris un renglon
+## mas arriba y mas chico: el desperdicio es lo que el encuentro 2 quiere que
+## se aprenda a ver, pero no puede tapar lo que si entro. Aca y no en cada
+## movimiento: toda cura pasa por curar(), asi que ninguna queda sin numero.
+##
+## Una cura nueva apaga lo que esta unidad todavia mostraba: en un combo sobre
+## el mismo paciente, el numero anterior (ya leido) quedaria justo donde nacen
+## los nuevos.
+func _mostrar_cura(solicitada: float, efectiva: float) -> void:
+	if not is_inside_tree() or not Presentacion.activa():
+		return
+	_apagar_numeros()
+	if efectiva >= 1.0:
+		mostrar_numero("+%d" % roundi(efectiva), NumeroFlotante.COLOR_CURA)
+	var sobra := solicitada - efectiva
+	if sobra >= 1.0:
+		mostrar_numero("%d desp." % roundi(sobra), NumeroFlotante.COLOR_DESPERDICIO, 0.8, 1)
 
 
 func estabilizar() -> bool:

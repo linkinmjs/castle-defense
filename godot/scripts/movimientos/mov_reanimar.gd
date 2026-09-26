@@ -14,7 +14,7 @@ func ejecutar(healer: Node3D) -> Dictionary:
 	# reanimar() dice si habia a quien levantar: si no, no se anuncia nada.
 	if unidad == null or not unidad.reanimar():
 		return _resultado(false)
-	healer.lanzar_efecto(unidad, efecto)
+	healer.lanzar_efecto(unidad, efecto, color)
 	return _resultado(true, unidad, unidad.vida, "Reanimado")
 
 

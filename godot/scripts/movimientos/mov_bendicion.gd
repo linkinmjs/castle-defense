@@ -35,7 +35,7 @@ func ejecutar(healer: Node3D) -> Dictionary:
 	if unidad == null or unidad.esta_bendecida():
 		return _resultado(false)
 	unidad.bendecir(duracion, reduccion, bonus)
-	healer.lanzar_efecto(unidad, efecto)
+	healer.lanzar_efecto(unidad, efecto, color)
 	return _resultado(true, unidad, 0.0, "Bendecido")
 
 

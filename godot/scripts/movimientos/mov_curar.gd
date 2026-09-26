@@ -30,7 +30,11 @@ func ejecutar(healer: Node3D) -> Dictionary:
 
 	var cortado := corta_sangrado and unidad.estabilizar()
 	var entro := unidad.curar(cantidad)
-	healer.lanzar_efecto(unidad, efecto)
+	healer.lanzar_efecto(unidad, efecto, color)
+	if cortado:
+		# El nombre del movimiento, un renglon arriba de lo que entro. Si ahi
+		# ya esta lo desperdiciado, mostrar_numero lo sube otro.
+		unidad.mostrar_numero(nombre.to_upper(), color, 0.8, 1)
 	# Cortar el sangrado es lo que el jugador tiene que ver primero: la vida
 	# que entro ya la muestra la barra.
 	var texto := "%s: sangrado cortado" % nombre if cortado else _texto_cura(cantidad, entro)

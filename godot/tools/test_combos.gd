@@ -505,7 +505,7 @@ func _caida() -> bool:
 	_b = _aliado(-2.5, 0.0, 50.0)   # a 2.5 m, detras
 	_c = _aliado(3.6, 0.0, 50.0)    # a 3.6 m: fuera
 	_aturdible = _enemigo(1.5, 0.5, true)
-	_comun = _enemigo(-1.0, 0.5)    # sin aturdir(): se lo saltea sin romper nada
+	_comun = _enemigo(-1.0, 0.5)    # con el aturdir() de verdad
 	_healer.saltar()
 	_esperar(0.1)
 	return true
@@ -529,8 +529,9 @@ func _caida_aterriza() -> bool:
 	_igual("y al que esta a 2.5 m", _b.vida, 75.0)
 	_igual("no al que esta a 3.6 m", _c.vida, 50.0)
 	_igual("cobra 30 recien al aterrizar", _healer.mana, 70.0)
-	_igual("aturde 0.5 s al enemigo que sabe aturdirse", _aturdible.get("aturdido"), 0.5)
-	_ok("y al que no sabe no le pasa nada", _comun.esta_viva() and not _comun.esta_derribada())
+	_igual("aturde 0.5 s a un enemigo cercano", _aturdible.get("aturdido"), 0.5)
+	_ok("y al otro lo frena el aturdir() de verdad, sin hacerle dano",
+		_comun.esta_aturdida() and is_equal_approx(_comun.vida, _comun.vida_maxima))
 	return true
 
 
@@ -726,8 +727,9 @@ func _aliado(dx: float, dz: float, vida: float = -1.0) -> Unidad3D:
 	return unidad
 
 
-## Zombi quieto. Con `aturdible` lleva un aturdir() de mentira, que es lo que
-## la Caida sanadora le pregunta a cada enemigo.
+## Zombi quieto. Con `aturdible` le cambia el aturdir() de las unidades por uno
+## que solo anota los segundos pedidos, para medir lo que pide la Caida
+## sanadora.
 func _enemigo(dx: float, dz: float, aturdible: bool = false) -> Unidad3D:
 	var unidad: Unidad3D = ESCENA_UNIDAD.instantiate()
 	if aturdible:

@@ -12,8 +12,10 @@ var _ticks := 0
 var _maxima := 0.0
 var _vy_guardada := 0.0
 var _aterrizajes := 0
-## Un movimiento de suelo cualquiera: su pose es "cast".
+## Un movimiento de suelo cualquiera: su pose es "healing".
 var _toque: Movimiento = preload("res://resources/movimientos/toque.tres")
+## La ligera en el aire: trae pose propia, "aerial_strike".
+var _impulso: Movimiento = preload("res://resources/movimientos/impulso.tres")
 
 
 func _initialize() -> void:
@@ -83,17 +85,20 @@ func _tick() -> void:
 			if not _healer.esta_en_el_aire():
 				_fase = 8
 		8:
+			# Uno de suelo no se prueba en el aire: ahi no resuelve nunca.
 			print("--- la pose de un movimiento en el aire ---")
 			_healer.saltar()
-			_healer.animar_movimiento(_toque)
-			_ok("en el aire mantiene la animacion de salto", _healer._sprite.animation == "jump")
+			_ok("saltar pone la animacion de salto", _healer._sprite.animation == &"jump")
+			_healer.animar_movimiento(_impulso)
+			_ok("un aereo trae su pose: el Impulso es aerial_strike",
+				_healer._sprite.animation == &"aerial_strike")
 			_fase = 9
 		9:
 			if not _healer.esta_en_el_aire():
 				_healer.gastar_mana(10.0)
-				_ok("gastar mana ya no anima nada", _healer._sprite.animation != "cast")
+				_ok("gastar mana ya no anima nada", _healer._sprite.animation != &"healing")
 				_healer.animar_movimiento(_toque)
-				_ok("en el suelo la pose si se ve", _healer._sprite.animation == "cast")
+				_ok("en el suelo la pose si se ve", _healer._sprite.animation == &"healing")
 				_fase = 10
 		10:
 			print("")

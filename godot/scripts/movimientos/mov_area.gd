@@ -24,8 +24,9 @@ func alcanzados(healer: Node3D) -> Array[Unidad3D]:
 	return Apuntado.aliados_alrededor(healer, radio)
 
 
-## Enemigos que quedarian aturdidos. Hoy ninguna unidad sabe aturdirse: se
-## pregunta por el metodo para que el dia que exista funcione sin tocar esto.
+## Enemigos que quedarian aturdidos. Las unidades saben aturdirse
+## (Unidad3D.aturdir); se pregunta por el metodo y no por el tipo para que un
+## enemigo que no sepa se saltee sin romper nada.
 func aturdibles(healer: Node3D) -> Array[Unidad3D]:
 	var lista: Array[Unidad3D] = []
 	if aturde_radio <= 0.0 or aturde_segundos <= 0.0:
@@ -57,7 +58,7 @@ func ejecutar(healer: Node3D) -> Dictionary:
 	var destellos := 0
 	if al_aterrizar:
 		# El golpe contra el suelo se ve en el healer; el resto, en quien sube.
-		healer.lanzar_efecto(healer, efecto)
+		healer.lanzar_efecto(healer, efecto, color)
 		destellos += 1
 	for unidad in lista:
 		var entro := unidad.curar(cantidad)
@@ -65,7 +66,7 @@ func ejecutar(healer: Node3D) -> Dictionary:
 		if entro > 0.0:
 			curados += 1
 		if destellos < MAX_EFECTOS:
-			healer.lanzar_efecto(unidad, efecto)
+			healer.lanzar_efecto(unidad, efecto, color)
 			destellos += 1
 	for enemigo in aturdidos:
 		enemigo.call(&"aturdir", aturde_segundos)

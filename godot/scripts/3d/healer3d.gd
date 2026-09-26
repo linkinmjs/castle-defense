@@ -11,6 +11,11 @@ extends CharacterBody3D
 ## Cada healer lee solo las acciones de su jugador (p1_*, p2_*, ver Jugadores).
 ## Por eso nunca marca un evento como manejado: el otro healer y la batalla
 ## escuchan el mismo input y cada uno se queda con lo suyo.
+##
+## Tambien pone lo que se ve y no cambia el juego: la pose de cada movimiento,
+## el polvo al aterrizar y al correr, el numero y la vineta cuando le pegan, el
+## brillo de cada cura y el peso de un remate. Sin pantalla (Presentacion) nada
+## de eso crea nodos, asi que las pruebas corren igual.
 
 signal mana_cambio(actual: float, maximo: float)
 signal vida_cambio(actual: float, maximo: float)
@@ -28,8 +33,41 @@ signal combo_cambio(cuenta: int, nombre: String)
 const FRAMES_FX := preload("res://assets/sprites/fx/fx_frames.tres")
 ## Alto con el que se ve un efecto en el mundo, sea cual sea su sheet.
 const ALTO_EFECTO := 1.6
-## Segundos que la pose de un movimiento no se deja pisar por caminar.
-const DURACION_POSE := 0.45
+## A que altura va el centro de un efecto: el pecho de quien lo recibe.
+const ALTURA_EFECTO := 1.1
+## Cuanto se adelantan hacia la camara (que mira desde +Z) el dibujo y el
+## brillo de un efecto. En el mismo plano que el sprite de quien lo recibe, el
+## dibujo pelearia con el por quien va adelante y la mitad del brillo quedaria
+## tapada por el cuerpo.
+const HACIA_CAMARA_EFECTO := 0.1
+const HACIA_CAMARA_BRILLO := 0.3
+## Efectos que nacen del suelo: el pilar de Reanimar sube desde el borde de
+## abajo del cuadro. Van con la base a ras del piso; centrados en el pecho
+## flotarian a medio metro.
+const EFECTOS_DEL_SUELO: Array[String] = ["reanimar"]
+## Tope de lo que la pose de un movimiento no se deja pisar por caminar. La
+## pose dura lo que su animacion, pero el escudo o el golpe aereo pasan de
+## 0.6 s, y tanto tiempo sin que el cuerpo acompane al joystick se siente
+## trabado.
+const POSE_MAXIMA := 0.6
+## Lo que dura la pose de aterrizar: apenas el golpe de las rodillas.
+const DURACION_ATERRIZAJE := 0.15
+## Desde que cuadro de "land": el primero es el contacto, todavia estirado, y
+## en 0.15 s taparia la mitad del golpe de las rodillas.
+const CUADRO_ATERRIZAJE := 1
+## Por debajo de esto (m/s) cuenta como quieto: no camina, y al aterrizar se
+## agacha.
+const RAPIDEZ_QUIETO := 0.25
+## Cada cuanto levanta tierra un paso, corriendo.
+const INTERVALO_PASOS := 0.15
+## A que altura de los pies sale el numero del dano que recibe: sobre la
+## cabeza, que queda a 2 m.
+const ALTURA_NUMERO_DANO := 2.35
+## Dano con el que la vineta late a pleno, y lo menos que late. Un golpe comun
+## (8 a 12) queda en el piso, que ya se lee; los del bruto y el jefe la llevan
+## al tope.
+const DANO_VINETA_PLENA := 15.0
+const VINETA_MINIMA := 0.4
 
 ## Que acciones lee: 1 las p1_*, 2 las p2_*.
 @export_range(1, 2) var jugador: int = 1
@@ -92,11 +130,16 @@ var fuente_ultimo_dano: String = ""
 var _impulso_direccion: Vector3 = Vector3.ZERO
 var _impulso_fuerza: float = 0.0
 var _impulso_restante: float = 0.0
-## Lo que falta de la pose del ultimo movimiento. Mientras dura, caminar no la
-## pisa.
+## Lo que falta de la pose del ultimo movimiento. Mientras dura, ni caminar ni
+## un golpe la pisan: el movimiento se tiene que ver entero.
 var _casteando: float = 0.0
 ## Lo que falta de la animacion de golpe. Mientras dura, caminar no la pisa.
 var _hurt_restante: float = 0.0
+## Lo que falta de una postura que no es un movimiento: aterrizar o levantarse
+## del suelo. Caminar no la pisa; un golpe si, que es mas urgente.
+var _postura_restante: float = 0.0
+## Lo que falta para el proximo paso con polvo, mientras corre.
+var _reloj_pasos: float = 0.0
 var _en_el_aire: bool = false
 var _caido_restante: float = 0.0
 var _flash: float = 0.0
@@ -121,6 +164,7 @@ func _ready() -> void:
 	_tinte_base = tinte_jugador
 	_sprite.modulate = tinte_jugador
 	_combos.combo_cambio.connect(combo_cambio.emit)
+	_combos.movimiento_usado.connect(_on_movimiento_usado)
 	mana = mana_maximo
 	mana_cambio.emit(mana, mana_maximo)
 	vida = vida_maxima
@@ -140,6 +184,8 @@ func reiniciar(posicion: Vector3) -> void:
 	_impulso_fuerza = 0.0
 	_casteando = 0.0
 	_hurt_restante = 0.0
+	_postura_restante = 0.0
+	_reloj_pasos = 0.0
 	_en_el_aire = false
 	_flash = 0.0
 	# Reequipar lo mismo es lo que deja al componente como nuevo: sin combo,
@@ -148,7 +194,7 @@ func reiniciar(posicion: Vector3) -> void:
 	_combos.equipar(_combos.movimientos)
 	_cambiar_al_frente(null)
 	_sprite.modulate = _tinte_base
-	_sprite.play("idle")
+	_reproducir(&"idle")
 	vida_cambio.emit(vida, vida_maxima)
 	mana_cambio.emit(mana, mana_maximo)
 
@@ -197,6 +243,7 @@ func _physics_process(delta: float) -> void:
 			_en_el_aire = false
 			velocity.y = 0.0
 			aterrizo.emit()
+			_aterrizar()
 
 	# Caido no junta mana: si no, caer seria una pausa gratis para recargar.
 	if mana < mana_maximo and esta_viva():
@@ -205,7 +252,9 @@ func _physics_process(delta: float) -> void:
 
 	_casteando = maxf(_casteando - delta, 0.0)
 	_hurt_restante = maxf(_hurt_restante - delta, 0.0)
+	_postura_restante = maxf(_postura_restante - delta, 0.0)
 	_actualizar_animacion()
+	_dejar_pasos(delta)
 	# Despues de moverse: la caja de la ligera sale de donde quedo parado.
 	_actualizar_al_frente()
 
@@ -237,7 +286,11 @@ func saltar() -> void:
 		return
 	_en_el_aire = true
 	velocity.y = sqrt(2.0 * gravedad * altura_salto)
-	_sprite.play("jump")
+	# El salto pisa la pose o la postura que hubiera: lo que les quedara no
+	# puede frenar la del aterrizaje.
+	_casteando = 0.0
+	_postura_restante = 0.0
+	_reproducir(&"jump")
 
 
 func esta_en_el_aire() -> bool:
@@ -281,14 +334,35 @@ func recibir_dano(cantidad: float, fuente: Node = null, _causa: StringName = &"g
 	vida = maxf(vida - cantidad, 0.0)
 	_flash = 0.12
 	vida_cambio.emit(vida, vida_maxima)
+	_acusar_golpe(cantidad)
 	if vida <= 0.0:
 		_caer()
 		return
 	# En el aire, en una pose o rezando manda esa pose, como en
-	# _actualizar_animacion: el golpe se lee igual por el destello.
+	# _actualizar_animacion: el golpe se lee igual por el destello. Una postura
+	# (aterrizar, levantarse) si se corta.
 	if not _en_el_aire and _casteando <= 0.0 and not esta_en_wind_up():
 		_hurt_restante = 0.25
-		_sprite.play("hurt")
+		_postura_restante = 0.0
+		_reproducir(&"hurt")
+
+
+## Lo que hace que un golpe se sienta aunque nadie mire la barra del healer: el
+## numero rojo sobre la cabeza, el borde rojo de la pantalla y un temblor
+## chico. Sin pantalla no hay numero ni temblor; la vineta, si esta, late igual
+## (ver Vineta).
+func _acusar_golpe(cantidad: float) -> void:
+	if not is_inside_tree():
+		return
+	if roundi(cantidad) > 0:
+		NumeroFlotante.mostrar(get_parent(),
+			global_position + Vector3(0.0, ALTURA_NUMERO_DANO, 0.0),
+			"-%d" % roundi(cantidad), NumeroFlotante.COLOR_DANO)
+	get_tree().call_group(Vineta.GRUPO, &"pulsar_dano",
+		clampf(cantidad / DANO_VINETA_PLENA, VINETA_MINIMA, 1.0))
+	var camara := _camara_batalla()
+	if camara != null:
+		camara.sacudir(0.08, 0.15)
 
 
 ## Mismo nombre que en las unidades: los enemigos preguntan esto a cualquier
@@ -310,16 +384,23 @@ func _caer() -> void:
 	_impulso_restante = 0.0
 	_casteando = 0.0
 	_hurt_restante = 0.0
-	_sprite.play("dead")
+	_postura_restante = 0.0
+	# Tropieza y cae; la animacion no vuelve sola, asi que queda tirado en el
+	# ultimo cuadro hasta levantarse.
+	_reproducir(&"fall")
 	cayo.emit()
 	aviso.emit("Caiste")
 
 
+## Se levanta desde donde quedo tirado, con la animacion entera: pasa una vez
+## cada tanto, y cortada a la mitad para caminar se veria como un salto de
+## cuadro. Es una postura y no una pose: si le pegan mientras, se ve el golpe.
 func _levantarse() -> void:
 	_caido_restante = 0.0
 	vida = vida_maxima * vida_al_levantarse
 	vida_cambio.emit(vida, vida_maxima)
-	_sprite.play("idle")
+	_reproducir(&"resurrection", 1.0, true)
+	_postura_restante = _duracion(&"resurrection")
 	aviso.emit("Te levantaste")
 
 
@@ -348,26 +429,50 @@ func gastar_mana(cantidad: float) -> void:
 
 
 ## La pose de un movimiento, conecte o no. La llama el componente.
+##
+## En el suelo, la animacion del movimiento desde su cuadro_inicial, o "cast"
+## si el sprite no la tiene. En el aire, solo si el sprite la tiene: los
+## aereos traen pose propia, y uno sin pose deja la del salto (si la pisara una
+## de suelo, al terminar volveria a arrancar el salto desde el primer cuadro).
+## El que espera el suelo muestra su pose de carga: en el aire todavia no
+## salio.
 func animar_movimiento(mov: Movimiento) -> void:
-	# En el aire la pose de salto manda: si la pisara otra, al terminar
-	# volveria a arrancar el salto desde el primer frame.
-	if mov == null or _en_el_aire:
+	if mov == null:
 		return
-	var animacion := mov.animacion
-	if not _sprite.sprite_frames.has_animation(animacion):
-		animacion = "cast"
-	_sprite.play(animacion)
-	_casteando = DURACION_POSE
+	var animacion: StringName = mov.animacion
+	var desde := mov.cuadro_inicial
+	if _en_el_aire and mov.al_aterrizar:
+		animacion = mov.pose_de_carga()
+		desde = 0
+	if not _tiene(animacion):
+		if _en_el_aire:
+			return
+		animacion = &"cast"
+		desde = 0
+	_posar(animacion, desde)
 
 
-## Arranca la carga de un movimiento lento. Hasta que sale (o lo cancela una
-## caida), _puede_actuar() da false: sin caminar, que frena con la friccion, y
-## sin saltar.
+## Arranca la carga de un movimiento lento. La pose de carga (o la del
+## movimiento, si no tiene) se estira a lo que dura la carga: el gesto termina
+## justo cuando sale, y la pose de soltarlo vuelve al ritmo de siempre. Hasta
+## que sale (o lo cancela una caida), _puede_actuar() da false: sin caminar,
+## que frena con la friccion, y sin saltar.
 func iniciar_wind_up(mov: Movimiento) -> void:
-	animar_movimiento(mov)
+	if mov == null:
+		return
+	var animacion: StringName = mov.pose_de_carga()
+	if not _tiene(animacion):
+		animacion = &"cast"
+	var duracion := _duracion(animacion)
+	var escala := duracion / mov.wind_up if mov.wind_up > 0.0 and duracion > 0.0 else 1.0
+	_postura_restante = 0.0
+	_reproducir(animacion, escala, true)
 
 
-func lanzar_efecto(objetivo: Node3D, animacion: String) -> void:
+## El dibujo del movimiento sobre quien lo recibe y un brillo de su color que
+## sube desde el cuerpo. Si fx_frames no tiene esa animacion, sale la cura
+## comun. color es el del movimiento (Movimiento.color).
+func lanzar_efecto(objetivo: Node3D, animacion: String, color: Color = Color.WHITE) -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return
 	if not FRAMES_FX.has_animation(animacion) or FRAMES_FX.get_frame_count(animacion) == 0:
@@ -385,15 +490,42 @@ func lanzar_efecto(objetivo: Node3D, animacion: String) -> void:
 	efecto.shaded = false
 	efecto.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	get_parent().add_child(efecto)
-	efecto.global_position = objetivo.global_position + Vector3(0, 1.1, 0)
+	# Centrado en el pecho; los que nacen del suelo, medio alto arriba de los
+	# pies, que es lo que deja su base a ras del piso.
+	var altura := ALTO_EFECTO * 0.5 if animacion in EFECTOS_DEL_SUELO else ALTURA_EFECTO
+	efecto.global_position = objetivo.global_position \
+		+ Vector3(0.0, altura, HACIA_CAMARA_EFECTO)
 	efecto.play(animacion)
 	efecto.animation_finished.connect(efecto.queue_free)
+	Particulas.brillo(get_parent(),
+		objetivo.global_position + Vector3(0.0, 1.0, HACIA_CAMARA_BRILLO), color)
 
 
 func impulsar(direccion: Vector3, fuerza: float, duracion: float) -> void:
 	_impulso_direccion = direccion
 	_impulso_fuerza = fuerza
 	_impulso_restante = duracion
+
+
+## Un remate que conecto pesa: el juego se frena un instante y la camara se
+## acerca de golpe. Por esta senal y no en animar_movimiento, que tambien
+## corre en los golpes al aire: un remate que no alcanzo a nadie no tiene nada
+## que hacer pesar.
+func _on_movimiento_usado(mov: Movimiento, _objetivo: Node3D, _efectivo: float) -> void:
+	if mov == null or not mov.termina_combo:
+		return
+	Presentacion.hit_stop(get_tree(), 0.05)
+	var camara := _camara_batalla()
+	if camara != null:
+		camara.punch(-2.5, 0.18)
+
+
+## La camara de la batalla, si es la que se esta mirando; si no, null. Fuera
+## del arbol o en una prueba sin camara no hay a quien sacudir.
+func _camara_batalla() -> CamaraBatalla:
+	if not is_inside_tree():
+		return null
+	return get_viewport().get_camera_3d() as CamaraBatalla
 
 
 # --- Al frente -----------------------------------------------------------------
@@ -450,17 +582,114 @@ func _actualizar_animacion() -> void:
 	elif velocity.x > 0.05:
 		_sprite.flip_h = false
 
-	if _en_el_aire or _casteando > 0.0 or esta_en_wind_up():
-		return  # ni el salto ni la pose ni la carga se interrumpen por caminar
-	if _hurt_restante > 0.0:
-		return  # el golpe se ve entero antes de volver a caminar
+	if _en_el_aire:
+		_posar_espera_del_suelo()
+		return  # el salto no se interrumpe por caminar
+	if _casteando > 0.0 or esta_en_wind_up():
+		return  # ni la pose ni la carga se interrumpen por caminar
+	if _hurt_restante > 0.0 or _postura_restante > 0.0:
+		return  # el golpe, el aterrizaje o el levantarse se ven enteros
 
 	var rapidez := Vector2(velocity.x, velocity.z).length()
-	var animacion := "idle"
+	var animacion := &"idle"
 	if rapidez > velocidad_maxima * 0.7:
-		animacion = "run"
-	elif rapidez > 0.25:
-		animacion = "walk"
+		animacion = &"run"
+	elif rapidez > RAPIDEZ_QUIETO:
+		animacion = &"walk"
 
-	if _sprite.animation != animacion:
-		_sprite.play(animacion)
+	if _sprite.animation == animacion:
+		return
+	if animacion == &"run":
+		# Arrancar a correr levanta tierra; los pasos que siguen, menos.
+		Particulas.polvo(get_parent(), global_position, 5)
+		_reloj_pasos = INTERVALO_PASOS
+	_reproducir(animacion)
+
+
+## La Caida sanadora se aprieta en el aire y sale recien al tocar el suelo, y
+## el componente no avisa al apretarla (no tiene carga). Se la descubre en
+## curso y se pone su pose de carga una sola vez: desde ahi el healer ya esta
+## comprometido con el golpe.
+func _posar_espera_del_suelo() -> void:
+	if _combos == null:
+		return
+	var mov := _combos.movimiento_en_curso()
+	if mov == null or not mov.al_aterrizar:
+		return
+	var animacion: StringName = mov.pose_de_carga()
+	if _tiene(animacion) and _sprite.animation != animacion:
+		_reproducir(animacion)
+
+
+## Toca el suelo: polvo siempre, y la postura de aterrizar solo si llega casi
+## quieto. Corriendo, agacharse trabaria la carrera; y si hay una pose de
+## movimiento en curso (el Impulso), manda esa.
+func _aterrizar() -> void:
+	Particulas.polvo(get_parent(), global_position)
+	if not esta_viva() or _casteando > 0.0:
+		return
+	if Vector2(velocity.x, velocity.z).length() > RAPIDEZ_QUIETO:
+		return
+	_reproducir(&"land")
+	if _sprite.animation == &"land":
+		_sprite.set_frame_and_progress(CUADRO_ATERRIZAJE, 0.0)
+	_postura_restante = DURACION_ATERRIZAJE
+
+
+## Mientras corre por el suelo, un poco de tierra cada INTERVALO_PASOS.
+func _dejar_pasos(delta: float) -> void:
+	if _en_el_aire or _sprite.animation != &"run":
+		_reloj_pasos = 0.0
+		return
+	_reloj_pasos -= delta
+	if _reloj_pasos <= 0.0:
+		_reloj_pasos += INTERVALO_PASOS
+		Particulas.pasos(get_parent(), global_position)
+
+
+## La pose de un movimiento: desde el cuadro pedido aunque ya estuviera
+## sonando (dos toques seguidos son dos gestos), protegida de caminar lo que
+## le queda a la animacion, hasta POSE_MAXIMA.
+func _posar(animacion: StringName, desde: int = 0) -> void:
+	if not _tiene(animacion):
+		return
+	_postura_restante = 0.0
+	_reproducir(animacion, 1.0, true)
+	var cuadro := clampi(desde, 0, _sprite.sprite_frames.get_frame_count(animacion) - 1)
+	if cuadro > 0:
+		_sprite.set_frame_and_progress(cuadro, 0.0)
+	_casteando = minf(_duracion(animacion, cuadro), POSE_MAXIMA)
+
+
+## Todo cambio de animacion del sprite pasa por aca. Asi la escala que estira
+## una carga vuelve a 1 con lo que venga despues, sin que cada lugar tenga que
+## acordarse. desde_el_principio la arranca de cero aunque ya estuviera
+## sonando; sin eso, pedir la misma que suena la deja seguir.
+func _reproducir(animacion: StringName, escala: float = 1.0,
+		desde_el_principio: bool = false) -> void:
+	if not _tiene(animacion):
+		return
+	_sprite.speed_scale = escala
+	_sprite.play(animacion)
+	if desde_el_principio:
+		_sprite.set_frame_and_progress(0, 0.0)
+
+
+func _tiene(animacion: StringName) -> bool:
+	return animacion != &"" and _sprite.sprite_frames != null \
+		and _sprite.sprite_frames.has_animation(animacion)
+
+
+## Segundos que dura una animacion del sprite a velocidad normal, desde el
+## cuadro pedido hasta el final; 0 si no la tiene.
+func _duracion(animacion: StringName, desde: int = 0) -> float:
+	if not _tiene(animacion):
+		return 0.0
+	var frames := _sprite.sprite_frames
+	var fps := frames.get_animation_speed(animacion)
+	if fps <= 0.0:
+		return 0.0
+	var cuadros := 0.0
+	for i in range(maxi(desde, 0), frames.get_frame_count(animacion)):
+		cuadros += frames.get_frame_duration(animacion, i)
+	return cuadros / fps

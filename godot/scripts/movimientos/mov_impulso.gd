@@ -16,6 +16,9 @@ extends Movimiento
 func ejecutar(healer: Node3D) -> Dictionary:
 	var frente := Vector3(Apuntado.direccion_frente(healer), 0.0, 0.0)
 	healer.impulsar(frente, fuerza, duracion)
+	# Colgada del healer y no del campo: el emisor viaja con el y las motas se
+	# quedan donde nacieron, asi que la estela queda atras sola.
+	Particulas.estela(healer, healer.global_position + Vector3(0.0, 0.9, 0.0), color)
 	return _resultado(true)
 
 
@@ -39,7 +42,7 @@ func cruzar(healer: Node3D) -> Dictionary:
 		return _resultado(false)
 
 	var entro := mejor.curar(cura_al_cruzar)
-	healer.lanzar_efecto(mejor, efecto)
+	healer.lanzar_efecto(mejor, efecto, color)
 	return _resultado(true, mejor, entro, _texto_cura(cura_al_cruzar, entro))
 
 

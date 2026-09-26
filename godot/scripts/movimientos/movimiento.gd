@@ -45,6 +45,13 @@ const MAX_EFECTOS := 6
 @export var wind_up: float = 0.0
 ## Animacion del healer al soltarlo.
 @export var animacion: String = "cast"
+## Cuadro de `animacion` desde el que arranca la pose. Casi siempre el primero;
+## la de levantarse (resurrection) empieza tirado en el suelo, y como gesto de
+## Reanimar alcanza con la parte en que se incorpora.
+@export var cuadro_inicial: int = 0
+## Pose mientras se prepara: durante la carga (wind_up) o, en el aire,
+## mientras espera el suelo. Vacia = la misma de soltarlo.
+@export var animacion_carga: String = ""
 ## Animacion de fx_frames que aparece sobre lo que alcanza.
 @export var efecto: String = "heal"
 @export var color: Color = Color.WHITE
@@ -63,6 +70,11 @@ func especificidad() -> int:
 	if en_el_aire:
 		valor += 1
 	return valor
+
+
+## La pose mientras se prepara: la de carga, o la de soltarlo si no tiene.
+func pose_de_carga() -> String:
+	return animacion_carga if animacion_carga != "" else animacion
 
 
 ## "" si puede salir. SIN_OBJETIVO si saldria al aire. Cualquier otro texto es
