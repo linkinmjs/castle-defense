@@ -111,7 +111,7 @@ func _probar_habilidades(componente: ComponenteHabilidades) -> void:
 	_igual("el enfriamiento no cobra mana", _healer.mana, 75.0)
 	_ok("avisa el enfriamiento", _tiene_aviso("enfriamiento"))
 
-	componente._process(1.0)
+	componente._physics_process(1.0)
 	_ok("tras el enfriamiento vuelve a estar lista",
 		componente.fraccion_enfriamiento(curar) == 0.0)
 

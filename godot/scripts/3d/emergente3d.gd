@@ -20,15 +20,22 @@ func _ready() -> void:
 	_marca.scale = Vector3(0.2, 1.0, 0.2)
 
 
-func _process(delta: float) -> void:
-	_restante -= delta
+func _process(_delta: float) -> void:
 	var progreso := 1.0 - clampf(_restante / duracion, 0.0, 1.0)
 	# Crece hasta su tamano final y late mas rapido cuanto mas cerca esta.
 	var latido := 0.85 + 0.15 * sin(progreso * progreso * 40.0)
 	var lado := lerpf(0.2, 1.0, progreso) * latido
 	_marca.scale = Vector3(lado, 1.0, lado)
 
+
+## La cuenta va con la fisica y el latido con el frame: lo que se ve puede ir
+## a cualquier ritmo, pero el enemigo tiene que salir en el mismo tick en cada
+## corrida, porque desde ahi entra al combate.
+func _physics_process(delta: float) -> void:
+	_restante -= delta
 	if _restante <= 0.0:
-		set_process(false)  # que no vuelva a avisar si el frame se estira
+		# Un frame lento corre varios pasos de fisica antes de liberar el
+		# nodo: sin esto avisaria una vez por paso.
+		set_physics_process(false)
 		termino.emit(global_position)
 		queue_free()

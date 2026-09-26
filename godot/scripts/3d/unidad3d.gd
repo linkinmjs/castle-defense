@@ -101,6 +101,9 @@ var _sembrada: bool = false
 var _cooldown: float = 0.0
 var _impacto_pendiente: float = -1.0
 var _flash: float = 0.0
+## Lo que falta de la animacion de golpe. Avanzar y combatir siguen decidiendo
+## el movimiento pero no la pisan: al tick siguiente ya no se veia.
+var _hurt_restante: float = 0.0
 
 @onready var _sprite: AnimatedSprite3D = $Sprite
 @onready var _colision: CollisionShape3D = $CollisionShape3D
@@ -168,10 +171,14 @@ func _physics_process(delta: float) -> void:
 
 	_actualizar_bendicion(delta)
 	_actualizar_sangrado(delta)
-	if estado == Estado.MUERTA:
+	# El sangrado pudo tirarla o matarla en este mismo tick: si siguiera, avanzar
+	# o combatir le pisarian el derribo y caminaria con 0 de vida sin poder ser
+	# reanimada.
+	if estado == Estado.MUERTA or estado == Estado.DERRIBADA:
 		return
 
 	_cooldown -= delta
+	_hurt_restante -= delta
 
 	if _impacto_pendiente > 0.0:
 		_impacto_pendiente -= delta
@@ -229,8 +236,7 @@ func _avanzar(delta: float) -> void:
 	# Acelera en vez de saltar a la velocidad: amortigua los cambios de rumbo.
 	velocity = velocity.move_toward(direccion * velocidad, 6.0 * delta)
 	_encarar(direccion.x)
-	if _sprite.animation != "walk":
-		_sprite.play("walk")
+	_animar(&"walk")
 
 
 ## Solo gira si el otro esta claramente a un lado. Con el objetivo justo
@@ -248,10 +254,19 @@ func _combatir() -> void:
 	if _cooldown <= 0.0 and _impacto_pendiente <= 0.0:
 		_cooldown = cadencia * (1.0 - _bonus_cadencia)
 		_impacto_pendiente = retardo_impacto
-		_sprite.play("attack")
+		# El golpe sale igual; lo que se posterga es solo el dibujo.
+		if _hurt_restante <= 0.0:
+			_sprite.play("attack")
 	elif _sprite.animation != "attack" and _impacto_pendiente <= 0.0:
-		if _sprite.animation != "idle":
-			_sprite.play("idle")
+		_animar(&"idle")
+
+
+## Cambia la animacion de movimiento o de combate, salvo mientras se ve el
+## golpe recibido.
+func _animar(animacion: StringName) -> void:
+	if _hurt_restante > 0.0 or _sprite.animation == animacion:
+		return
+	_sprite.play(animacion)
 
 
 func _conectar_golpe() -> void:
@@ -275,6 +290,11 @@ func recibir_dano(cantidad: float, fuente: Node = null, causa: StringName = &"go
 	if _azar.randf() < probabilidad_sangrado * (1.0 - _reduccion_dano):
 		aplicar_sangrado(duracion_sangrado)
 	_perder_vida(recibido, causa)
+	# Si el golpe lo tiro, manda la animacion de caida. Sin _ready todavia no
+	# hay sprite: test_determinismo golpea unidades que no entraron al arbol.
+	if esta_viva() and not esta_derribada() and is_node_ready():
+		_hurt_restante = 0.25
+		_sprite.play("hurt")
 
 
 ## Un solo lugar donde empieza un sangrado, para que el aviso salga siempre.
@@ -436,6 +456,7 @@ func _caer() -> void:
 	_reduccion_dano = 0.0
 	_bonus_cadencia = 0.0
 	_impacto_pendiente = -1.0
+	_hurt_restante = 0.0
 	# Sin colision: la linea puede pasarle por encima y el healer llegar.
 	_colision.set_deferred("disabled", true)
 	_sprite.play("dead")  # no vuelve sola: queda en el ultimo frame, tirada
@@ -555,13 +576,11 @@ func _retirarse() -> void:
 	var dx := destino_x - global_position.x
 	if absf(dx) < 1.0:
 		velocity = Vector3.ZERO
-		if _sprite.animation != "idle":
-			_sprite.play("idle")
+		_animar(&"idle")
 		return
 	velocity = Vector3(signf(dx), 0.0, 0.0) * velocidad * 1.2
 	_encarar(dx)
-	if _sprite.animation != "run":
-		_sprite.play("run")
+	_animar(&"run")
 
 
 ## Sale del suelo: sin fisica ni colision hasta que termina de asomar, asi no
@@ -570,7 +589,9 @@ func emerger(duracion: float) -> void:
 	set_physics_process(false)
 	_colision.disabled = true
 	global_position.y = -2.1
-	var tween := create_tween()
+	# Con la fisica y no con el frame: cuando termina, la unidad entra al
+	# combate, y eso tiene que pasar en el mismo tick en cada corrida.
+	var tween := create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_property(self, "global_position:y", 0.0, duracion).set_ease(Tween.EASE_OUT)
 	tween.tween_callback(func() -> void:
 		_colision.disabled = false

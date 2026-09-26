@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="castle-defense"
-config/description="Juego 2D de defensa de castillo."
+config/description="Beat-em-up 2.5D de healers: curas a un ejercito automatico que avanza por las filas enemigas."
 config/version="0.1.0"
 run/main_scene="res://scenes/ui/menu_principal.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
@@ -23,6 +23,14 @@ window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[importer_defaults]
+
+texture={
+"compress/mode": 0,
+"detect_3d/compress_to": 0,
+"mipmaps/generate": false
+}
 
 [input]
 
@@ -111,9 +119,13 @@ continuar={
 2d_render/layer_2="gameplay"
 2d_render/layer_3="foreground"
 2d_physics/layer_1="world"
+3d_physics/layer_1="mundo"
 2d_physics/layer_2="player"
+3d_physics/layer_2="jugadores"
 2d_physics/layer_3="allies"
+3d_physics/layer_3="aliados"
 2d_physics/layer_4="enemies"
+3d_physics/layer_4="enemigos"
 2d_physics/layer_5="projectiles"
 2d_physics/layer_6="buildings"
 

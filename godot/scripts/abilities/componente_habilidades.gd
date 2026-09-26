@@ -8,7 +8,6 @@ extends Node
 
 signal habilidad_usada(habilidad: Habilidad, aviso: String)
 signal habilidad_fallo(habilidad: Habilidad, motivo: String)
-signal enfriamientos_cambiaron
 ## Cambio la lista equipada: lo escucha el HUD para redibujar los slots.
 signal loadout_cambio
 
@@ -17,7 +16,10 @@ signal loadout_cambio
 var _restante: Dictionary = {}
 
 
-func _process(delta: float) -> void:
+## Los enfriamientos son un reloj de juego: corren al paso de la fisica, como
+## el mana y el combate, para que una habilidad vuelva a estar lista en el
+## mismo tick sin importar cuanto tarde cada frame.
+func _physics_process(delta: float) -> void:
 	if _restante.is_empty():
 		return
 
@@ -29,8 +31,6 @@ func _process(delta: float) -> void:
 	for nombre in terminadas:
 		_restante.erase(nombre)
 
-	enfriamientos_cambiaron.emit()
-
 
 ## Reemplaza la lista equipada. Un encuentro puede entregar solo Curar al
 ## principio y sumar Estabilizar mas tarde.
@@ -38,13 +38,6 @@ func equipar(lista: Array[Habilidad]) -> void:
 	habilidades = lista
 	_restante.clear()
 	loadout_cambio.emit()
-	enfriamientos_cambiaron.emit()
-
-
-func habilidad_en(indice: int) -> Habilidad:
-	if indice < 0 or indice >= habilidades.size():
-		return null
-	return habilidades[indice]
 
 
 ## Buscar por nombre en vez de por posicion: la lista cambia entre encuentros.
@@ -88,7 +81,6 @@ func intentar(habilidad: Habilidad) -> bool:
 	healer.gastar_mana(habilidad.costo)
 	if habilidad.enfriamiento > 0.0:
 		_restante[habilidad.nombre] = habilidad.enfriamiento
-		enfriamientos_cambiaron.emit()
 
 	habilidad_usada.emit(habilidad, aviso)
 	return true

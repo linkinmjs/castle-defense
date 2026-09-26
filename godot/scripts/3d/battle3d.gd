@@ -92,6 +92,9 @@ var _bajas_aliadas: int = 0
 var _emergente_restante: float = 0.0
 ## Oleadas ya disparadas, por indice, para no repetir las que no se repiten.
 var _oleadas_lanzadas: Dictionary = {}
+## Por indice de oleada: si su disparador por flanco puede volver a disparar.
+## Falta la clave hasta la primera vez que se evalua, y eso cuenta como armada.
+var _disparador_armado: Dictionary = {}
 
 
 func _ready() -> void:
@@ -134,6 +137,14 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_actualizar_camara(delta)
+
+
+## Los relojes del encuentro van al paso de la fisica, como el combate. Un
+## frame lento hace que Godot recupere el atraso con varios pasos de fisica
+## seguidos y ningun _process en el medio: con los relojes en _process, el
+## desenlace y las oleadas se evaluaban tarde, y el mismo encuentro podia
+## terminar distinto segun cuanto tardara cada frame.
+func _physics_process(delta: float) -> void:
 	if _terminada or _actual == null:
 		return
 
@@ -162,6 +173,7 @@ func iniciar_encuentro(enc: Encuentro, nueva_semilla: int = -1) -> void:
 	_bajas_aliadas = 0
 	tiempo_encuentro = 0.0
 	_oleadas_lanzadas.clear()
+	_disparador_armado.clear()
 	_limpiar_campo()
 
 	if _actual == null:
@@ -319,14 +331,14 @@ func _revisar_oleadas() -> void:
 		var lanzadas: int = _oleadas_lanzadas.get(i, 0)
 		if lanzadas > 0 and not oleada.repetir:
 			continue
-		if not _disparador_cumplido(oleada, lanzadas):
+		if not _disparador_cumplido(i, oleada, lanzadas):
 			continue
 		for grupo in oleada.grupos:
 			_desplegar_grupo(grupo)
 		_oleadas_lanzadas[i] = lanzadas + 1
 
 
-func _disparador_cumplido(oleada: OleadaEncuentro, lanzadas: int) -> bool:
+func _disparador_cumplido(indice: int, oleada: OleadaEncuentro, lanzadas: int) -> bool:
 	match oleada.disparador:
 		OleadaEncuentro.Disparador.RELOJ:
 			# Al repetirse, la siguiente entra un intervalo mas tarde.
@@ -334,10 +346,28 @@ func _disparador_cumplido(oleada: OleadaEncuentro, lanzadas: int) -> bool:
 		OleadaEncuentro.Disparador.BAJAS_ALIADAS:
 			return _bajas_aliadas >= int(oleada.valor) * (lanzadas + 1)
 		OleadaEncuentro.Disparador.FRENTE_PASA_X:
-			return frente_x() <= oleada.valor
+			return _flanco(indice, frente_x() <= oleada.valor)
 		OleadaEncuentro.Disparador.SIN_ENEMIGOS:
-			return _vivos("enemigos") == 0
+			return _flanco(indice, _vivos("enemigos") == 0)
 	return false
+
+
+## Para los disparadores que miran un estado y no un evento: el frente puede
+## quedarse del otro lado de la X, o el campo vacio, durante cientos de ticks.
+## Mirando solo si se cumple, una oleada que se repite entraba en cada uno de
+## esos ticks. Por flanco dispara cuando la condicion se vuelve cierta, y para
+## volver a disparar tiene que dejar de cumplirse antes.
+##
+## Arranca armada: si la condicion ya se cumple al empezar, dispara enseguida.
+func _flanco(indice: int, cumplida: bool) -> bool:
+	if not cumplida:
+		_disparador_armado[indice] = true
+		return false
+	var armado: bool = _disparador_armado.get(indice, true)
+	if not armado:
+		return false
+	_disparador_armado[indice] = false
+	return true
 
 
 # --- Emergentes ---------------------------------------------------------------

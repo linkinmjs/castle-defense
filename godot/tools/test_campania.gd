@@ -68,10 +68,15 @@ func _tick() -> void:
 			print("--- al terminar sale el resumen ---")
 			_ok("la batalla termino", _battle.esta_terminada())
 			_ok("se publico un resumen", _resumenes.size() == 1)
-			var r: Dictionary = _resumenes[0]
-			_ok("dice que se gano", r["victoria"] == true)
-			_ok("con el id del encuentro", r["encuentro_id"] == &"e1_mantener_linea")
-			_ok("y la curacion que hubo", r["curacion_emitida"] > 0.0)
+			# Sin resumen no hay que revisar: indexar igual cortaria la prueba
+			# con un error en vez de contarlo como una falla mas.
+			if _resumenes.is_empty():
+				_ok("el resumen dice como termino (no llego ninguno)", false)
+			else:
+				var r: Dictionary = _resumenes[0]
+				_ok("dice que se gano", r["victoria"] == true)
+				_ok("con el id del encuentro", r["encuentro_id"] == &"e1_mantener_linea")
+				_ok("y la curacion que hubo", r["curacion_emitida"] > 0.0)
 			_ok("hay una observacion",
 				_battle.telemetria().observacion_causal() != "")
 			_ok("las unidades quedaron quietas", _ninguna_procesa())
@@ -104,8 +109,11 @@ func _tick() -> void:
 			if _ticks < 5:
 				return
 			_ok("segundo resumen publicado", _resumenes.size() == 2)
-			_ok("y es del segundo encuentro",
-				_resumenes[1]["encuentro_id"] == &"e2_no_desperdiciar")
+			if _resumenes.size() < 2:
+				_ok("y es del segundo encuentro (no llego el segundo resumen)", false)
+			else:
+				_ok("y es del segundo encuentro",
+					_resumenes[1]["encuentro_id"] == &"e2_no_desperdiciar")
 			_battle.avanzar_encuentro()
 			_ticks = 0
 			_fase = 5

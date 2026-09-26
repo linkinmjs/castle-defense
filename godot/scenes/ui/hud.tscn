@@ -7,10 +7,10 @@
 [ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="5_kicr4"]
 [ext_resource type="Script" path="res://scripts/tarjeta_objetivo.gd" id="6_mj13f"]
 
-[node name="HUD" type="CanvasLayer" unique_id=2127563573]
+[node name="HUD" type="CanvasLayer" unique_id=1286444645]
 script = ExtResource("1_oj5la")
 
-[node name="Raiz" type="Control" parent="." unique_id=952571032]
+[node name="Raiz" type="Control" parent="." unique_id=238232707]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,7 +18,7 @@ anchor_bottom = 1.0
 mouse_filter = 2
 theme = ExtResource("2_gss2c")
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=1044581615]
+[node name="Contadores" type="Label" parent="Raiz" unique_id=171672297]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
@@ -27,7 +27,7 @@ offset_right = 24.0
 offset_bottom = 16.0
 theme_type_variation = &"Subtitulo"
 
-[node name="Frente" type="Control" parent="Raiz" unique_id=1738562935]
+[node name="Frente" type="Control" parent="Raiz" unique_id=448429206]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_left = 0.5
@@ -39,7 +39,7 @@ offset_bottom = 40.0
 mouse_filter = 2
 script = ExtResource("3_h022r")
 
-[node name="Encabezado" type="Label" parent="Raiz" unique_id=1938791506]
+[node name="Encabezado" type="Label" parent="Raiz" unique_id=2081910469]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_left = 0.5
@@ -51,19 +51,19 @@ offset_bottom = 98.0
 theme_type_variation = &"Subtitulo"
 horizontal_alignment = 1
 
-[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=2087590389]
+[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=214825859]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="ColumnaCentro" type="VBoxContainer" parent="Raiz/Centro" unique_id=929278715]
+[node name="ColumnaCentro" type="VBoxContainer" parent="Raiz/Centro" unique_id=332193892]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="Desenlace" type="Label" parent="Raiz/Centro/ColumnaCentro" unique_id=512010377]
+[node name="Desenlace" type="Label" parent="Raiz/Centro/ColumnaCentro" unique_id=482057711]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -71,14 +71,14 @@ theme_type_variation = &"Titulo"
 theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 
-[node name="Resumen" type="PanelContainer" parent="Raiz/Centro/ColumnaCentro" unique_id=1223811473]
+[node name="Resumen" type="PanelContainer" parent="Raiz/Centro/ColumnaCentro" unique_id=1065636299]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("4_4jqwt")
 
-[node name="Inferior" type="VBoxContainer" parent="Raiz" unique_id=476593509]
+[node name="Inferior" type="VBoxContainer" parent="Raiz" unique_id=1743176638]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -88,24 +88,24 @@ grow_vertical = 0
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="Aviso" type="Label" parent="Raiz/Inferior" unique_id=911066943]
+[node name="Aviso" type="Label" parent="Raiz/Inferior" unique_id=1309715060]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Aviso"
 
-[node name="Slots" type="PanelContainer" parent="Raiz/Inferior" unique_id=422880075]
+[node name="Slots" type="PanelContainer" parent="Raiz/Inferior" unique_id=1327060594]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 0
 mouse_filter = 2
 script = ExtResource("5_kicr4")
 
-[node name="BarraVidaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=962822876]
+[node name="BarraVidaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=1899066100]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="BarraVida" type="ProgressBar" parent="Raiz/Inferior/BarraVidaFila" unique_id=1324546590]
+[node name="BarraVida" type="ProgressBar" parent="Raiz/Inferior/BarraVidaFila" unique_id=609804211]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 18)
 layout_mode = 2
@@ -113,18 +113,18 @@ mouse_filter = 2
 theme_type_variation = &"BarraVida"
 show_percentage = false
 
-[node name="TextoVida" type="Label" parent="Raiz/Inferior/BarraVidaFila" unique_id=1774326424]
+[node name="TextoVida" type="Label" parent="Raiz/Inferior/BarraVidaFila" unique_id=1019147597]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Chico"
 vertical_alignment = 1
 
-[node name="BarraManaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=495985160]
+[node name="BarraManaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=1024374102]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="BarraMana" type="ProgressBar" parent="Raiz/Inferior/BarraManaFila" unique_id=1795449607]
+[node name="BarraMana" type="ProgressBar" parent="Raiz/Inferior/BarraManaFila" unique_id=576314144]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 18)
 layout_mode = 2
@@ -132,18 +132,18 @@ mouse_filter = 2
 theme_type_variation = &"BarraMana"
 show_percentage = false
 
-[node name="TextoMana" type="Label" parent="Raiz/Inferior/BarraManaFila" unique_id=698854730]
+[node name="TextoMana" type="Label" parent="Raiz/Inferior/BarraManaFila" unique_id=731122568]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Chico"
 vertical_alignment = 1
 
-[node name="Ayuda" type="Label" parent="Raiz/Inferior" unique_id=1649299223]
+[node name="Ayuda" type="Label" parent="Raiz/Inferior" unique_id=1162006138]
 layout_mode = 2
 theme_type_variation = &"Chico"
 text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     Esc pausa"
 
-[node name="Tarjeta" type="PanelContainer" parent="Raiz" unique_id=1818204371]
+[node name="Tarjeta" type="PanelContainer" parent="Raiz" unique_id=217828905]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_left = 1.0

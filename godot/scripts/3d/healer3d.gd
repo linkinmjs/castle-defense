@@ -11,7 +11,6 @@ signal mana_cambio(actual: float, maximo: float)
 signal vida_cambio(actual: float, maximo: float)
 signal aviso(texto: String)
 signal cayo
-signal se_levanto
 ## Cambio a quien apunta el mouse. Lo escucha la tarjeta del HUD.
 signal apuntada_cambio(unidad: Unidad3D)
 
@@ -53,6 +52,8 @@ var _impulso_direccion: Vector3 = Vector3.ZERO
 var _impulso_fuerza: float = 0.0
 var _impulso_restante: float = 0.0
 var _casteando: float = 0.0
+## Lo que falta de la animacion de golpe. Mientras dura, caminar no la pisa.
+var _hurt_restante: float = 0.0
 var _en_el_aire: bool = false
 var vida: float
 ## Que tipo de enemigo le pego por ultima vez.
@@ -68,6 +69,10 @@ var _tinte_base: Color = Color.WHITE
 func _ready() -> void:
 	# Sin gravedad ni suelo fisico: se desliza por el plano.
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
+	# Capa propia y sin mascara: atraviesa a los soldados, que lo buscan por
+	# grupo y no por colision, y dos healers tampoco se traban entre si.
+	collision_layer = 2   # jugadores
+	collision_mask = 0
 	# En este grupo lo encuentran los enemigos: es un objetivo mas, y el mas
 	# cercano gana. Rodeado de soldados no sos vos; solo, si.
 	add_to_group("healer")
@@ -90,6 +95,7 @@ func reiniciar(posicion: Vector3) -> void:
 	_impulso_restante = 0.0
 	_impulso_fuerza = 0.0
 	_casteando = 0.0
+	_hurt_restante = 0.0
 	_en_el_aire = false
 	_flash = 0.0
 	if _apuntada != null and is_instance_valid(_apuntada):
@@ -148,11 +154,13 @@ func _physics_process(delta: float) -> void:
 			_en_el_aire = false
 			velocity.y = 0.0
 
-	if mana < mana_maximo:
+	# Caido no junta mana: si no, caer seria una pausa gratis para recargar.
+	if mana < mana_maximo and esta_viva():
 		mana = minf(mana + regeneracion_mana * delta, mana_maximo)
 		mana_cambio.emit(mana, mana_maximo)
 
 	_casteando = maxf(_casteando - delta, 0.0)
+	_hurt_restante = maxf(_hurt_restante - delta, 0.0)
 	_actualizar_animacion()
 
 
@@ -211,6 +219,12 @@ func recibir_dano(cantidad: float, fuente: Node = null, _causa: StringName = &"g
 	vida_cambio.emit(vida, vida_maxima)
 	if vida <= 0.0:
 		_caer()
+		return
+	# En el aire o casteando manda esa pose, como en _actualizar_animacion: el
+	# golpe se lee igual por el destello.
+	if not _en_el_aire and _casteando <= 0.0:
+		_hurt_restante = 0.25
+		_sprite.play("hurt")
 
 
 ## Mismo nombre que en las unidades: los enemigos preguntan esto a cualquier
@@ -229,6 +243,7 @@ func _caer() -> void:
 	_caido_restante = tiempo_caido
 	_impulso_restante = 0.0
 	_casteando = 0.0
+	_hurt_restante = 0.0
 	_sprite.play("dead")
 	cayo.emit()
 	aviso.emit("Caiste")
@@ -239,7 +254,6 @@ func _levantarse() -> void:
 	vida = vida_maxima * vida_al_levantarse
 	vida_cambio.emit(vida, vida_maxima)
 	_sprite.play("idle")
-	se_levanto.emit()
 	aviso.emit("Te levantaste")
 
 
@@ -462,6 +476,8 @@ func _actualizar_animacion() -> void:
 
 	if _en_el_aire or _casteando > 0.0:
 		return  # ni el salto ni el cast se interrumpen por caminar
+	if _hurt_restante > 0.0:
+		return  # el golpe se ve entero antes de volver a caminar
 
 	var rapidez := Vector2(velocity.x, velocity.z).length()
 	var animacion := "idle"

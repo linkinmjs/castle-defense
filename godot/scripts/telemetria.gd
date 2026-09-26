@@ -92,7 +92,10 @@ func observar_unidad(unidad: Unidad3D) -> void:
 		}))
 
 
-func _process(delta: float) -> void:
+## Con la fisica y no con el frame: la duracion y el tiempo con mana lleno
+## tienen que medir el mismo encuentro que juega la batalla, y la batalla
+## corre sus relojes a ese paso.
+func _physics_process(delta: float) -> void:
 	if not _abierto:
 		return
 	_duracion += delta

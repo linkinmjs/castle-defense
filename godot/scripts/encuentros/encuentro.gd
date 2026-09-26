@@ -43,7 +43,6 @@ enum Condicion {
 @export var sangrado_habilitado: bool = true
 ## En -1 cada tipo usa su propia probabilidad.
 @export var probabilidad_sangrado: float = -1.0
-@export var derribo_habilitado: bool = true
 @export var emergentes_habilitados: bool = false
 
 @export_group("Healer")
