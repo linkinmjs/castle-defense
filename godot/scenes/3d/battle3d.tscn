@@ -43,50 +43,50 @@ roughness = 0.9
 [sub_resource type="BoxMesh" id="BoxMesh_qwkrd"]
 size = Vector3(1.6, 4, 5)
 
-[node name="Battle3D" type="Node3D" unique_id=1849984216]
+[node name="Battle3D" type="Node3D" unique_id=694921374]
 script = ExtResource("1_g13fl")
 
-[node name="Entorno" type="WorldEnvironment" parent="." unique_id=66050966]
+[node name="Entorno" type="WorldEnvironment" parent="." unique_id=1473293781]
 environment = SubResource("Environment_ipdr2")
 
-[node name="Sol" type="DirectionalLight3D" parent="." unique_id=131545335]
+[node name="Sol" type="DirectionalLight3D" parent="." unique_id=168220737]
 transform = Transform3D(-0.64278764, 0.6036512, -0.47162408, 0, 0.6156615, 0.7880107, 0.76604444, 0.50652355, -0.39573961, 0, 0, 0)
 light_color = Color(1, 0.9490196, 0.84705883, 1)
 light_energy = 1.1
 shadow_enabled = true
 
-[node name="Suelo" type="MeshInstance3D" parent="." unique_id=1686323120]
+[node name="Suelo" type="MeshInstance3D" parent="." unique_id=558908238]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 5)
 material_override = SubResource("StandardMaterial3D_ln2o5")
 mesh = SubResource("PlaneMesh_loeg0")
 
-[node name="BaseAliada" type="MeshInstance3D" parent="." unique_id=1807048158]
+[node name="BaseAliada" type="MeshInstance3D" parent="." unique_id=1757450176]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 5)
 material_override = SubResource("StandardMaterial3D_vl7ca")
 mesh = SubResource("BoxMesh_ej82q")
 
-[node name="BaseEnemiga" type="MeshInstance3D" parent="." unique_id=1658353310]
+[node name="BaseEnemiga" type="MeshInstance3D" parent="." unique_id=2070356454]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29, 2, 5)
 material_override = SubResource("StandardMaterial3D_pejnj")
 mesh = SubResource("BoxMesh_qwkrd")
 
-[node name="Unidades" type="Node3D" parent="." unique_id=843985348]
+[node name="Unidades" type="Node3D" parent="." unique_id=1392785220]
 unique_name_in_owner = true
 
-[node name="Healer" type="CharacterBody3D" parent="Unidades" unique_id=439845191 instance=ExtResource("3_l7i6f")]
+[node name="Healer" type="CharacterBody3D" parent="Unidades" unique_id=746272802 instance=ExtResource("3_l7i6f")]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 5)
 script = ExtResource("4_b02fv")
 tinte_jugador = Color(1, 0.96, 0.85, 1)
 
-[node name="Camara" type="Camera3D" parent="." unique_id=83950866]
+[node name="Camara" type="Camera3D" parent="." unique_id=1491335329]
 unique_name_in_owner = true
 fov = 42.0
 script = ExtResource("5_ur1wm")
 
-[node name="CapaUnidades" type="CanvasLayer" parent="." unique_id=1511861596]
+[node name="CapaUnidades" type="CanvasLayer" parent="." unique_id=131559288]
 
-[node name="Overlay" type="Control" parent="CapaUnidades" unique_id=178719907]
+[node name="Overlay" type="Control" parent="CapaUnidades" unique_id=790685261]
 unique_name_in_owner = true
 layout_mode = 3
 anchors_preset = 15
@@ -95,11 +95,11 @@ anchor_bottom = 1.0
 mouse_filter = 2
 script = ExtResource("6_n2h16")
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=902274430 instance=ExtResource("7_d38fa")]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1060974127 instance=ExtResource("7_d38fa")]
 unique_name_in_owner = true
 script = ExtResource("8_q8jvo")
 
-[node name="MenuPausa" type="CanvasLayer" parent="." unique_id=1488576721 instance=ExtResource("9_b1sul")]
+[node name="MenuPausa" type="CanvasLayer" parent="." unique_id=803733551 instance=ExtResource("9_b1sul")]
 unique_name_in_owner = true
 layer = 10
 script = ExtResource("10_shpvq")

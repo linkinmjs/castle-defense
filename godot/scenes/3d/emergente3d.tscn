@@ -12,10 +12,10 @@ top_radius = 0.75
 bottom_radius = 0.75
 height = 0.04
 
-[node name="Emergente" type="Node3D" unique_id=981179516]
+[node name="Emergente" type="Node3D" unique_id=1651175203]
 script = ExtResource("1_as66a")
 
-[node name="Marca" type="MeshInstance3D" parent="." unique_id=1732922415]
+[node name="Marca" type="MeshInstance3D" parent="." unique_id=1085235249]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
 material_override = SubResource("StandardMaterial3D_o75ct")
 cast_shadow = 0

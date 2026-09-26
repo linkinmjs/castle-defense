@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="TipoSoldado" format=3]
+
+[ext_resource type="SpriteFrames" path="res://assets/sprites/demonio/demonio_frames.tres" id="1_lwrcu"]
+[ext_resource type="Script" path="res://scripts/3d/tipo_soldado.gd" id="2_sjve1"]
+
+[resource]
+script = ExtResource("2_sjve1")
+nombre = "Demonio"
+frames = ExtResource("1_lwrcu")
+vida_maxima = 900.0
+dano = 30.0
+cadencia = 3.0
+alcance = 2.6
+velocidad = 0.8
+lado_frame = 96
+alto_util_px = 52.0
+altura_metros = 3.2
+radio_colision = 0.7
+altura_barra = 3.5
+telegrafiado = 1.4
+radio_golpe = 2.5
+anim_ataque_2 = "attack2"
+es_jefe = true

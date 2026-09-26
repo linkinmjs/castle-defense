@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="TipoSoldado" format=3]
+
+[ext_resource type="SpriteFrames" path="res://assets/sprites/bruto/bruto_frames.tres" id="1_2ab5c"]
+[ext_resource type="Script" path="res://scripts/3d/tipo_soldado.gd" id="2_leftb"]
+
+[resource]
+script = ExtResource("2_leftb")
+nombre = "Bruto"
+frames = ExtResource("1_2ab5c")
+vida_maxima = 260.0
+dano = 34.0
+cadencia = 2.6
+alcance = 1.6
+velocidad = 0.7
+lado_frame = 40
+alto_util_px = 31.0
+altura_metros = 2.2
+radio_colision = 0.5
+altura_barra = 2.4
+telegrafiado = 1.2
+barrido = true
+radio_golpe = 1.2

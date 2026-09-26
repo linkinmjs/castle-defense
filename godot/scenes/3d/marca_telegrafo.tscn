@@ -1,0 +1,39 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/3d/marca_telegrafo.gd" id="1_cb7jy"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6kl60"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.95, 0.35, 0.15, 0.22)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_xynrp"]
+top_radius = 1.0
+bottom_radius = 1.0
+height = 0.02
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lnpcr"]
+render_priority = 1
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.95, 0.35, 0.15, 0.7)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_g2gio"]
+top_radius = 1.0
+bottom_radius = 1.0
+height = 0.04
+
+[node name="MarcaTelegrafo" type="Node3D" unique_id=732351969]
+script = ExtResource("1_cb7jy")
+
+[node name="Area" type="MeshInstance3D" parent="." unique_id=2028589464]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
+material_override = SubResource("StandardMaterial3D_6kl60")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_xynrp")
+
+[node name="Carga" type="MeshInstance3D" parent="." unique_id=982980495]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+material_override = SubResource("StandardMaterial3D_lnpcr")
+cast_shadow = 0
+mesh = SubResource("CylinderMesh_g2gio")

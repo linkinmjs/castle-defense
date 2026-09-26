@@ -6,6 +6,8 @@ var _escudero: TipoSoldado
 var _lancero: TipoSoldado
 var _espadachin: TipoSoldado
 var _zombie: TipoSoldado
+var _bruto: TipoSoldado
+var _demonio: TipoSoldado
 var _e: Unidad3D
 var _l: Unidad3D
 var _z: Unidad3D
@@ -25,6 +27,8 @@ func _initialize() -> void:
 	_lancero = load("res://resources/soldados/lancero.tres")
 	_espadachin = load("res://resources/soldados/espadachin.tres")
 	_zombie = load("res://resources/soldados/zombie.tres")
+	_bruto = load("res://resources/soldados/bruto.tres")
+	_demonio = load("res://resources/soldados/demonio.tres")
 	physics_frame.connect(_tick)
 
 
@@ -110,6 +114,7 @@ func _tick() -> void:
 			_ok("los demas eligen al mas cercano", _sano._objetivo == _s)
 			_fase = 6
 		6:
+			_revisar_bruto_y_demonio()
 			print("")
 			print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
 			quit(1 if _fallos > 0 else 0)
@@ -118,6 +123,61 @@ func _tick() -> void:
 	if _ticks > 2000:
 		print("FALLA: el test no termino")
 		quit(1)
+
+
+## Los dos que pegan anunciado. El comportamiento lo cubre test_bruto; aca, que
+## los recursos digan lo que el diseno pide y que los viejos no cambiaron.
+func _revisar_bruto_y_demonio() -> void:
+	print("--- bruto y demonio ---")
+	_ok("existen los dos", _bruto != null and _demonio != null)
+	if _bruto == null or _demonio == null:
+		return
+
+	_igual("vida del bruto", _bruto.vida_maxima, 260.0)
+	_igual("dano del bruto", _bruto.dano, 34.0)
+	_igual("cadencia del bruto", _bruto.cadencia, 2.6)
+	_igual("alcance del bruto", _bruto.alcance, 1.6)
+	_igual("velocidad del bruto", _bruto.velocidad, 0.7)
+	_igual("aviso del bruto", _bruto.telegrafiado, 1.2)
+	_ok("el bruto barre a ras del suelo", _bruto.barrido)
+	_igual("radio del golpe del bruto", _bruto.radio_golpe, 1.2)
+	_ok("con un solo ataque", _bruto.anim_ataque_2 == "")
+	_ok("y no es jefe", not _bruto.es_jefe)
+	_ok("hoja de 40 px con el oso en 31",
+		_bruto.lado_frame == 40 and is_equal_approx(_bruto.alto_util_px, 31.0))
+	_igual("mide 2.2 m", _bruto.altura_metros, 2.2)
+	_igual("ocupa 0.5 m de radio", _bruto.radio_colision, 0.5)
+	_igual("barra del bruto", _bruto.altura_barra, 2.4)
+	_ok("sus sprites tienen el ataque", _bruto.frames != null
+		and _bruto.frames.has_animation(&"attack"))
+
+	_igual("vida del demonio", _demonio.vida_maxima, 900.0)
+	_igual("dano del demonio", _demonio.dano, 30.0)
+	_igual("cadencia del demonio", _demonio.cadencia, 3.0)
+	_igual("alcance del demonio", _demonio.alcance, 2.6)
+	_igual("velocidad del demonio", _demonio.velocidad, 0.8)
+	_igual("aviso del demonio", _demonio.telegrafiado, 1.4)
+	_ok("el demonio no barre: saltar no lo esquiva", not _demonio.barrido)
+	_igual("radio del golpe del demonio", _demonio.radio_golpe, 2.5)
+	_ok("alterna con attack2", _demonio.anim_ataque_2 == "attack2")
+	_igual("que pega 1.5 veces", _demonio.factor_ataque_2, 1.5)
+	_ok("y es el jefe", _demonio.es_jefe)
+	_ok("hoja de 96 px con el demonio en 52",
+		_demonio.lado_frame == 96 and is_equal_approx(_demonio.alto_util_px, 52.0))
+	_igual("mide 3.2 m", _demonio.altura_metros, 3.2)
+	_igual("ocupa 0.7 m de radio", _demonio.radio_colision, 0.7)
+	_igual("barra del demonio", _demonio.altura_barra, 3.5)
+	_ok("sus sprites tienen los dos ataques", _demonio.frames != null
+		and _demonio.frames.has_animation(&"attack") and _demonio.frames.has_animation(&"attack2"))
+
+	for tipo in [_escudero, _lancero, _espadachin, _zombie]:
+		_ok("%s sigue con el tamano y el golpe de siempre" % tipo.nombre,
+			tipo.lado_frame == 128 and is_equal_approx(tipo.alto_util_px, 68.0)
+			and is_equal_approx(tipo.altura_metros, 2.0)
+			and is_equal_approx(tipo.radio_colision, 0.32)
+			and is_equal_approx(tipo.altura_barra, 2.1)
+			and tipo.telegrafiado == 0.0 and tipo.radio_golpe == 0.0
+			and not tipo.barrido and tipo.anim_ataque_2 == "" and not tipo.es_jefe)
 
 
 func _crear(bando: Unidad3D.Bando, tipo: TipoSoldado, pos: Vector3) -> Unidad3D:

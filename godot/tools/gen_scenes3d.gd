@@ -33,6 +33,7 @@ func _initialize() -> void:
 	_crear_healer()
 	_crear_unidad()
 	_crear_emergente()
+	_crear_marca_telegrafo()
 	_crear_battle()
 	quit()
 
@@ -57,7 +58,9 @@ func _crear_textura_grilla() -> void:
 
 ## Cada tipo le crea un problema distinto al healer: el escudero es el mejor
 ## paciente pero esta en primera linea; el lancero depende de tener a alguien
-## adelante; el espadachin se mete solo en problemas.
+## adelante; el espadachin se mete solo en problemas. Del otro lado, el bruto
+## avisa donde va a pegar y obliga a decidir antes de que caiga, y el demonio
+## hace lo mismo con media linea adentro.
 func _crear_tipos() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DIR_SOLDADOS))
 
@@ -103,6 +106,51 @@ func _crear_tipos() -> void:
 	zombie.alcance = 1.3
 	zombie.velocidad = 0.95
 	_guardar_tipo(zombie, "zombie.tres")
+
+	# Pega poco pero muy fuerte, y se ve venir: carga el golpe con una marca en
+	# el suelo. El healer elige entre saltarlo, bendecir al que lo va a recibir
+	# o curar despues. Pega a ras del suelo y en un circulo chico.
+	var bruto := TipoSoldado.new()
+	bruto.nombre = "Bruto"
+	bruto.frames = load("res://assets/sprites/bruto/bruto_frames.tres")
+	bruto.vida_maxima = 260.0
+	bruto.dano = 34.0
+	bruto.cadencia = 2.6
+	bruto.alcance = 1.6
+	bruto.velocidad = 0.7
+	bruto.telegrafiado = 1.2
+	bruto.barrido = true
+	bruto.radio_golpe = 1.2
+	# Hoja de 40 px con el oso ocupando 31: sin esto se veria de un metro.
+	bruto.lado_frame = 40
+	bruto.alto_util_px = 31.0
+	bruto.altura_metros = 2.2
+	bruto.radio_colision = 0.5
+	bruto.altura_barra = 2.4
+	_guardar_tipo(bruto, "bruto.tres")
+
+	# El jefe del ultimo nivel: grande, con dos golpes anunciados que pegan en
+	# un area que abarca media linea. El segundo pega mas.
+	var demonio := TipoSoldado.new()
+	demonio.nombre = "Demonio"
+	demonio.frames = load("res://assets/sprites/demonio/demonio_frames.tres")
+	demonio.vida_maxima = 900.0
+	demonio.dano = 30.0
+	demonio.cadencia = 3.0
+	demonio.alcance = 2.6
+	demonio.velocidad = 0.8
+	demonio.telegrafiado = 1.4
+	demonio.barrido = false
+	demonio.radio_golpe = 2.5
+	demonio.anim_ataque_2 = "attack2"
+	demonio.factor_ataque_2 = 1.5
+	demonio.lado_frame = 96
+	demonio.alto_util_px = 52.0
+	demonio.altura_metros = 3.2
+	demonio.radio_colision = 0.7
+	demonio.altura_barra = 3.5
+	demonio.es_jefe = true
+	_guardar_tipo(demonio, "demonio.tres")
 
 
 func _guardar_tipo(recurso: Resource, archivo: String) -> void:
@@ -231,6 +279,46 @@ func _crear_emergente() -> void:
 	marca.owner = raiz
 
 	_guardar(raiz, "res://scenes/3d/emergente3d.tscn")
+
+
+## Aviso de un golpe telegrafiado: el area del golpe, tenue y fija, y adentro un
+## disco que crece hasta llenarla. Los dos miden 1 m de radio, asi la marca los
+## escala directo al radio del golpe en metros.
+func _crear_marca_telegrafo() -> void:
+	var raiz := Node3D.new()
+	raiz.name = "MarcaTelegrafo"
+	raiz.set_script(load("res://scripts/3d/marca_telegrafo.gd"))
+
+	var color := Color(0.95, 0.35, 0.15, 0.7)
+	_agregar_disco(raiz, "Area", Color(color, 0.22), 0.02, 0)
+	# Mas alto y dibujado despues: el que crece va siempre encima del area,
+	# aunque las dos transparencias queden casi a la misma distancia.
+	_agregar_disco(raiz, "Carga", color, 0.04, 1)
+
+	_guardar(raiz, "res://scenes/3d/marca_telegrafo.tscn")
+
+
+## Disco chato, sin luz ni sombra, como el del emergente.
+func _agregar_disco(raiz: Node3D, nombre: String, color: Color, alto: float,
+		prioridad: int) -> void:
+	var disco := MeshInstance3D.new()
+	disco.name = nombre
+	var cilindro := CylinderMesh.new()
+	cilindro.top_radius = 1.0
+	cilindro.bottom_radius = 1.0
+	cilindro.height = alto
+	disco.mesh = cilindro
+	disco.position = Vector3(0, alto * 0.5, 0)
+	disco.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	material.albedo_color = color
+	material.render_priority = prioridad
+	disco.material_override = material
+	raiz.add_child(disco)
+	disco.owner = raiz
 
 
 func _crear_battle() -> void:

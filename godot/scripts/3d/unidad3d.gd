@@ -5,6 +5,10 @@ extends CharacterBody3D
 ## Misma logica que la unidad 2D: cambia el mundo (plano XZ) y el dibujo, no
 ## las reglas. Las barras de vida ya no se pintan aca sino en un overlay, que
 ## proyecta a pantalla la posicion de cada unidad.
+##
+## El tamano y el golpe salen del TipoSoldado. Un tipo con golpe telegrafiado
+## (el bruto, el jefe) marca el suelo donde va a caer, se queda plantado
+## mientras carga y pega ahi cuando vence el aviso, este quien este.
 
 enum Bando { ALIADO, ENEMIGO }
 enum Estado { AVANZANDO, COMBATIENDO, RETIRANDOSE, DERRIBADA, MUERTA }
@@ -23,12 +27,29 @@ signal sangrado_cortado(segundos: float)
 ## Nadie lo corto: el sangrado se agoto solo.
 signal sangrado_expiro(segundos: float)
 signal reanimada()
+## Empezo un golpe telegrafiado: la marca ya esta en el suelo y el golpe cae en
+## `segundos`. Para quien quiera sumarle un sonido o contar esquivas sin mirar
+## la escena.
+signal golpe_anunciado(punto: Vector3, radio: float, segundos: float)
+## Cayo un golpe telegrafiado. `alcanzados` es a cuantos les pego: los que se
+## salieron de la marca o la saltaron no cuentan. Es el momento para sacudir
+## la camara, no el anuncio.
+signal golpe_cayo(punto: Vector3, alcanzados: int)
 
 const FRAMES_ALIADO := preload("res://assets/sprites/soldier/soldier_frames.tres")
 const FRAMES_ENEMIGO := preload("res://assets/sprites/enemy/enemy_frames.tres")
+## Cargada en runtime y no con preload: la escena la genera gen_scenes3d, que
+## tambien carga este script, y un preload rompe el parseo si todavia no existe.
+const RUTA_MARCA := "res://scenes/3d/marca_telegrafo.tscn"
 
 const TINTE_ALIADO := Color(0.62, 0.78, 1.0)
 const TINTE_ENEMIGO := Color(1.0, 0.58, 0.52)
+## La capsula de la escena mide 1.7 m para un soldado de 2 m. Un tipo mas alto
+## o mas bajo conserva la proporcion.
+const PROPORCION_CAPSULA := 0.85
+## Radio minimo de la marca: un golpe telegrafiado a un solo objetivo tambien
+## tiene que verse en el suelo, aunque no pegue en area.
+const RADIO_MARCA_MINIMO := 0.8
 
 @export var vida_maxima: float = 80.0
 @export var dano: float = 12.0
@@ -66,6 +87,20 @@ var base_x: float = NAN
 var reduccion_base: float = 0.0
 var retirada_bajo: float = 0.0
 var oportunista: bool = false
+## Golpe telegrafiado, copiado del tipo (ver TipoSoldado).
+var telegrafiado: float = 0.0
+var barrido: bool = false
+var radio_golpe: float = 0.0
+var anim_ataque_2: StringName = &""
+var factor_ataque_2: float = 1.5
+## A que altura sobre los pies va la barra de vida. Sale del tipo: un oso de
+## 2.2 m o un jefe de 3.2 m no la llevan donde un soldado.
+var altura_barra: float = 2.1
+## El jefe del nivel, copiado del tipo. El HUD lo usa para darle su barra.
+var es_jefe: bool = false
+## X que un aliado no pasa al avanzar. La fija el sector en curso; INF es que
+## no hay limite. Los enemigos no la miran.
+var limite_avance_x: float = INF
 var vida: float
 var estado: Estado = Estado.AVANZANDO
 var sangrado_restante: float = 0.0
@@ -104,6 +139,15 @@ var _flash: float = 0.0
 ## Lo que falta de la animacion de golpe. Avanzar y combatir siguen decidiendo
 ## el movimiento pero no la pisan: al tick siguiente ya no se veia.
 var _hurt_restante: float = 0.0
+## Lo que le queda aturdida: mientras dure no camina ni pega.
+var _aturdida_restante: float = 0.0
+## Donde cae el golpe en curso: la posicion del objetivo cuando empezo.
+var _punto_golpe: Vector3 = Vector3.ZERO
+## Cuanto pega el golpe en curso respecto de `dano`: el segundo ataque del
+## jefe pega mas.
+var _factor_golpe: float = 1.0
+## La marca en el suelo del golpe telegrafiado en curso, si hay.
+var _marca: MarcaTelegrafo = null
 
 @onready var _sprite: AnimatedSprite3D = $Sprite
 @onready var _colision: CollisionShape3D = $CollisionShape3D
@@ -121,6 +165,13 @@ func configurar(nuevo_bando: Bando, nuevo_tipo: TipoSoldado = null) -> void:
 		reduccion_base = tipo.reduccion_dano
 		retirada_bajo = tipo.retirada_bajo
 		oportunista = tipo.oportunista
+		telegrafiado = tipo.telegrafiado
+		barrido = tipo.barrido
+		radio_golpe = tipo.radio_golpe
+		anim_ataque_2 = StringName(tipo.anim_ataque_2)
+		factor_ataque_2 = tipo.factor_ataque_2
+		altura_barra = tipo.altura_barra
+		es_jefe = tipo.es_jefe
 	vida = vida_maxima
 
 	if bando == Bando.ALIADO:
@@ -131,6 +182,11 @@ func configurar(nuevo_bando: Bando, nuevo_tipo: TipoSoldado = null) -> void:
 		collision_layer = 8   # enemies
 	# Se bloquean entre si: de ese amontonamiento sale la linea de frente.
 	collision_mask = 12       # allies | enemies
+
+	# Lo normal es configurarla antes de entrar al arbol y que el cuerpo se
+	# ajuste en _ready. Si ya entro, _ready no vuelve a correr: se ajusta aca.
+	if is_node_ready():
+		_aplicar_presentacion()
 
 
 ## La batalla la siembra al crearla, para que un encuentro con la misma semilla
@@ -147,13 +203,49 @@ func _ready() -> void:
 		_azar.randomize()
 	if vida <= 0.0:
 		vida = vida_maxima
+	_aplicar_presentacion()
+	_sprite.modulate = TINTE_ALIADO if bando == Bando.ALIADO else TINTE_ENEMIGO
+	_sprite.flip_h = bando == Bando.ENEMIGO
+	_sprite.play("idle")
+
+
+## Sprites y tamano del tipo. Las hojas vienen de 40, 96 o 128 px y el
+## personaje ocupa una parte distinta del cuadro en cada una: el tamano del
+## pixel sale del alto que ocupa y de lo que tiene que medir en el mundo. Sin
+## tipo quedan los valores de la escena, que son los del soldado.
+func _aplicar_presentacion() -> void:
 	if tipo != null and tipo.frames != null:
 		_sprite.sprite_frames = tipo.frames
 	else:
 		_sprite.sprite_frames = FRAMES_ALIADO if bando == Bando.ALIADO else FRAMES_ENEMIGO
-	_sprite.modulate = TINTE_ALIADO if bando == Bando.ALIADO else TINTE_ENEMIGO
-	_sprite.flip_h = bando == Bando.ENEMIGO
-	_sprite.play("idle")
+	if tipo == null:
+		return
+	_sprite.pixel_size = tipo.altura_metros / tipo.alto_util_px
+	# Los pies estan en el borde de abajo del cuadro: subirlo medio lado deja
+	# el origen del nodo a ras del suelo.
+	_sprite.offset = Vector2(0.0, tipo.lado_frame / 2.0)
+	_ajustar_capsula(tipo.radio_colision, tipo.altura_metros * PROPORCION_CAPSULA)
+
+
+## Forma nueva y no la de la escena: esa la comparten todas las instancias, y
+## agrandarla agrandaria a todos los soldados a la vez. Si el tipo mide lo
+## mismo que la escena se queda con la compartida.
+func _ajustar_capsula(radio: float, alto: float) -> void:
+	var actual := _colision.shape as CapsuleShape3D
+	if actual != null and is_equal_approx(actual.radius, radio) \
+			and is_equal_approx(actual.height, alto):
+		return
+	var capsula := CapsuleShape3D.new()
+	capsula.radius = radio
+	capsula.height = maxf(alto, radio * 2.0)
+	_colision.shape = capsula
+	_colision.position = Vector3(0.0, capsula.height * 0.5, 0.0)
+
+
+## Si la sacan del campo con un golpe telegrafiado en marcha, la marca no se
+## queda en el suelo avisando algo que ya no va a pasar.
+func _exit_tree() -> void:
+	_cancelar_golpe()
 
 
 func _physics_process(delta: float) -> void:
@@ -180,10 +272,23 @@ func _physics_process(delta: float) -> void:
 	_cooldown -= delta
 	_hurt_restante -= delta
 
+	# Aturdida no hace nada mas: ni camina, ni pega, ni se retira. Sin
+	# move_and_slide, asi tampoco la corre de lugar el amontonamiento.
+	if _aturdida_restante > 0.0:
+		_aturdida_restante -= delta
+		velocity = Vector3.ZERO
+		return
+
 	if _impacto_pendiente > 0.0:
 		_impacto_pendiente -= delta
 		if _impacto_pendiente <= 0.0:
 			_conectar_golpe()
+
+	# Con un golpe telegrafiado en marcha se queda plantada hasta que cae: si
+	# pudiera caminar, la marca dejaria de decir de donde viene el golpe.
+	if _telegrafiando():
+		velocity = Vector3.ZERO
+		return
 
 	if _quiere_retirarse():
 		estado = Estado.RETIRANDOSE
@@ -211,8 +316,10 @@ func _physics_process(delta: float) -> void:
 		Estado.COMBATIENDO:
 			_combatir()
 
+	var x_antes := global_position.x
 	move_and_slide()
 	global_position.y = 0.0
+	_respetar_limite(x_antes)
 
 
 func _avanzar(delta: float) -> void:
@@ -231,7 +338,34 @@ func _avanzar(delta: float) -> void:
 	# Acelera en vez de saltar a la velocidad: amortigua los cambios de rumbo.
 	velocity = velocity.move_toward(direccion * velocidad, 6.0 * delta)
 	_encarar(direccion.x)
+	if _frenar_en_limite(delta):
+		_animar(&"idle")
+		return
 	_animar(&"walk")
+
+
+## Un aliado no pasa del limite de avance, ni caminando sin objetivo ni
+## persiguiendo a uno que esta mas alla: la linea se arma ahi y espera. Frena
+## justo en el borde en vez de pasarse y volver. Devuelve true si quedo parada
+## contra el limite, para que no camine en el lugar.
+func _frenar_en_limite(delta: float) -> bool:
+	if bando != Bando.ALIADO or velocity.x <= 0.0:
+		return false
+	var margen := maxf(limite_avance_x - global_position.x, 0.0)
+	velocity.x = minf(velocity.x, margen / delta)
+	return margen <= 0.001 and absf(velocity.z) < 0.05
+
+
+## El freno de _avanzar ya la deja en el borde; esto cubre lo que el freno no
+## ve, como un roce con otro soldado que la desliza hacia adelante. Si ya
+## estaba pasada (el limite se corrio para atras), no la trae de vuelta: solo
+## no la deja seguir.
+func _respetar_limite(x_antes: float) -> void:
+	if bando != Bando.ALIADO:
+		return
+	var tope := maxf(limite_avance_x, x_antes)
+	if global_position.x > tope:
+		global_position.x = tope
 
 
 ## Solo gira si el otro esta claramente a un lado. Con el objetivo justo
@@ -247,13 +381,96 @@ func _combatir() -> void:
 	if _objetivo_valido():
 		_encarar(_objetivo.global_position.x - global_position.x)
 	if _cooldown <= 0.0 and _impacto_pendiente <= 0.0:
-		_cooldown = cadencia * (1.0 - _bonus_cadencia)
-		_impacto_pendiente = retardo_impacto
-		# El golpe sale igual; lo que se posterga es solo el dibujo.
-		if _hurt_restante <= 0.0:
-			_sprite.play("attack")
-	elif _sprite.animation != "attack" and _impacto_pendiente <= 0.0:
+		_iniciar_golpe()
+	elif not _es_ataque(_sprite.animation) and _impacto_pendiente <= 0.0:
 		_animar(&"idle")
+
+
+## El golpe normal cae a los retardo_impacto. El telegrafiado marca el suelo
+## donde esta el objetivo y cae ahi cuando vence el aviso.
+func _iniciar_golpe() -> void:
+	_cooldown = cadencia * (1.0 - _bonus_cadencia)
+	var animacion := _elegir_ataque()
+	_punto_golpe = _objetivo.global_position if _objetivo_valido() else global_position
+	# En el suelo aunque el objetivo este saltando: ahi va la marca.
+	_punto_golpe.y = 0.0
+	if telegrafiado > 0.0:
+		_impacto_pendiente = telegrafiado
+		_marcar_suelo()
+	else:
+		_impacto_pendiente = retardo_impacto
+	# El golpe sale igual; lo que se posterga es solo el dibujo.
+	if _hurt_restante <= 0.0 and _sprite.sprite_frames.has_animation(animacion):
+		# El telegrafiado estira la animacion a lo que dura el aviso: se ve
+		# cargar mientras la marca crece y baja cuando pega.
+		_sprite.speed_scale = _escala_para(animacion, telegrafiado) if telegrafiado > 0.0 else 1.0
+		_sprite.play(animacion)
+	if telegrafiado > 0.0:
+		golpe_anunciado.emit(_punto_golpe, _radio_marca(), telegrafiado)
+
+
+## El jefe alterna dos ataques con su azar sembrado: la misma semilla repite la
+## misma secuencia. Los dos se anuncian igual; el segundo pega mas.
+func _elegir_ataque() -> StringName:
+	_factor_golpe = 1.0
+	if anim_ataque_2 == &"" or _azar.randf() < 0.5:
+		return &"attack"
+	_factor_golpe = factor_ataque_2
+	return anim_ataque_2
+
+
+func _es_ataque(animacion: StringName) -> bool:
+	return animacion == &"attack" or (anim_ataque_2 != &"" and animacion == anim_ataque_2)
+
+
+## Cuanto hay que frenar la animacion para que dure `segundos`.
+func _escala_para(animacion: StringName, segundos: float) -> float:
+	var frames := _sprite.sprite_frames
+	var fps := frames.get_animation_speed(animacion)
+	if segundos <= 0.0 or fps <= 0.0:
+		return 1.0
+	var cuadros := 0.0
+	for i in frames.get_frame_count(animacion):
+		cuadros += frames.get_frame_duration(animacion, i)
+	return (cuadros / fps) / segundos
+
+
+func _telegrafiando() -> bool:
+	return telegrafiado > 0.0 and _impacto_pendiente > 0.0
+
+
+func _radio_marca() -> float:
+	return maxf(radio_golpe, RADIO_MARCA_MINIMO)
+
+
+## La marca cuelga del padre y no de la unidad: es del suelo, no del cuerpo. Y
+## asi, al limpiar el campo, se va junto con las unidades.
+func _marcar_suelo() -> void:
+	_cerrar_telegrafiado()
+	var padre := get_parent()
+	if padre == null or not ResourceLoader.exists(RUTA_MARCA):
+		return
+	var escena: PackedScene = load(RUTA_MARCA)
+	_marca = escena.instantiate()
+	_marca.iniciar(telegrafiado, _radio_marca())
+	padre.add_child(_marca)
+	_marca.global_position = _punto_golpe
+
+
+## Termina el telegrafiado, haya caido el golpe o no: saca la marca del suelo
+## y devuelve la animacion a su ritmo.
+func _cerrar_telegrafiado() -> void:
+	if _marca != null and is_instance_valid(_marca):
+		_marca.cancelar()
+	_marca = null
+	if is_node_ready():
+		_sprite.speed_scale = 1.0
+
+
+## El golpe en curso no llega a caer: la tiraron, la aturdieron o se fue.
+func _cancelar_golpe() -> void:
+	_impacto_pendiente = -1.0
+	_cerrar_telegrafiado()
 
 
 ## Cambia la animacion de movimiento o de combate, salvo mientras se ve el
@@ -266,11 +483,46 @@ func _animar(animacion: StringName) -> void:
 
 func _conectar_golpe() -> void:
 	_impacto_pendiente = -1.0
-	if not _objetivo_valido():
-		return
-	if global_position.distance_to(_objetivo.global_position) > alcance * 1.25:
-		return
-	_objetivo.recibir_dano(dano, self)
+	var anunciado := telegrafiado > 0.0
+	_cerrar_telegrafiado()
+	var cantidad := dano * _factor_golpe
+	var alcanzados := 0
+	if radio_golpe > 0.0:
+		alcanzados = _golpear_area(cantidad)
+	elif _objetivo_valido() \
+			and global_position.distance_to(_objetivo.global_position) <= alcance * 1.25 \
+			and not (barrido and _en_el_aire(_objetivo)):
+		_objetivo.recibir_dano(cantidad, self)
+		alcanzados = 1
+	if anunciado:
+		golpe_cayo.emit(_punto_golpe, alcanzados)
+
+
+## Pega donde cayo el golpe y no a quien apuntaba: el que salio de la marca se
+## salva y el que entro la recibe. Si no, la marca no le diria nada al healer.
+## Devuelve a cuantos les pego.
+func _golpear_area(cantidad: float) -> int:
+	var alcanzados := 0
+	for grupo in _grupos_rivales():
+		for candidato in get_tree().get_nodes_in_group(grupo):
+			var nodo := candidato as Node3D
+			if not _en_juego(nodo):
+				continue
+			# Sobre el suelo, sin la altura: saltar solo salva de un barrido.
+			var dx := nodo.global_position.x - _punto_golpe.x
+			var dz := nodo.global_position.z - _punto_golpe.z
+			if dx * dx + dz * dz > radio_golpe * radio_golpe:
+				continue
+			if barrido and _en_el_aire(nodo):
+				continue
+			nodo.recibir_dano(cantidad, self)
+			alcanzados += 1
+	return alcanzados
+
+
+## Solo el healer salta: un soldado no tiene como esquivar un barrido.
+func _en_el_aire(nodo: Node3D) -> bool:
+	return nodo.has_method(&"esta_en_el_aire") and nodo.esta_en_el_aire()
 
 
 ## La fuente y la causa llegan con valor por defecto para que quien solo quiera
@@ -287,9 +539,37 @@ func recibir_dano(cantidad: float, fuente: Node = null, causa: StringName = &"go
 	_perder_vida(recibido, causa)
 	# Si el golpe lo tiro, manda la animacion de caida. Sin _ready todavia no
 	# hay sprite: test_determinismo golpea unidades que no entraron al arbol.
-	if esta_viva() and not esta_derribada() and is_node_ready():
+	if esta_viva() and not esta_derribada() and is_node_ready() and not _no_se_inmuta():
 		_hurt_restante = 0.25
 		_sprite.play("hurt")
+
+
+## El bruto y el jefe no acusan los golpes: con toda la linea pegandoles
+## vivirian en la animacion de dolor, y la carga de su golpe, que es el aviso,
+## no se veria. Se enteran por el destello.
+func _no_se_inmuta() -> bool:
+	return telegrafiado > 0.0 or es_jefe
+
+
+## La frena: no camina ni pega mientras dure, y pierde el golpe que tenia en
+## marcha, marca incluida. Lo usa la Caida sanadora del healer.
+func aturdir(segundos: float) -> void:
+	if estado == Estado.MUERTA or estado == Estado.DERRIBADA or segundos <= 0.0:
+		return
+	_aturdida_restante = maxf(_aturdida_restante, segundos)
+	_cancelar_golpe()
+	velocity = Vector3.ZERO
+	if is_node_ready():
+		_sprite.play("hurt")
+
+
+func esta_aturdida() -> bool:
+	return _aturdida_restante > 0.0
+
+
+## Donde va la barra de vida: sobre los pies, a la altura que pide el tipo.
+func punto_cabeza() -> Vector3:
+	return global_position + Vector3(0.0, altura_barra, 0.0)
 
 
 ## Un solo lugar donde empieza un sangrado, para que el aviso salga siempre.
@@ -450,7 +730,9 @@ func _caer() -> void:
 	bendicion_restante = 0.0
 	_reduccion_dano = 0.0
 	_bonus_cadencia = 0.0
-	_impacto_pendiente = -1.0
+	# El golpe que tenia en marcha no cae: su marca se va con ella.
+	_cancelar_golpe()
+	_aturdida_restante = 0.0
 	_hurt_restante = 0.0
 	# Sin colision: la linea puede pasarle por encima y el healer llegar.
 	_colision.set_deferred("disabled", true)
@@ -463,6 +745,7 @@ func _morir(causa: StringName = &"") -> void:
 	causa_muerte = causa if causa != &"" else causa_caida
 	velocity = Vector3.ZERO
 	resaltada = false
+	_cancelar_golpe()
 	_colision.set_deferred("disabled", true)
 	murio.emit(self)
 
@@ -502,13 +785,25 @@ func _objetivo_valido() -> bool:
 		and _objetivo.esta_viva() and not _objetivo.esta_derribada()
 
 
-## El mas cercano de los grupos rivales. Para un enemigo, el healer entra en
-## la lista: de ahi sale la cobertura sin programarla aparte. Rodeado de
-## soldados, siempre hay alguien mas cerca que el.
-func _buscar_objetivo() -> Node3D:
-	var grupos: Array[String] = ["enemigos"]
+## Para un enemigo, el healer entra en la lista de rivales: de ahi sale la
+## cobertura sin programarla aparte, y por eso tambien lo alcanza un golpe en
+## area.
+func _grupos_rivales() -> Array[String]:
 	if bando == Bando.ENEMIGO:
-		grupos = ["aliados", "healer"]
+		return ["aliados", "healer"]
+	return ["enemigos"]
+
+
+## Una derribada no es objetivo ni recibe golpes: ya esta fuera de combate.
+func _en_juego(nodo: Node3D) -> bool:
+	return nodo != null and nodo.esta_viva() and not nodo.esta_derribada() \
+		and not nodo.is_queued_for_deletion()
+
+
+## El mas cercano de los grupos rivales. Rodeado de soldados, siempre hay
+## alguien mas cerca que el healer.
+func _buscar_objetivo() -> Node3D:
+	var grupos := _grupos_rivales()
 
 	# El oportunista prefiere al mas herido que tenga cerca. Si no hay nadie
 	# a mano, elige al mas cercano como todos.
@@ -522,9 +817,7 @@ func _buscar_objetivo() -> Node3D:
 	for grupo in grupos:
 		for candidato in get_tree().get_nodes_in_group(grupo):
 			var nodo := candidato as Node3D
-			# Una derribada no es objetivo: ya esta fuera de combate.
-			if nodo == null or not nodo.esta_viva() or nodo.esta_derribada() \
-					or nodo.is_queued_for_deletion():
+			if not _en_juego(nodo):
 				continue
 			var distancia := global_position.distance_squared_to(nodo.global_position)
 			if distancia < mejor_distancia:
@@ -539,8 +832,7 @@ func _mas_herido_cerca(grupos: Array[String], radio: float) -> Node3D:
 	for grupo in grupos:
 		for candidato in get_tree().get_nodes_in_group(grupo):
 			var nodo := candidato as Node3D
-			if nodo == null or not nodo.esta_viva() or nodo.esta_derribada() \
-					or nodo.is_queued_for_deletion():
+			if not _en_juego(nodo):
 				continue
 			if global_position.distance_to(nodo.global_position) > radio:
 				continue
