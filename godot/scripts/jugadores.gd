@@ -1,7 +1,8 @@
 class_name Jugadores
 extends RefCounted
 ## Quien es quien cuando juegan dos: que acciones del Input Map le tocan a cada
-## healer, con que joystick y como se nombran sus botones en pantalla.
+## healer, con que joystick, como se nombran sus botones en pantalla y con que
+## color se lo distingue.
 ##
 ## Funciones estaticas y no un autoload, como Navegacion: el unico estado que
 ## hay (cuantos juegan) lo deja anotado el menu en el SceneTree, y un singleton
@@ -27,6 +28,14 @@ const CANTIDAD := &"jugadores"
 const _ETIQUETAS := {
 	1: {"mover": "WASD / Stick", "ligera": "J / X", "pesada": "K / Y", "saltar": "Espacio / A"},
 	2: {"mover": "Flechas / Stick", "ligera": "Coma / X", "pesada": "Punto / Y", "saltar": "Barra / A"},
+}
+## Con que color se tine el sprite de cada healer. Apenas un toque: el
+## contorno ya viene horneado en su sprite (dorado el 1, turquesa el 2), y un
+## tinte fuerte lo ensuciaba. Esta aca y no en la batalla para que el HUD
+## pinte a cada jugador con el mismo color que se ve en el campo.
+const _TINTES := {
+	1: Color(1.0, 0.96, 0.85),
+	2: Color(0.85, 1.0, 0.97),
 }
 
 
@@ -103,3 +112,9 @@ static func es_entrada_de(jugador: int, evento: InputEvent) -> bool:
 static func etiquetas(jugador: int) -> Dictionary:
 	var propias: Dictionary = _ETIQUETAS.get(jugador, _ETIQUETAS[1])
 	return propias.duplicate()
+
+
+## El tinte del healer de ese jugador. Un jugador que no existe recibe el del
+## primero, como con las etiquetas.
+static func tinte(jugador: int) -> Color:
+	return _TINTES.get(jugador, _TINTES[1])

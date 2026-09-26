@@ -10,6 +10,11 @@ extends Node
 ## Es un Node sin nada de interfaz: escucha señales y publica un Dictionary.
 ## El HUD lo consume, nunca al reves, asi el modelo de combate sigue corriendo
 ## en las pruebas headless sin arrastrar la UI.
+##
+## Con dos jugadores mira a los dos. Los usos se cuentan tambien por jugador;
+## lo demas es del equipo: el mana sin usar se suma, el tiempo con el mana
+## lleno corre solo si lo tienen lleno los dos, y una muerte es evitable si
+## cualquiera de los dos tenia con que evitarla.
 
 ## Se cerro un encuentro y el resumen esta listo.
 signal encuentro_cerrado(resumen: Dictionary)
@@ -18,8 +23,9 @@ signal encuentro_cerrado(resumen: Dictionary)
 const INTERVALO_FRENTE := 2.0
 
 var _battle: Node
-var _healer: Node
-var _combos: ComponenteCombos
+## Los healers que se miran, en el orden en que se engancharon: en la batalla,
+## el 1 primero.
+var _healers: Array[Node] = []
 
 var _encuentro_id: StringName = &""
 var _semilla: int = 0
@@ -46,6 +52,9 @@ var _sangrados_sin_tratar: int = 0
 var _tiempo_total_estabilizar: float = 0.0
 
 var _usos_por_movimiento: Dictionary = {}
+## Lo que conecto, por numero de jugador. Cada uno que se mira arranca en 0,
+## asi el resumen nombra tambien al que no hizo nada.
+var _usos_por_jugador: Dictionary = {}
 ## Golpes al aire: el boton salio sin nadie en la caja. Muchos es que el
 ## jugador aprieta antes de pararse frente a alguien.
 var _movimientos_en_vacio: int = 0
@@ -64,13 +73,21 @@ func observar_batalla(battle: Node) -> void:
 	battle.batalla_terminada.connect(_on_batalla_terminada)
 
 
+## Una vez por healer que juegue, tambien a mitad de un encuentro (un jugador
+## que se suma): lo suyo cuenta desde ahi. Volver a pasar uno ya mirado no
+## hace nada.
 func observar_healer(healer: Node) -> void:
-	_healer = healer
-	_combos = healer.get_node("Combos")
-	_combos.movimiento_usado.connect(_on_movimiento_usado)
-	_combos.movimiento_fallo.connect(_on_movimiento_fallo)
-	_combos.combo_cambio.connect(_on_combo_cambio)
-	healer.cayo.connect(func() -> void: registrar(&"healer_cayo"))
+	if _healers.has(healer):
+		return
+	_healers.append(healer)
+	var jugador: int = healer.jugador
+	if not _usos_por_jugador.has(jugador):
+		_usos_por_jugador[jugador] = 0
+	var combos: ComponenteCombos = healer.get_node("Combos")
+	combos.movimiento_usado.connect(_on_movimiento_usado.bind(jugador, combos))
+	combos.movimiento_fallo.connect(_on_movimiento_fallo)
+	combos.combo_cambio.connect(_on_combo_cambio)
+	healer.cayo.connect(func() -> void: registrar(&"healer_cayo", {"jugador": jugador}))
 
 
 ## Solo importan los aliados: los enemigos no son pacientes.
@@ -107,10 +124,11 @@ func _physics_process(delta: float) -> void:
 		return
 	_duracion += delta
 
-	if _healer != null and is_instance_valid(_healer) \
-			and _healer.mana >= _healer.mana_maximo - 0.01:
+	if _todos_con_mana_lleno():
 		# Tiempo con el mana lleno: si es mucho, el jugador esta esperando en
-		# vez de intervenir, y eso cambia que consejo tiene sentido darle.
+		# vez de intervenir, y eso cambia que consejo tiene sentido darle. Con
+		# dos cuenta solo si esperan los dos: mientras uno cura, el equipo no
+		# esta esperando.
 		_segundos_mana_al_tope += delta
 
 	if _battle != null and is_instance_valid(_battle) and _duracion >= _proxima_muestra:
@@ -141,12 +159,17 @@ func _on_curada(solicitada: float, efectiva: float) -> void:
 	_curacion_efectiva += efectiva
 
 
-## Solo llega lo que conecto: es lo unico que cobra. El evento guarda en que
-## punto del combo salio, para ver despues si el jugador encadena.
-func _on_movimiento_usado(mov: Movimiento, _objetivo: Node3D, _efectivo: float) -> void:
+## Solo llega lo que conecto: es lo unico que cobra. El evento guarda quien lo
+## hizo y en que punto de su combo salio, para ver despues si cada jugador
+## encadena.
+func _on_movimiento_usado(mov: Movimiento, _objetivo: Node3D, _efectivo: float,
+		jugador: int, combos: ComponenteCombos) -> void:
 	_usos_por_movimiento[mov.nombre] = _usos_por_movimiento.get(mov.nombre, 0) + 1
+	_usos_por_jugador[jugador] = _usos_por_jugador.get(jugador, 0) + 1
 	_mana_gastado += mov.costo
-	registrar(&"movimiento", {"nombre": mov.nombre, "combo": _combos.cuenta_combo()})
+	registrar(&"movimiento", {
+		"nombre": mov.nombre, "combo": combos.cuenta_combo(), "jugador": jugador,
+	})
 
 
 func _on_movimiento_fallo(_mov: Movimiento, motivo: String) -> void:
@@ -183,11 +206,41 @@ func _on_murio(unidad: Unidad3D) -> void:
 	})
 
 
-## Si el movimiento estaba equipado, sin enfriamiento y con mana para pagarlo.
+## Si algun healer lo tenia equipado, sin enfriamiento y con mana para
+## pagarlo. Con dos, la muerte era evitable si cualquiera de los dos podia.
 func _disponible(nombre: String) -> bool:
-	if _combos == null or not is_instance_valid(_combos):
+	for healer in _healers_validos():
+		var combos: ComponenteCombos = healer.get_node("Combos")
+		if combos.disponible(nombre):
+			return true
+	return false
+
+
+## Los healers mirados que siguen existiendo. Variant al recorrer: uno que ya
+## se libero no se puede pasar por una variable tipada sin que sea un error.
+func _healers_validos() -> Array[Node]:
+	var validos: Array[Node] = []
+	for healer: Variant in _healers:
+		if is_instance_valid(healer) and not (healer as Node).is_queued_for_deletion():
+			validos.append(healer)
+	return validos
+
+
+func _todos_con_mana_lleno() -> bool:
+	var mirados := _healers_validos()
+	if mirados.is_empty():
 		return false
-	return _combos.disponible(nombre)
+	for healer in mirados:
+		if healer.mana < healer.mana_maximo - 0.01:
+			return false
+	return true
+
+
+func _mana_sin_usar() -> float:
+	var total := 0.0
+	for healer in _healers_validos():
+		total += healer.mana
+	return total
 
 
 func _on_batalla_terminada(victoria: bool) -> void:
@@ -219,6 +272,10 @@ func _reiniciar() -> void:
 	_sangrados_sin_tratar = 0
 	_tiempo_total_estabilizar = 0.0
 	_usos_por_movimiento.clear()
+	# Los jugadores siguen siendo los mismos: cada uno vuelve a cero sin
+	# desaparecer del resumen.
+	for jugador: int in _usos_por_jugador.keys():
+		_usos_por_jugador[jugador] = 0
 	_movimientos_en_vacio = 0
 	_combo_maximo = 0
 	_frente_muestras.clear()
@@ -247,7 +304,7 @@ func resumen(victoria: bool = false) -> Dictionary:
 		"fraccion_desperdiciada": desperdiciada / _curacion_emitida if _curacion_emitida > 0.0 else 0.0,
 
 		"mana_gastado": _mana_gastado,
-		"mana_sin_usar": _healer.mana if _healer != null and is_instance_valid(_healer) else 0.0,
+		"mana_sin_usar": _mana_sin_usar(),
 		"segundos_mana_al_tope": _segundos_mana_al_tope,
 
 		"caidas": _caidas,
@@ -261,6 +318,8 @@ func resumen(victoria: bool = false) -> Dictionary:
 		"tiempo_hasta_estabilizar": promedio_estabilizar,
 
 		"usos_por_movimiento": _usos_por_movimiento.duplicate(),
+		"usos_por_jugador": _usos_por_jugador.duplicate(),
+		"jugadores": _healers_validos().size(),
 		"movimientos_en_vacio": _movimientos_en_vacio,
 		"combo_maximo": _combo_maximo,
 		"frente_muestras": _frente_muestras.duplicate(),

@@ -136,7 +136,13 @@ func _crear_healer() -> void:
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	sprite.shaded = false
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-	sprite.modulate = Color(1.0, 0.88, 0.55)
+	# El tinte del jugador 1, apenas un toque: el contorno dorado ya viene en
+	# el sprite, y el tinte fuerte de antes lo ensuciaba. Va en los dos lados:
+	# el healer pisa el modulate del sprite con tinte_jugador al arrancar, y el
+	# modulate es lo que se ve en el editor.
+	var tinte := Jugadores.tinte(1)
+	sprite.modulate = tinte
+	healer.set("tinte_jugador", tinte)
 	healer.add_child(sprite)
 	sprite.owner = healer
 
@@ -253,7 +259,9 @@ func _crear_battle() -> void:
 	healer.owner = battle
 	healer.unique_name_in_owner = true
 
-	var camara := Camera3D.new()
+	# La camara lateral que sigue a los healers. No tiene _process propio: la
+	# batalla la avanza desde el suyo y le pasa el campo en cada encuentro.
+	var camara := CamaraBatalla.new()
 	camara.name = "Camara"
 	camara.fov = 42.0
 	battle.add_child(camara)
