@@ -6,11 +6,17 @@ extends SceneTree
 ## conexion: una señal que nadie escucha, un resumen que sale vacio, un
 ## encuentro que no limpia lo del anterior.
 
+## Mas que la recuperacion de la ligera (0.3 s) y menos que la ventana del
+## combo (0.7 s): lo que tarda un jugador en apretar dos veces.
+const ENTRE_LIGERAS := 24
+
 var _battle: Node
-var _healer: Node
-var _componente: ComponenteHabilidades
+var _healer: Healer3D
+var _combos: ComponenteCombos
 var _resumenes: Array[Dictionary] = []
 var _titulos: Array[String] = []
+## El que recibe el combo del tercer encuentro.
+var _paciente: Unidad3D
 var _fallos := 0
 var _fase := 0
 var _ticks := 0
@@ -26,7 +32,7 @@ func _initialize() -> void:
 ## corrio cuando SceneTree llama a _initialize.
 func _engancharse() -> void:
 	_healer = _battle.get_node("%Healer")
-	_componente = _healer.get_node("Habilidades")
+	_combos = _healer.get_node("Combos")
 	_battle.telemetria().encuentro_cerrado.connect(
 		func(r: Dictionary) -> void: _resumenes.append(r))
 	_battle.encuentro_iniciado.connect(
@@ -43,20 +49,18 @@ func _tick() -> void:
 			print("--- arranca por el primero, no por la batalla completa ---")
 			_ok("carga la campania sola", _battle.campana != null)
 			_ok("empieza en el primer encuentro", _battle._actual.id == &"e1_mantener_linea")
-			_igual("con una sola habilidad", _componente.habilidades.size(), 1)
+			_igual("con un solo movimiento", _combos.movimientos.size(), 1)
 
 			print("--- curar de verdad queda anotado ---")
 			var paciente := _primer_aliado()
 			_ok("hay a quien curar", paciente != null)
 			paciente.vida = paciente.vida_maxima * 0.5
-			_healer.global_position = paciente.global_position + Vector3(0.6, 0, 0)
-			_healer._apuntada = paciente
+			_frente_a(paciente)
 			_healer.mana = _healer.mana_maximo
-			_ok("la curacion se usa",
-				_componente.intentar(_componente.habilidad_por_nombre("Curar")))
+			_ok("la ligera sale", _healer.pulsar(&"ligera"))
 			var r: Dictionary = _battle.telemetria().resumen()
 			_ok("y la telemetria la vio", r["curacion_emitida"] > 0.0)
-			_ok("con el uso anotado", r["usos_por_habilidad"].has("Curar"))
+			_ok("con el uso anotado", r["usos_por_movimiento"].has("Toque"))
 
 			# Se fuerza el final en vez de esperar los 75 segundos reales.
 			_battle.tiempo_encuentro = _battle._actual.duracion
@@ -120,47 +124,68 @@ func _tick() -> void:
 		5:
 			if _ticks < 5:
 				return
-			print("--- el tercero suma Estabilizar ---")
+			print("--- el tercero suma Vendaje ---")
 			_ok("es el del sangrado", _battle._actual.id == &"e3_tratar_la_causa")
 			# El segundo recorta el mana a 60 y el tercero no dice nada al
 			# respecto: tiene que volver al de la escena, no heredar el recorte.
 			_igual("el mana vuelve al normal", int(_healer.mana_maximo), 100)
-			_igual("ahora hay dos habilidades", _componente.habilidades.size(), 2)
-			_ok("Estabilizar esta equipada",
-				_componente.habilidad_por_nombre("Estabilizar") != null)
+			_igual("ahora hay dos movimientos", _combos.movimientos.size(), 2)
+			_ok("Vendaje esta equipado", _combos.movimiento_por_nombre("Vendaje") != null)
 			_ok("hay alguien sangrando de entrada", _sangrando() > 0)
 
-			print("--- estabilizar corta la causa y queda anotado ---")
+			print("--- L, L sobre el que sangra corta la causa y queda anotado ---")
 			var herido := _primer_sangrando()
-			_healer.global_position = herido.global_position + Vector3(0.6, 0, 0)
-			_healer._apuntada = herido
+			if herido == null:
+				# Sin nadie sangrando no hay combo que probar: ya fallo arriba.
+				_fase = 7
+				return
+			_frente_a(herido)
 			_healer.mana = _healer.mana_maximo
-			_ok("se puede estabilizar",
-				_componente.intentar(_componente.habilidad_por_nombre("Estabilizar")))
-			_ok("dejo de sangrar", not herido.esta_sangrando())
-			var r: Dictionary = _battle.telemetria().resumen()
-			_ok("la telemetria lo conto", r["sangrados_estabilizados"] >= 1)
+			# Con dos lanceros sangrando, la ligera elige; lo que importa es que
+			# el que recibe el combo sea uno que sangra.
+			_paciente = Apuntado.objetivo_ligera(_healer)
+			_ok("la ligera le llega a uno que sangra",
+				_paciente != null and _paciente.esta_sangrando())
+			_ok("la primera ligera sale", _healer.pulsar(&"ligera"))
+			_ok("y es Toque: todavia sangra", _paciente != null and _paciente.esta_sangrando())
+			_ticks = 0
 			_fase = 6
 		6:
+			if _ticks < ENTRE_LIGERAS:
+				return
+			_ok("la segunda ligera sale", _healer.pulsar(&"ligera"))
+			_ok("es Vendaje: dejo de sangrar", _paciente != null and not _paciente.esta_sangrando())
+			var r: Dictionary = _battle.telemetria().resumen()
+			_ok("la telemetria lo conto", r["sangrados_estabilizados"] >= 1)
+			_ok("y anoto el Vendaje", r["usos_por_movimiento"].has("Vendaje"))
+			_fase = 7
+		7:
 			print("--- volver al primero desde el ultimo ---")
 			_ok("el ultimo avisa que no hay mas", not _battle.avanzar_encuentro())
 			_ticks = 0
-			_fase = 7
-		7:
+			_fase = 8
+		8:
 			if _ticks < 5:
 				return
 			_ok("y se vuelve al primero", _battle._actual.id == &"e1_mantener_linea")
-			_igual("con su loadout otra vez", _componente.habilidades.size(), 1)
-			_fase = 8
-		8:
+			_igual("con su loadout otra vez", _combos.movimientos.size(), 1)
+			_fase = 9
+		9:
 			print("")
 			print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
 			quit(1 if _fallos > 0 else 0)
-			_fase = 9
+			_fase = 10
 
 	if _ticks > 900:
 		print("FALLA: el test no termino")
 		quit(1)
+
+
+## Pone al healer 0.6 m detras de la unidad y mirando hacia ella: queda en la
+## caja de la ligera, bien adentro.
+func _frente_a(unidad: Unidad3D) -> void:
+	_healer.global_position = unidad.global_position - Vector3(0.6, 0, 0)
+	_healer._sprite.flip_h = false
 
 
 func _primer_aliado() -> Unidad3D:

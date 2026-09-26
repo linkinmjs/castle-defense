@@ -40,9 +40,18 @@ func seguir_batalla(battle: Node) -> void:
 func _unhandled_input(evento: InputEvent) -> void:
 	if not evento.is_action_pressed("pause"):
 		return
+	# En el joystick, Start es pausa y tambien "continuar". Con el encuentro
+	# terminado gana continuar: ahi no hay nada que pausar, y si el menu se
+	# quedara con el Start el pad no podria pasar nunca al siguiente.
+	if not visible and _encuentro_terminado() and evento.is_action_pressed("continuar"):
+		return
 	alternar()
 	# Sin esto el mismo Escape sigue viaje y lo recibe la batalla.
 	get_viewport().set_input_as_handled()
+
+
+func _encuentro_terminado() -> bool:
+	return _battle != null and is_instance_valid(_battle) and _battle.esta_terminada()
 
 
 func alternar() -> void:

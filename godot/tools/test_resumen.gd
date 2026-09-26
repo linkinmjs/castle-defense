@@ -10,12 +10,14 @@ var _fallos := 0
 
 func _initialize() -> void:
 	print("--- prioridad: lo que se podia evitar va primero ---")
-	var tele := _con_muerte(&"sangrado", {"estabilizar_disponible": true})
+	var tele := _con_muerte(&"sangrado", {"vendaje_disponible": true})
 	# Ademas del muerto hay desperdicio alto: igual gana el muerto evitable.
 	tele._curacion_emitida = 200.0
 	tele._curacion_efectiva = 100.0
 	_contiene("una muerte evitable manda sobre el desperdicio",
-		tele.observacion_causal(), "Estabilizar estaba lista")
+		tele.observacion_causal(), "Vendaje estaba listo")
+	_contiene("y dice como se hace", tele.observacion_causal(),
+		"ligera dos veces sobre el mismo corta el sangrado")
 
 	print("--- cada situacion tiene su observacion ---")
 	tele = _con_muerte(&"sin_atencion", {"reanimar_disponible": true})
@@ -39,7 +41,7 @@ func _initialize() -> void:
 
 	tele = _nueva()
 	tele._duracion = 60.0
-	tele._usos_por_habilidad["Curar"] = 3
+	tele._usos_por_movimiento["Toque"] = 3
 	tele._segundos_mana_al_tope = 40.0
 	_contiene("esperar en vez de intervenir",
 		tele.observacion_causal(), "mana lleno")
@@ -49,13 +51,13 @@ func _initialize() -> void:
 	tele = _nueva()
 	tele._duracion = 60.0
 	tele._victoria = true
-	_contiene("ganar sin usar una habilidad",
-		tele.observacion_causal(), "sin usar una sola habilidad")
+	_contiene("ganar sin usar un movimiento",
+		tele.observacion_causal(), "sin usar un solo movimiento")
 
 	print("--- ganar limpio tambien dice algo ---")
 	tele = _nueva()
 	tele._victoria = true
-	tele._usos_por_habilidad["Estabilizar"] = 3
+	tele._usos_por_movimiento["Vendaje"] = 3
 	tele._sangrados = 3
 	tele._sangrados_estabilizados = 3
 	tele._tiempo_total_estabilizar = 6.0
@@ -63,18 +65,18 @@ func _initialize() -> void:
 		tele.observacion_causal(), "no perdiste a nadie")
 
 	print("--- singular y plural ---")
-	tele = _con_muerte(&"sangrado", {"estabilizar_disponible": true})
+	tele = _con_muerte(&"sangrado", {"vendaje_disponible": true})
 	_contiene("con uno habla en singular",
 		tele.observacion_causal(), "Perdiste un soldado")
-	tele = _con_muerte(&"sangrado", {"estabilizar_disponible": true})
-	_muerte(tele, &"sangrado", {"estabilizar_disponible": true})
+	tele = _con_muerte(&"sangrado", {"vendaje_disponible": true})
+	_muerte(tele, &"sangrado", {"vendaje_disponible": true})
 	_contiene("con dos, en plural", tele.observacion_causal(), "Perdiste 2 soldados")
 
 	print("--- una muerte inevitable no genera reproche ---")
-	tele = _con_muerte(&"sangrado", {"estabilizar_disponible": false})
+	tele = _con_muerte(&"sangrado", {"vendaje_disponible": false})
 	var texto := tele.observacion_causal()
-	_ok("no dice que Estabilizar estaba lista",
-		not texto.contains("Estabilizar estaba lista"))
+	_ok("no dice que Vendaje estaba listo",
+		not texto.contains("Vendaje estaba listo"))
 
 	print("--- metas: se evaluan sobre el resumen ---")
 	var resumen := {"fraccion_desperdiciada": 0.10, "sangrados_sin_tratar": 0.0}
@@ -88,6 +90,20 @@ func _initialize() -> void:
 		not _meta(&"fraccion_desperdiciada", MetaEncuentro.Comparador.MAYOR_IGUAL, 0.5).cumplida(resumen))
 	_ok("una clave que no existe no se da por cumplida",
 		not _meta(&"inventada", MetaEncuentro.Comparador.MENOR_IGUAL, 99.0).cumplida(resumen))
+
+	print("--- el informe nombra el combo mas largo, si hubo ---")
+	var informe = load("res://scripts/resumen_encuentro.gd").new()
+	root.add_child(informe)
+	tele = _nueva()
+	tele._combo_maximo = 3
+	var lineas: Array[String] = informe._armar_metricas(tele.resumen())
+	_ok("con un combo de 3 dice \"Combo maximo: 3\"", lineas.has("Combo maximo: 3"))
+	tele._combo_maximo = 1
+	lineas = informe._armar_metricas(tele.resumen())
+	_ok("tocando de a uno no ocupa un renglon",
+		not " ".join(lineas).contains("Combo maximo"))
+	_ok("el resumen trae los golpes al aire", tele.resumen().has("movimientos_en_vacio"))
+	_ok("y los usos por movimiento", tele.resumen().has("usos_por_movimiento"))
 
 	print("--- los encuentros de la campania traen sus metas ---")
 	var e2: Encuentro = load("res://resources/encuentros/e2_no_desperdiciar.tres")

@@ -4,13 +4,13 @@
 [ext_resource type="Theme" path="res://resources/ui/tema.tres" id="2_gss2c"]
 [ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="3_h022r"]
 [ext_resource type="Script" path="res://scripts/resumen_encuentro.gd" id="4_4jqwt"]
-[ext_resource type="Script" path="res://scripts/slots_habilidades.gd" id="5_kicr4"]
+[ext_resource type="Script" path="res://scripts/leyenda_controles.gd" id="5_kicr4"]
 [ext_resource type="Script" path="res://scripts/tarjeta_objetivo.gd" id="6_mj13f"]
 
-[node name="HUD" type="CanvasLayer" unique_id=1286444645]
+[node name="HUD" type="CanvasLayer" unique_id=902274430]
 script = ExtResource("1_oj5la")
 
-[node name="Raiz" type="Control" parent="." unique_id=238232707]
+[node name="Raiz" type="Control" parent="." unique_id=1263860328]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,7 +18,7 @@ anchor_bottom = 1.0
 mouse_filter = 2
 theme = ExtResource("2_gss2c")
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=171672297]
+[node name="Contadores" type="Label" parent="Raiz" unique_id=1531425609]
 unique_name_in_owner = true
 layout_mode = 0
 offset_left = 24.0
@@ -27,7 +27,7 @@ offset_right = 24.0
 offset_bottom = 16.0
 theme_type_variation = &"Subtitulo"
 
-[node name="Frente" type="Control" parent="Raiz" unique_id=448429206]
+[node name="Frente" type="Control" parent="Raiz" unique_id=52208030]
 unique_name_in_owner = true
 anchors_preset = 0
 anchor_left = 0.5
@@ -39,7 +39,7 @@ offset_bottom = 40.0
 mouse_filter = 2
 script = ExtResource("3_h022r")
 
-[node name="Encabezado" type="Label" parent="Raiz" unique_id=2081910469]
+[node name="Encabezado" type="Label" parent="Raiz" unique_id=1495661300]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_left = 0.5
@@ -51,19 +51,19 @@ offset_bottom = 98.0
 theme_type_variation = &"Subtitulo"
 horizontal_alignment = 1
 
-[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=214825859]
+[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=1143513227]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="ColumnaCentro" type="VBoxContainer" parent="Raiz/Centro" unique_id=332193892]
+[node name="ColumnaCentro" type="VBoxContainer" parent="Raiz/Centro" unique_id=1525532564]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="Desenlace" type="Label" parent="Raiz/Centro/ColumnaCentro" unique_id=482057711]
+[node name="Desenlace" type="Label" parent="Raiz/Centro/ColumnaCentro" unique_id=1781875067]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -71,14 +71,14 @@ theme_type_variation = &"Titulo"
 theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 
-[node name="Resumen" type="PanelContainer" parent="Raiz/Centro/ColumnaCentro" unique_id=1065636299]
+[node name="Resumen" type="PanelContainer" parent="Raiz/Centro/ColumnaCentro" unique_id=1107906972]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("4_4jqwt")
 
-[node name="Inferior" type="VBoxContainer" parent="Raiz" unique_id=1743176638]
+[node name="Inferior" type="VBoxContainer" parent="Raiz" unique_id=672364502]
 layout_mode = 0
 anchor_top = 1.0
 anchor_bottom = 1.0
@@ -88,24 +88,22 @@ grow_vertical = 0
 mouse_filter = 2
 theme_override_constants/separation = 6
 
-[node name="Aviso" type="Label" parent="Raiz/Inferior" unique_id=1309715060]
+[node name="Aviso" type="Label" parent="Raiz/Inferior" unique_id=63982174]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Aviso"
 
-[node name="Slots" type="PanelContainer" parent="Raiz/Inferior" unique_id=1327060594]
+[node name="Combo" type="Label" parent="Raiz/Inferior" unique_id=580389280]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 0
-mouse_filter = 2
-script = ExtResource("5_kicr4")
+theme_type_variation = &"Aviso"
 
-[node name="BarraVidaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=1899066100]
+[node name="BarraVidaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=1544289888]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="BarraVida" type="ProgressBar" parent="Raiz/Inferior/BarraVidaFila" unique_id=609804211]
+[node name="BarraVida" type="ProgressBar" parent="Raiz/Inferior/BarraVidaFila" unique_id=2042293892]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 18)
 layout_mode = 2
@@ -113,18 +111,18 @@ mouse_filter = 2
 theme_type_variation = &"BarraVida"
 show_percentage = false
 
-[node name="TextoVida" type="Label" parent="Raiz/Inferior/BarraVidaFila" unique_id=1019147597]
+[node name="TextoVida" type="Label" parent="Raiz/Inferior/BarraVidaFila" unique_id=1588614729]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Chico"
 vertical_alignment = 1
 
-[node name="BarraManaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=1024374102]
+[node name="BarraManaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=489864790]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="BarraMana" type="ProgressBar" parent="Raiz/Inferior/BarraManaFila" unique_id=576314144]
+[node name="BarraMana" type="ProgressBar" parent="Raiz/Inferior/BarraManaFila" unique_id=439558220]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 18)
 layout_mode = 2
@@ -132,18 +130,19 @@ mouse_filter = 2
 theme_type_variation = &"BarraMana"
 show_percentage = false
 
-[node name="TextoMana" type="Label" parent="Raiz/Inferior/BarraManaFila" unique_id=731122568]
+[node name="TextoMana" type="Label" parent="Raiz/Inferior/BarraManaFila" unique_id=1721175899]
 unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Chico"
 vertical_alignment = 1
 
-[node name="Ayuda" type="Label" parent="Raiz/Inferior" unique_id=1162006138]
+[node name="Leyenda" type="Label" parent="Raiz/Inferior" unique_id=657095102]
+unique_name_in_owner = true
 layout_mode = 2
 theme_type_variation = &"Chico"
-text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     Esc pausa"
+script = ExtResource("5_kicr4")
 
-[node name="Tarjeta" type="PanelContainer" parent="Raiz" unique_id=217828905]
+[node name="Tarjeta" type="PanelContainer" parent="Raiz" unique_id=381650394]
 unique_name_in_owner = true
 layout_mode = 0
 anchor_left = 1.0

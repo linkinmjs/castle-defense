@@ -47,8 +47,8 @@ func ocultar() -> void:
 	visible = false
 
 
-## Seis lineas, no todo lo que se midio. El resto queda en la telemetria para
-## cuando haga falta mirar en detalle.
+## Unas pocas lineas, no todo lo que se midio. El resto queda en la
+## telemetria para cuando haga falta mirar en detalle.
 func _armar_metricas(r: Dictionary) -> Array[String]:
 	var lineas: Array[String] = []
 
@@ -81,6 +81,12 @@ func _armar_metricas(r: Dictionary) -> Array[String]:
 
 	lineas.append("Mana: %d gastado, %d sin usar" % [
 		r.get("mana_gastado", 0.0), r.get("mana_sin_usar", 0.0)])
+
+	# Solo si encadeno algo: "Combo maximo: 1" diria lo mismo que no decir
+	# nada, y ocuparia un renglon.
+	var combo: int = r.get("combo_maximo", 0)
+	if combo > 1:
+		lineas.append("Combo maximo: %d" % combo)
 
 	var al_tope: float = r.get("segundos_mana_al_tope", 0.0)
 	var duracion: float = maxf(r.get("duracion", 0.0), 0.01)

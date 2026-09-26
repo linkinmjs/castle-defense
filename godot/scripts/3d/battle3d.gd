@@ -88,6 +88,9 @@ var _terminada: bool = false
 ## recorte del anterior.
 var _mana_maximo_base: float = 0.0
 var _regeneracion_base: float = 0.0
+## Los movimientos que trae la escena del healer. Un encuentro que no pide
+## ninguno en particular equipa estos, no los que dejo el anterior.
+var _movimientos_base: Array[Movimiento] = []
 var _bajas_aliadas: int = 0
 var _emergente_restante: float = 0.0
 ## Oleadas ya disparadas, por indice, para no repetir las que no se repiten.
@@ -98,6 +101,12 @@ var _disparador_armado: Dictionary = {}
 
 
 func _ready() -> void:
+	# Cada jugador con su joystick. Los ids de los pads cambian al enchufar y
+	# desenchufar (y en web son los que el navegador quiera), asi que se
+	# vuelven a repartir cada vez.
+	Jugadores.aplicar_dispositivos()
+	Input.joy_connection_changed.connect(_on_joy_connection_changed)
+
 	# Rotacion fija de una vez: la camara nunca gira, solo se traslada. Si se
 	# le hiciera look_at cada frame mientras la posicion va con retraso, el
 	# yaw iria corrigiendo y la vista se ladearia al caminar.
@@ -105,6 +114,7 @@ func _ready() -> void:
 
 	_mana_maximo_base = _healer.mana_maximo
 	_regeneracion_base = _healer.regeneracion_mana
+	_movimientos_base = _combos_de(_healer).movimientos.duplicate()
 
 	_telemetria = Telemetria.new()
 	_telemetria.name = "Telemetria"
@@ -112,8 +122,7 @@ func _ready() -> void:
 	_telemetria.observar_batalla(self)
 	_telemetria.observar_healer(_healer)
 
-	# Apuntar y dibujar barras necesitan proyectar el mundo a pantalla.
-	_healer.usar_camara(_camara)
+	# Dibujar las barras necesita proyectar el mundo a pantalla.
 	_overlay.seguir(_camara)
 	_hud.seguir(_healer)
 	_hud.seguir_batalla(self)
@@ -199,8 +208,10 @@ func iniciar_encuentro(enc: Encuentro, nueva_semilla: int = -1) -> void:
 	else:
 		_healer.regeneracion_mana = _regeneracion_base
 	_healer.reiniciar(Vector3(_actual.healer_inicial.x, 0.0, _actual.healer_inicial.y))
-	if not _actual.habilidades.is_empty():
-		_habilidades().equipar(_actual.habilidades)
+	if not _actual.movimientos.is_empty():
+		_combos_de(_healer).equipar(_actual.movimientos)
+	else:
+		_combos_de(_healer).equipar(_movimientos_base)
 
 	_camara_x = _healer.global_position.x
 	_camara.global_position = _posicion_deseada()
@@ -257,8 +268,12 @@ func _primer_encuentro() -> Encuentro:
 	return null
 
 
-func _habilidades() -> ComponenteHabilidades:
-	return _healer.get_node("Habilidades")
+func _combos_de(healer: Node) -> ComponenteCombos:
+	return healer.get_node("Combos")
+
+
+func _on_joy_connection_changed(_device: int, _conectado: bool) -> void:
+	Jugadores.aplicar_dispositivos()
 
 
 ## Fija el azar del despliegue. Con 0 sortea una semilla y la guarda, para que

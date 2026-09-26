@@ -1,22 +1,46 @@
 class_name Healer3D
 extends CharacterBody3D
-## Healer del prototipo 3D.
+## El healer, el personaje de cada jugador.
 ##
-## Mismo comportamiento que la version 2D: el mundo ahora es un plano XZ, donde
-## X es el avance del frente y Z la profundidad. Expone la misma API que el
-## healer 2D (objetivo_apuntado, en_rango, lanzar_efecto...), asi que los
-## recursos de habilidad se reutilizan tal cual.
+## Camina por el plano XZ (X es el avance del frente, Z la profundidad), salta
+## y cura con dos botones. No apunta: a quien le llega cada movimiento lo decide
+## Apuntado segun lo que tiene enfrente, y que movimiento sale lo decide su
+## ComponenteCombos segun el orden en que se apretaron los botones. Este nodo
+## pone el cuerpo: se mueve, anima, junta mana, recibe golpes y lee el input.
+##
+## Cada healer lee solo las acciones de su jugador (p1_*, p2_*, ver Jugadores).
+## Por eso nunca marca un evento como manejado: el otro healer y la batalla
+## escuchan el mismo input y cada uno se queda con lo suyo.
 
 signal mana_cambio(actual: float, maximo: float)
 signal vida_cambio(actual: float, maximo: float)
 signal aviso(texto: String)
 signal cayo
-## Cambio a quien apunta el mouse. Lo escucha la tarjeta del HUD.
+## Toco el suelo al terminar un salto.
+signal aterrizo
+## Cambio el aliado que recibiria la ligera. Lo escuchan la ficha del HUD y
+## quien quiera marcarlo en el campo.
 signal apuntada_cambio(unidad: Unidad3D)
+## El mismo aviso del componente de combos, para que el HUD no tenga que
+## saber donde vive: cuenta 0 es que el combo se corto.
+signal combo_cambio(cuenta: int, nombre: String)
 
 const FRAMES_FX := preload("res://assets/sprites/fx/fx_frames.tres")
-## Radio en pixeles para enganchar una unidad cuando el mouse no cae encima.
-const IMAN_MOUSE := 90.0
+## Alto con el que se ve un efecto en el mundo, sea cual sea su sheet.
+const ALTO_EFECTO := 1.6
+## Segundos que la pose de un movimiento no se deja pisar por caminar.
+const DURACION_POSE := 0.45
+
+## Que acciones lee: 1 las p1_*, 2 las p2_*.
+@export_range(1, 2) var jugador: int = 1
+## Color con el que se distingue a cada jugador. La escena trae el dorado del
+## primero.
+@export var tinte_jugador: Color = Color(1.0, 0.88, 0.55):
+	set(valor):
+		tinte_jugador = valor
+		if is_node_ready():
+			_tinte_base = valor
+			_sprite.modulate = valor
 
 @export var velocidad_maxima: float = 4.6
 @export var aceleracion: float = 34.0
@@ -40,30 +64,48 @@ const IMAN_MOUSE := 90.0
 @export_group("Curacion")
 @export var mana_maximo: float = 100.0
 @export var regeneracion_mana: float = 7.0
-@export var rango_curacion: float = 3.6
+
+## Las cajas de Apuntado, en metros. Estan aca y no solo como constantes alla
+## para poder afinarlas desde el inspector, y para que otro healer pueda tener
+## otro alcance.
+@export_group("Alcance")
+## Largo de la caja de la ligera, hacia donde mira.
+@export var alcance_frontal := 2.4
+## Mitad del ancho de la caja de la ligera, en profundidad.
+@export var alcance_lateral := 1.3
+## Cuanto se mete la caja por detras del healer.
+@export var margen_trasero := 0.5
+## Caja de la pesada: largo y mitad del ancho.
+@export var alcance_pesada := Vector2(3.2, 2.0)
 
 ## Zona por la que puede caminar, en metros: x0, z0, ancho, profundidad.
 var limites: Rect2 = Rect2(0, 0, 30, 10)
+## Ademas de los limites, la X se recorta a este rango (minimo, maximo). Con
+## una camara compartida, es lo que no deja a un jugador salirse de la
+## pantalla del otro. Por defecto no recorta nada.
+var limites_pantalla := Vector2(-INF, INF)
 var mana: float
+var vida: float
+## Que tipo de enemigo le pego por ultima vez.
+var fuente_ultimo_dano: String = ""
 
-var _camara: Camera3D
-var _apuntada: Unidad3D = null
 var _impulso_direccion: Vector3 = Vector3.ZERO
 var _impulso_fuerza: float = 0.0
 var _impulso_restante: float = 0.0
+## Lo que falta de la pose del ultimo movimiento. Mientras dura, caminar no la
+## pisa.
 var _casteando: float = 0.0
 ## Lo que falta de la animacion de golpe. Mientras dura, caminar no la pisa.
 var _hurt_restante: float = 0.0
 var _en_el_aire: bool = false
-var vida: float
-## Que tipo de enemigo le pego por ultima vez.
-var fuente_ultimo_dano: String = ""
 var _caido_restante: float = 0.0
 var _flash: float = 0.0
 var _tinte_base: Color = Color.WHITE
+## El aliado que recibiria la ligera ahora. Se calcula una vez por tick.
+var _al_frente: Unidad3D = null
 
 @onready var _sprite: AnimatedSprite3D = $Sprite
-@onready var _habilidades: ComponenteHabilidades = $Habilidades
+@onready var _combos: ComponenteCombos = $Combos
 
 
 func _ready() -> void:
@@ -76,7 +118,9 @@ func _ready() -> void:
 	# En este grupo lo encuentran los enemigos: es un objetivo mas, y el mas
 	# cercano gana. Rodeado de soldados no sos vos; solo, si.
 	add_to_group("healer")
-	_tinte_base = _sprite.modulate
+	_tinte_base = tinte_jugador
+	_sprite.modulate = tinte_jugador
+	_combos.combo_cambio.connect(combo_cambio.emit)
 	mana = mana_maximo
 	mana_cambio.emit(mana, mana_maximo)
 	vida = vida_maxima
@@ -98,19 +142,15 @@ func reiniciar(posicion: Vector3) -> void:
 	_hurt_restante = 0.0
 	_en_el_aire = false
 	_flash = 0.0
-	if _apuntada != null and is_instance_valid(_apuntada):
-		_apuntada.resaltada = false
-	_apuntada = null
+	# Reequipar lo mismo es lo que deja al componente como nuevo: sin combo,
+	# sin enfriamientos y sin una plegaria a medio rezar que saldria en el
+	# campo nuevo.
+	_combos.equipar(_combos.movimientos)
+	_cambiar_al_frente(null)
 	_sprite.modulate = _tinte_base
 	_sprite.play("idle")
 	vida_cambio.emit(vida, vida_maxima)
 	mana_cambio.emit(mana, mana_maximo)
-
-
-## La batalla le pasa la camara: sin ella no se puede saber a que apunta el
-## mouse ni proyectar nada a pantalla.
-func usar_camara(camara: Camera3D) -> void:
-	_camara = camara
 
 
 func _physics_process(delta: float) -> void:
@@ -129,8 +169,9 @@ func _physics_process(delta: float) -> void:
 		horizontal = _impulso_direccion * _impulso_fuerza
 	else:
 		var entrada := Vector2.ZERO
-		if esta_viva():
-			entrada = Input.get_vector("move_left", "move_right", "move_up", "move_down")
+		if _puede_actuar():
+			entrada = Input.get_vector(
+				_accion(&"izquierda"), _accion(&"derecha"), _accion(&"arriba"), _accion(&"abajo"))
 		var direccion := Vector3(entrada.x, 0.0, entrada.y * factor_profundidad)
 		if direccion != Vector3.ZERO:
 			horizontal = horizontal.move_toward(direccion * velocidad_maxima, aceleracion * delta)
@@ -144,7 +185,9 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-	global_position.x = clampf(global_position.x, limites.position.x, limites.end.x)
+	var x_min := maxf(limites.position.x, limites_pantalla.x)
+	var x_max := minf(limites.end.x, limites_pantalla.y)
+	global_position.x = clampf(global_position.x, x_min, x_max)
 	global_position.z = clampf(global_position.z, limites.position.y, limites.end.y)
 
 	# El suelo es el plano y=0: no hay cuerpo fisico debajo.
@@ -153,6 +196,7 @@ func _physics_process(delta: float) -> void:
 		if _en_el_aire:
 			_en_el_aire = false
 			velocity.y = 0.0
+			aterrizo.emit()
 
 	# Caido no junta mana: si no, caer seria una pausa gratis para recargar.
 	if mana < mana_maximo and esta_viva():
@@ -162,31 +206,34 @@ func _physics_process(delta: float) -> void:
 	_casteando = maxf(_casteando - delta, 0.0)
 	_hurt_restante = maxf(_hurt_restante - delta, 0.0)
 	_actualizar_animacion()
+	# Despues de moverse: la caja de la ligera sale de donde quedo parado.
+	_actualizar_al_frente()
 
 
-func _process(_delta: float) -> void:
-	_actualizar_apuntada()
-
-
+## Solo reacciona a las acciones de su jugador, y nunca marca el evento como
+## manejado (ver la cabecera).
 func _unhandled_input(evento: InputEvent) -> void:
-	if not esta_viva():
+	if not _puede_actuar():
 		return
-	if evento.is_action_pressed("saltar"):
+	if evento.is_action_pressed(_accion(&"saltar")):
 		saltar()
-		return
+	elif evento.is_action_pressed(_accion(&"ligera")):
+		pulsar(ComponenteCombos.LIGERA)
+	elif evento.is_action_pressed(_accion(&"pesada")):
+		pulsar(ComponenteCombos.PESADA)
 
-	# Cada habilidad dice que accion la dispara. Antes esto era una escalera de
-	# indices fijos, y bastaba con que un encuentro entregara media lista para
-	# que una tecla terminara usando la habilidad equivocada.
-	var habilidad := _habilidades.habilidad_para_evento(evento)
-	if habilidad != null:
-		_usar(habilidad)
+
+## Aprieta un boton de movimiento (&"ligera" o &"pesada"). Devuelve true si
+## salio o quedo en marcha. Es lo mismo que hace el input, y lo que usan las
+## pruebas y las capturas para no depender de un teclado.
+func pulsar(entrada: StringName) -> bool:
+	return _combos.pulsar(entrada)
 
 
 ## Salto fisico: sirve para esquivar lo que pega a ras del suelo. Quien
 ## quiera saber si el healer esta a salvo pregunta esta_en_el_aire().
 func saltar() -> void:
-	if _en_el_aire or not esta_viva():
+	if _en_el_aire or not _puede_actuar():
 		return
 	_en_el_aire = true
 	velocity.y = sqrt(2.0 * gravedad * altura_salto)
@@ -197,18 +244,35 @@ func esta_en_el_aire() -> bool:
 	return _en_el_aire
 
 
-func _usar(habilidad: Habilidad) -> void:
-	if habilidad == null:
-		return
-	if habilidad.requiere_objetivo() and objetivo_apuntado() == null:
-		return
-	_habilidades.intentar(habilidad)
+## Rezando una plegaria (o cualquier movimiento con carga): el healer esta
+## comprometido y no camina ni salta hasta que sale.
+func esta_en_wind_up() -> bool:
+	return _combos != null and _combos.esta_en_wind_up()
+
+
+## -1 si mira hacia su base, +1 si mira hacia el frente.
+func direccion_frente() -> float:
+	return Apuntado.direccion_frente(self)
+
+
+func mirando_izquierda() -> bool:
+	return _sprite.flip_h
+
+
+func _puede_actuar() -> bool:
+	return esta_viva() and not esta_en_wind_up()
+
+
+func _accion(entrada: StringName) -> StringName:
+	return Jugadores.accion(jugador, entrada)
 
 
 # --- Vida ----------------------------------------------------------------------
 
 ## Misma firma que en las unidades: los enemigos golpean a cualquier objetivo
 ## sin saber si es soldado o healer, y pasan siempre quien pego.
+##
+## El combo no se corta aca: el componente lo corta solo al ver bajar la vida.
 func recibir_dano(cantidad: float, fuente: Node = null, _causa: StringName = &"golpe") -> void:
 	if not esta_viva():
 		return
@@ -220,9 +284,9 @@ func recibir_dano(cantidad: float, fuente: Node = null, _causa: StringName = &"g
 	if vida <= 0.0:
 		_caer()
 		return
-	# En el aire o casteando manda esa pose, como en _actualizar_animacion: el
-	# golpe se lee igual por el destello.
-	if not _en_el_aire and _casteando <= 0.0:
+	# En el aire, en una pose o rezando manda esa pose, como en
+	# _actualizar_animacion: el golpe se lee igual por el destello.
+	if not _en_el_aire and _casteando <= 0.0 and not esta_en_wind_up():
 		_hurt_restante = 0.25
 		_sprite.play("hurt")
 
@@ -239,6 +303,8 @@ func esta_derribada() -> bool:
 	return _caido_restante > 0.0
 
 
+## Lo que estaba cargando o esperando el suelo lo cancela el componente en su
+## tick: tirado no se termina de rezar.
 func _caer() -> void:
 	_caido_restante = tiempo_caido
 	_impulso_restante = 0.0
@@ -264,42 +330,55 @@ func _actualizar_flash(delta: float) -> void:
 	_sprite.modulate = Color.WHITE if _flash > 0.0 else _tinte_base
 
 
-# --- API que usan las habilidades -------------------------------------------
+# --- API que usan los movimientos ----------------------------------------------
 
-func objetivo_apuntado() -> Unidad3D:
-	if _apuntada == null or not is_instance_valid(_apuntada) or not _apuntada.esta_viva():
-		return null
-	return _apuntada
-
-
-## A quien apunta el mouse, este o no al alcance. objetivo_apuntado() es para
-## las habilidades y devuelve null si no se puede usar; esta es para mostrar,
-## que es distinto: un herido lejos hay que poder verlo antes de ir.
+## El aliado que recibiria la ligera ahora, o null. Es lo que marca la elipse a
+## sus pies y lo que muestra la ficha del HUD.
 func unidad_apuntada() -> Unidad3D:
-	if _apuntada == null or not is_instance_valid(_apuntada) or not _apuntada.esta_viva():
+	if not _sigue_en_juego(_al_frente):
 		return null
-	return _apuntada
+	return _al_frente
 
 
-func en_rango(unidad: Node3D) -> bool:
-	return global_position.distance_to(unidad.global_position) <= rango_curacion
-
-
+## Solo descuenta: la pose la pone animar_movimiento, que sabe que movimiento
+## fue. Asi un movimiento al aire tambien se ve, aunque no cobre.
 func gastar_mana(cantidad: float) -> void:
 	mana = maxf(mana - cantidad, 0.0)
 	mana_cambio.emit(mana, mana_maximo)
-	# En el aire la pose de salto manda: si la pisara el cast, al terminar
+
+
+## La pose de un movimiento, conecte o no. La llama el componente.
+func animar_movimiento(mov: Movimiento) -> void:
+	# En el aire la pose de salto manda: si la pisara otra, al terminar
 	# volveria a arrancar el salto desde el primer frame.
-	if cantidad > 0.0 and not _en_el_aire:
-		_casteando = 0.45
-		_sprite.play("cast")
+	if mov == null or _en_el_aire:
+		return
+	var animacion := mov.animacion
+	if not _sprite.sprite_frames.has_animation(animacion):
+		animacion = "cast"
+	_sprite.play(animacion)
+	_casteando = DURACION_POSE
+
+
+## Arranca la carga de un movimiento lento. Hasta que sale (o lo cancela una
+## caida), _puede_actuar() da false: sin caminar, que frena con la friccion, y
+## sin saltar.
+func iniciar_wind_up(mov: Movimiento) -> void:
+	animar_movimiento(mov)
 
 
 func lanzar_efecto(objetivo: Node3D, animacion: String) -> void:
+	if objetivo == null or not is_instance_valid(objetivo):
+		return
+	if not FRAMES_FX.has_animation(animacion) or FRAMES_FX.get_frame_count(animacion) == 0:
+		animacion = "heal"
 	var efecto := AnimatedSprite3D.new()
 	efecto.sprite_frames = FRAMES_FX
-	# El sheet de efectos es de 72 px y queremos ~1.6 m de alto.
-	efecto.pixel_size = 1.6 / 72.0
+	# Mismo alto en el mundo para cualquier efecto: los sheets no miden todos
+	# lo mismo (hay de 72 px y de 128 px).
+	var cuadro := FRAMES_FX.get_frame_texture(animacion, 0)
+	var alto := float(cuadro.get_height()) if cuadro != null else 72.0
+	efecto.pixel_size = ALTO_EFECTO / alto
 	efecto.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
 	efecto.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	efecto.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
@@ -317,153 +396,41 @@ func impulsar(direccion: Vector3, fuerza: float, duracion: float) -> void:
 	_impulso_restante = duracion
 
 
-## La habilidad no sabe en cuantas dimensiones vive el mundo: le pide al healer
-## que se lance hacia donde apunta el jugador y listo.
-func impulsar_hacia_mouse(fuerza: float, duracion: float) -> void:
-	var direccion := _punto_suelo_bajo_mouse() - global_position
-	direccion.y = 0.0
-	if direccion.length() < 0.2:
-		direccion = Vector3.LEFT if mirando_izquierda() else Vector3.RIGHT
-	impulsar(direccion.normalized(), fuerza, duracion)
+# --- Al frente -----------------------------------------------------------------
+
+## Recalcula a quien le llegaria la ligera. El ultimo tocado por el combo es
+## pegajoso, igual que para el Vendaje: la marca no salta al vecino a mitad de
+## un combo. Tirado no hay a quien: la ligera no sale.
+func _actualizar_al_frente() -> void:
+	var nuevo: Unidad3D = null
+	if esta_viva():
+		nuevo = Apuntado.objetivo_ligera(self, _combos.ultimo_objetivo())
+	_cambiar_al_frente(nuevo)
 
 
-func mirando_izquierda() -> bool:
-	return _sprite.flip_h
-
-
-# --- Apuntado ----------------------------------------------------------------
-
-func _actualizar_apuntada() -> void:
-	if _camara == null:
+## Mueve la marca del anterior al nuevo y avisa si cambio.
+func _cambiar_al_frente(nuevo: Unidad3D) -> void:
+	var anterior: Unidad3D = _al_frente if _sigue_en_juego(_al_frente) else null
+	_al_frente = nuevo
+	if nuevo != null:
+		nuevo.resaltada = true
+		# Si esta en la caja, esta al alcance: con el apuntado por posicion no
+		# hay objetivo marcado que no se pueda tocar.
+		nuevo.resaltada_alcanzable = true
+	if anterior == nuevo:
 		return
-
-	var anterior := _apuntada
-	_apuntada = buscar_bajo_punto(get_viewport().get_mouse_position())
-
-	if anterior != _apuntada and anterior != null and is_instance_valid(anterior):
+	if anterior != null:
 		anterior.resaltada = false
-
-	if _apuntada != null:
-		_apuntada.resaltada = true
-		_apuntada.resaltada_alcanzable = en_rango(_apuntada)
-
-	if anterior != _apuntada:
-		apuntada_cambio.emit(_apuntada)
+	apuntada_cambio.emit(nuevo)
 
 
-## Igual que en 2D, pero la caja del cuerpo se calcula proyectando la unidad a
-## pantalla: asi el area de click acompana el tamano con el que se la ve.
-func buscar_bajo_punto(mouse: Vector2) -> Unidad3D:
-	var mejor: Unidad3D = null
-	var mejor_alcanzable := false
-	var mejor_distancia := INF
-
-	for unidad: Unidad3D in get_tree().get_nodes_in_group("aliados"):
-		if not unidad.esta_viva() or unidad.is_queued_for_deletion():
-			continue
-		var caja := _caja_pantalla(unidad)
-		if caja.size == Vector2.ZERO or not caja.has_point(mouse):
-			continue
-
-		var alcanzable := en_rango(unidad)
-		# Primero los que puedo tocar; entre esos, el que tiene el cuerpo mas
-		# cerca del cursor. Con cajas superpuestas, la distancia al torso es lo
-		# que el jugador esta senalando de verdad.
-		var distancia := _centro_pantalla(unidad).distance_to(mouse)
-		if mejor == null \
-				or (alcanzable and not mejor_alcanzable) \
-				or (alcanzable == mejor_alcanzable and distancia < mejor_distancia):
-			mejor = unidad
-			mejor_alcanzable = alcanzable
-			mejor_distancia = distancia
-
-	# Pegajoso: si el cursor sigue sobre el que ya estaba apuntado, no cambia
-	# por un vecino que quedo apenas mas cerca. Sin esto, en la linea
-	# amontonada el objetivo parpadea entre dos y el click cae en cualquiera.
-	if _apuntada != null and is_instance_valid(_apuntada) and _apuntada.esta_viva() \
-			and _apuntada != mejor and _caja_pantalla(_apuntada).has_point(mouse) \
-			and (en_rango(_apuntada) or mejor == null or not mejor_alcanzable):
-		return _apuntada
-
-	if mejor != null:
-		return mejor
-	return _mas_cercano_al_mouse(mouse)
-
-
-## Caja del cuerpo en coordenadas de pantalla, o una vacia si esta detras.
-func _caja_pantalla(unidad: Unidad3D) -> Rect2:
-	var pies: Vector3 = unidad.global_position
-	if unidad.esta_derribada():
-		return _caja_tirada(pies)
-
-	var cabeza: Vector3 = pies + Vector3(0, 2.0, 0)
-	if _camara.is_position_behind(pies) or _camara.is_position_behind(cabeza):
-		return Rect2()
-
-	var p := _camara.unproject_position(pies)
-	var c := _camara.unproject_position(cabeza)
-	var alto := absf(p.y - c.y)
-	# Mas ancha que el cuerpo: la gente hace click en el arma y en el escudo.
-	var ancho := maxf(alto * 0.7, 14.0)
-	return Rect2(Vector2(p.x - ancho * 0.5, c.y), Vector2(ancho, alto + 6.0))
-
-
-## Un cuerpo tirado ocupa el suelo a lo ancho y casi nada a lo alto: la caja
-## de pie no lo cubre y reanimar se vuelve una prueba de punteria.
-func _caja_tirada(pies: Vector3) -> Rect2:
-	var izq := pies + Vector3(-0.95, 0, 0)
-	var der := pies + Vector3(0.95, 0, 0)
-	var arriba := pies + Vector3(0, 0.75, 0)
-	if _camara.is_position_behind(izq) or _camara.is_position_behind(der) \
-			or _camara.is_position_behind(arriba):
-		return Rect2()
-	var a := _camara.unproject_position(izq)
-	var b := _camara.unproject_position(der)
-	var techo := _camara.unproject_position(arriba)
-	var suelo := _camara.unproject_position(pies)
-	var x0 := minf(a.x, b.x)
-	var x1 := maxf(a.x, b.x)
-	return Rect2(Vector2(x0, techo.y), Vector2(x1 - x0, suelo.y - techo.y + 8.0))
-
-
-## Punto del cuerpo que representa a la unidad para el cursor: el torso si
-## esta de pie, mas abajo si esta tirada.
-func _punto_cuerpo(unidad: Unidad3D) -> Vector3:
-	if unidad.esta_derribada():
-		return unidad.global_position + Vector3(0, 0.35, 0)
-	return unidad.punto_torso()
-
-
-func _centro_pantalla(unidad: Unidad3D) -> Vector2:
-	return _camara.unproject_position(_punto_cuerpo(unidad))
-
-
-func _mas_cercano_al_mouse(mouse: Vector2) -> Unidad3D:
-	var mejor: Unidad3D = null
-	var mejor_distancia := IMAN_MOUSE
-	for unidad: Unidad3D in get_tree().get_nodes_in_group("aliados"):
-		if not unidad.esta_viva() or unidad.is_queued_for_deletion():
-			continue
-		var punto := _punto_cuerpo(unidad)
-		if _camara.is_position_behind(punto):
-			continue
-		var distancia := _camara.unproject_position(punto).distance_to(mouse)
-		if distancia < mejor_distancia:
-			mejor_distancia = distancia
-			mejor = unidad
-	return mejor
-
-
-## Cruce del rayo del mouse con el plano del suelo.
-func _punto_suelo_bajo_mouse() -> Vector3:
-	if _camara == null:
-		return global_position
-	var mouse := get_viewport().get_mouse_position()
-	var origen := _camara.project_ray_origin(mouse)
-	var direccion := _camara.project_ray_normal(mouse)
-	if absf(direccion.y) < 0.001:
-		return global_position
-	return origen + direccion * (-origen.y / direccion.y)
+## Variant y no Unidad3D: la marca puede haber quedado en una unidad que ya se
+## libero, y pasar eso a un parametro tipado es un error en si mismo.
+static func _sigue_en_juego(unidad: Variant) -> bool:
+	if not is_instance_valid(unidad):
+		return false
+	var nodo := unidad as Unidad3D
+	return nodo != null and not nodo.is_queued_for_deletion() and nodo.esta_viva()
 
 
 func _actualizar_animacion() -> void:
@@ -474,8 +441,8 @@ func _actualizar_animacion() -> void:
 	elif velocity.x > 0.05:
 		_sprite.flip_h = false
 
-	if _en_el_aire or _casteando > 0.0:
-		return  # ni el salto ni el cast se interrumpen por caminar
+	if _en_el_aire or _casteando > 0.0 or esta_en_wind_up():
+		return  # ni el salto ni la pose ni la carga se interrumpen por caminar
 	if _hurt_restante > 0.0:
 		return  # el golpe se ve entero antes de volver a caminar
 

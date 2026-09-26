@@ -1,38 +1,40 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/3d/healer3d.gd" id="1_5yv7t"]
-[ext_resource type="SpriteFrames" path="res://assets/sprites/healer/healer_frames.tres" id="2_ft11u"]
-[ext_resource type="Script" path="res://scripts/abilities/componente_habilidades.gd" id="3_xj4fx"]
-[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="4_24n8x"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="5_hah4o"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/estabilizar.tres" id="6_dscp4"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/oleada.tres" id="7_p5odk"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/bendicion.tres" id="8_ch5vl"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/impulso.tres" id="9_3ecv4"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/reanimar.tres" id="10_yqwp4"]
+[ext_resource type="Script" path="res://scripts/3d/healer3d.gd" id="1_xj4fx"]
+[ext_resource type="SpriteFrames" path="res://assets/sprites/healer/healer_frames.tres" id="2_24n8x"]
+[ext_resource type="Script" path="res://scripts/movimientos/componente_combos.gd" id="3_hah4o"]
+[ext_resource type="Script" path="res://scripts/movimientos/movimiento.gd" id="4_dscp4"]
+[ext_resource type="Resource" path="res://resources/movimientos/toque.tres" id="5_p5odk"]
+[ext_resource type="Resource" path="res://resources/movimientos/vendaje.tres" id="6_ch5vl"]
+[ext_resource type="Resource" path="res://resources/movimientos/plegaria.tres" id="7_3ecv4"]
+[ext_resource type="Resource" path="res://resources/movimientos/bendicion.tres" id="8_yqwp4"]
+[ext_resource type="Resource" path="res://resources/movimientos/oleada.tres" id="9_ukwhq"]
+[ext_resource type="Resource" path="res://resources/movimientos/reanimar.tres" id="10_xyc1q"]
+[ext_resource type="Resource" path="res://resources/movimientos/impulso.tres" id="11_58h0i"]
+[ext_resource type="Resource" path="res://resources/movimientos/caida.tres" id="12_oguc0"]
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_ukwhq"]
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_v1ypi"]
 radius = 0.32
 height = 1.7
 
-[node name="Healer" type="CharacterBody3D" unique_id=1620728516]
-script = ExtResource("1_5yv7t")
+[node name="Healer" type="CharacterBody3D" unique_id=1625816448]
+script = ExtResource("1_xj4fx")
 
-[node name="Sprite" type="AnimatedSprite3D" parent="." unique_id=1829870495]
+[node name="Sprite" type="AnimatedSprite3D" parent="." unique_id=1661473530]
 offset = Vector2(0, 64)
 modulate = Color(1, 0.88, 0.55, 1)
 pixel_size = 0.029411765
 billboard = 2
 alpha_cut = 1
 texture_filter = 0
-sprite_frames = ExtResource("2_ft11u")
+sprite_frames = ExtResource("2_24n8x")
 animation = &"idle"
 autoplay = "idle"
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=679133168]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=20081536]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
-shape = SubResource("CapsuleShape3D_ukwhq")
+shape = SubResource("CapsuleShape3D_v1ypi")
 
-[node name="Habilidades" type="Node" parent="." unique_id=995327929]
-script = ExtResource("3_xj4fx")
-habilidades = Array[ExtResource("4_24n8x")]([ExtResource("5_hah4o"), ExtResource("6_dscp4"), ExtResource("7_p5odk"), ExtResource("8_ch5vl"), ExtResource("9_3ecv4"), ExtResource("10_yqwp4")])
+[node name="Combos" type="Node" parent="." unique_id=1051253232]
+script = ExtResource("3_hah4o")
+movimientos = Array[ExtResource("4_dscp4")]([ExtResource("5_p5odk"), ExtResource("6_ch5vl"), ExtResource("7_3ecv4"), ExtResource("8_yqwp4"), ExtResource("9_ukwhq"), ExtResource("10_xyc1q"), ExtResource("11_58h0i"), ExtResource("12_oguc0")])

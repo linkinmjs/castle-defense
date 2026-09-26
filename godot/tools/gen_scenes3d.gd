@@ -1,22 +1,34 @@
 extends SceneTree
 ## Genera las escenas y los recursos del prototipo.
 ##
-## El HUD sale de gen_hud.gd y se corre antes que este: la batalla lo instancia
-## tal como quedo guardado.
+## El HUD sale de gen_hud.gd y los movimientos del healer de gen_movimientos.gd;
+## los dos se corren antes que este, que los usa tal como quedaron guardados.
 
 const ANCHO := 30.0
 const PROFUNDIDAD := 10.0
 ## El personaje mide ~68 px de arte y queremos que mida 2 m en el mundo.
 const PIXEL_SIZE := 2.0 / 68.0
 const RUTA_GRILLA := "res://assets/texturas/grilla.png"
-const DIR_HABILIDADES := "res://resources/habilidades3d"
+const DIR_MOVIMIENTOS := "res://resources/movimientos"
 const DIR_SOLDADOS := "res://resources/soldados"
 const RUTA_HUD := "res://scenes/ui/hud.tscn"
+## Lo que el healer trae equipado de fabrica, en el orden en que se lee la
+## tabla: primero lo que sale sin combo, despues lo que lo continua, al final
+## lo del aire. El orden solo desempata, y en la tabla no hay empates.
+const MOVIMIENTOS: Array[String] = [
+	"toque", "vendaje", "plegaria", "bendicion", "oleada", "reanimar", "impulso", "caida",
+]
 
 
 func _initialize() -> void:
+	for archivo in MOVIMIENTOS:
+		if not ResourceLoader.exists(_ruta_movimiento(archivo)):
+			print("Falta %s. Correr primero:" % _ruta_movimiento(archivo))
+			print("  --script res://tools/gen_movimientos.gd")
+			quit(1)
+			return
+
 	_crear_textura_grilla()
-	_crear_habilidades()
 	_crear_tipos()
 	_crear_healer()
 	_crear_unidad()
@@ -41,86 +53,6 @@ func _crear_textura_grilla() -> void:
 		imagen.set_pixel(0, i, linea)
 	imagen.save_png(ProjectSettings.globalize_path(RUTA_GRILLA))
 	print("%s -> OK" % RUTA_GRILLA)
-
-
-## Mismas habilidades que en 2D; solo cambian los valores que estan en
-## unidades de mundo (radios y fuerzas), que ahora se expresan en metros.
-func _crear_habilidades() -> void:
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DIR_HABILIDADES))
-
-	var curar := HabilidadCurar.new()
-	curar.nombre = "Curar"
-	curar.tecla = "LMB"
-	curar.accion = &"select"
-	curar.icono = _icono("curar")
-	curar.costo = 25.0
-	curar.enfriamiento = 0.6
-	curar.objetivo = Habilidad.Objetivo.ALIADO
-	curar.color = Color("5fbf5f")
-	curar.cantidad = 35.0
-	_guardar_recurso(curar, "curar.tres")
-
-	var estabilizar := HabilidadEstabilizar.new()
-	estabilizar.nombre = "Estabilizar"
-	estabilizar.tecla = "RMB"
-	estabilizar.accion = &"cancel"
-	estabilizar.icono = _icono("estabilizar")
-	estabilizar.costo = 10.0
-	estabilizar.enfriamiento = 1.2
-	estabilizar.objetivo = Habilidad.Objetivo.ALIADO
-	estabilizar.color = Color("d2503c")
-	_guardar_recurso(estabilizar, "estabilizar.tres")
-
-	var oleada := HabilidadOleada.new()
-	oleada.nombre = "Oleada"
-	oleada.tecla = "1"
-	oleada.accion = &"habilidad_1"
-	oleada.icono = _icono("oleada")
-	oleada.costo = 45.0
-	oleada.enfriamiento = 14.0
-	oleada.objetivo = Habilidad.Objetivo.AREA
-	oleada.color = Color("4a9fd4")
-	oleada.cantidad = 18.0
-	oleada.radio = 5.0
-	_guardar_recurso(oleada, "oleada.tres")
-
-	var bendicion := HabilidadBendicion.new()
-	bendicion.nombre = "Bendicion"
-	bendicion.tecla = "2"
-	bendicion.accion = &"habilidad_2"
-	bendicion.icono = _icono("bendicion")
-	bendicion.costo = 35.0
-	bendicion.enfriamiento = 16.0
-	bendicion.objetivo = Habilidad.Objetivo.ALIADO
-	bendicion.color = Color("6fd3c7")
-	bendicion.duracion = 8.0
-	bendicion.reduccion_dano = 0.35
-	bendicion.bonus_cadencia = 0.30
-	_guardar_recurso(bendicion, "bendicion.tres")
-
-	var impulso := HabilidadImpulso.new()
-	impulso.nombre = "Impulso"
-	impulso.tecla = "Shift"
-	impulso.accion = &"dash"
-	impulso.icono = _icono("impulso")
-	impulso.costo = 12.0
-	impulso.enfriamiento = 4.0
-	impulso.objetivo = Habilidad.Objetivo.PROPIA
-	impulso.color = Color("e0c060")
-	impulso.fuerza = 9.5
-	impulso.duracion = 0.22
-	_guardar_recurso(impulso, "impulso.tres")
-
-	var reanimar := HabilidadReanimar.new()
-	reanimar.nombre = "Reanimar"
-	reanimar.tecla = "3"
-	reanimar.accion = &"habilidad_3"
-	reanimar.icono = _icono("reanimar")
-	reanimar.costo = 40.0
-	reanimar.enfriamiento = 6.0
-	reanimar.objetivo = Habilidad.Objetivo.ALIADO
-	reanimar.color = Color("b07fd9")
-	_guardar_recurso(reanimar, "reanimar.tres")
 
 
 ## Cada tipo le crea un problema distinto al healer: el escudero es el mejor
@@ -179,17 +111,8 @@ func _guardar_tipo(recurso: Resource, archivo: String) -> void:
 	print("%s -> %s" % [ruta, "OK" if err == OK else "ERROR %d" % err])
 
 
-## El icono es opcional: si todavia no se corrio extraer_ui.gd, la habilidad se
-## guarda sin el y el slot cae al nombre en texto.
-func _icono(nombre: String) -> Texture2D:
-	var ruta := "res://assets/ui/habilidades/%s.png" % nombre
-	return load(ruta) if ResourceLoader.exists(ruta) else null
-
-
-func _guardar_recurso(recurso: Resource, archivo: String) -> void:
-	var ruta := "%s/%s" % [DIR_HABILIDADES, archivo]
-	var err := ResourceSaver.save(recurso, ruta)
-	print("%s -> %s" % [ruta, "OK" if err == OK else "ERROR %d" % err])
+func _ruta_movimiento(archivo: String) -> String:
+	return "%s/%s.tres" % [DIR_MOVIMIENTOS, archivo]
 
 
 func _crear_healer() -> void:
@@ -227,20 +150,16 @@ func _crear_healer() -> void:
 	healer.add_child(colision)
 	colision.owner = healer
 
-	var habilidades := Node.new()
-	habilidades.name = "Habilidades"
-	habilidades.set_script(load("res://scripts/abilities/componente_habilidades.gd"))
-	var lista: Array[Habilidad] = [
-		load(DIR_HABILIDADES + "/curar.tres"),
-		load(DIR_HABILIDADES + "/estabilizar.tres"),
-		load(DIR_HABILIDADES + "/oleada.tres"),
-		load(DIR_HABILIDADES + "/bendicion.tres"),
-		load(DIR_HABILIDADES + "/impulso.tres"),
-		load(DIR_HABILIDADES + "/reanimar.tres"),
-	]
-	habilidades.set("habilidades", lista)
-	healer.add_child(habilidades)
-	habilidades.owner = healer
+	# Todos los movimientos: un encuentro que quiera menos los recorta al
+	# empezar, y uno que no diga nada juega con estos.
+	var combos := ComponenteCombos.new()
+	combos.name = "Combos"
+	var lista: Array[Movimiento] = []
+	for archivo in MOVIMIENTOS:
+		lista.append(load(_ruta_movimiento(archivo)))
+	combos.movimientos = lista
+	healer.add_child(combos)
+	combos.owner = healer
 
 	_guardar(healer, "res://scenes/3d/healer3d.tscn")
 

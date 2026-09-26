@@ -72,6 +72,33 @@ func _tick() -> void:
 			_pausa.cerrar()
 			_ok("y cerrar de mas tampoco", not _pausa.esta_abierto())
 			_ok("el arbol quedo corriendo", not paused)
+			# Se fuerza el final del encuentro en vez de esperarlo.
+			_battle.tiempo_encuentro = _battle._actual.duracion
+			_ticks = 0
+			_fase = 6
+		6:
+			if not _battle.esta_terminada():
+				return
+			print("--- con el encuentro terminado, Start sigue y no pausa ---")
+			# En el pad, Start es pause y continuar a la vez.
+			var start := InputEventJoypadButton.new()
+			start.button_index = JOY_BUTTON_START
+			start.device = 0
+			start.pressed = true
+			_ok("Start es pause y continuar", start.is_action_pressed("pause")
+				and start.is_action_pressed("continuar"))
+			_pausa._unhandled_input(start)
+			_ok("el menu no se queda con el Start", not _pausa.esta_abierto())
+			_ok("y el arbol sigue corriendo", not paused)
+			var antes: StringName = _battle._actual.id
+			_battle._unhandled_input(start)
+			_ok("la batalla lo toma como continuar", _battle._actual.id != antes)
+			_ok("y el encuentro nuevo arranca en juego", not _battle.esta_terminada())
+
+			# Mientras se juega, Start vuelve a ser pausa.
+			_pausa._unhandled_input(start)
+			_ok("jugando, Start pausa", _pausa.esta_abierto())
+			_pausa.cerrar()
 			_fase = 5
 		5:
 			print("--- soltar la batalla pausada no deja el arbol trabado ---")

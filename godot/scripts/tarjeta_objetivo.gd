@@ -1,10 +1,13 @@
 extends PanelContainer
-## Ficha del soldado al que apunta el mouse.
+## Ficha del soldado que el healer tiene al frente: el que recibiria la ligera.
 ##
 ## El campo muestra un solo problema por unidad para que se pueda leer de un
 ## vistazo con quince soldados amontonados; el detalle completo va aca. Dice
-## que haria cada herramienta sobre ese paciente, pero nunca cual conviene:
-## elegir es el juego.
+## que haria cada movimiento equipado sobre ese paciente, pero nunca cual
+## conviene: elegir es el juego.
+##
+## No hay "fuera de alcance": con el apuntado por posicion, el que no esta en
+## la caja de la ligera no es el de la ficha.
 ##
 ## _armar_lineas() dice que mostrar y los nodos lo reflejan. Los Labels se
 ## rehacen solo cuando cambia la cantidad de renglones: recrearlos en cada
@@ -14,7 +17,6 @@ const ANCHO := 280.0
 
 const COLOR_NOMBRE := Color(0.94, 0.95, 1.0)
 const COLOR_TENUE := Color(0.70, 0.74, 0.85)
-const COLOR_LEJOS := Color(1.0, 0.55, 0.42)
 
 ## Un color por familia de problema, el mismo que usa el overlay del campo.
 const COLORES := {
@@ -34,15 +36,15 @@ const ETIQUETAS := {
 }
 
 var _healer: Node
-var _componente: ComponenteHabilidades
+var _combos: ComponenteCombos
 var _apuntada: Unidad3D
 var _columna: VBoxContainer
 var _renglones: Array[Label] = []
 
 
-func seguir(healer: Node, componente: ComponenteHabilidades) -> void:
+func seguir(healer: Node, combos: ComponenteCombos) -> void:
 	_healer = healer
-	_componente = componente
+	_combos = combos
 	healer.apuntada_cambio.connect(_on_apuntada_cambio)
 
 
@@ -53,8 +55,7 @@ func _on_apuntada_cambio(unidad: Unidad3D) -> void:
 func _ready() -> void:
 	theme_type_variation = &"PanelFicha"
 	custom_minimum_size = Vector2(ANCHO, 0)
-	# Todo el HUD deja pasar los clicks: la tarjeta va abajo a la derecha y
-	# taparia a los soldados que queden debajo.
+	# Nada del HUD se lleva el mouse: no hay nada que clickear.
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
 
@@ -65,7 +66,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	# La vida y los relojes cambian solos aunque el mouse no se mueva.
+	# La vida y los relojes cambian solos aunque el healer no se mueva.
 	if _healer != null:
 		_apuntada = _healer.unidad_apuntada()
 
@@ -107,8 +108,8 @@ func _refrescar(lineas: Array[Dictionary]) -> void:
 
 
 
-## Cuatro bloques: quien es, como esta, cual es su problema, y que puede hacer
-## el jugador al respecto.
+## Cuatro bloques: quien es, como esta, cual es su problema, y que haria cada
+## movimiento equipado.
 func _armar_lineas() -> Array[Dictionary]:
 	var lineas: Array[Dictionary] = []
 
@@ -133,19 +134,15 @@ func _armar_lineas() -> Array[Dictionary]:
 			texto += " · %.1f s" % segundos
 		lineas.append({"texto": texto, "color": COLORES.get(estado, COLOR_TENUE)})
 
-	# Fuera de alcance no se oculta lo que haria: saber que vale la pena llegar
-	# es parte de la decision.
-	if not _healer.en_rango(_apuntada):
-		lineas.append({"texto": "Fuera de alcance", "color": COLOR_LEJOS})
-
-	# Solo las habilidades equipadas en este encuentro: el primero tiene una
-	# sola, y la ficha tiene que verse igual de simple que el encuentro.
-	if _componente != null:
-		for habilidad: Habilidad in _componente.habilidades:
-			if habilidad == null:
+	# Solo los movimientos equipados en este encuentro: el primero tiene uno
+	# solo, y la ficha tiene que verse igual de simple que el encuentro. Los
+	# que no le harian nada a este paciente no dicen nada.
+	if _combos != null:
+		for mov in _combos.movimientos:
+			if mov == null:
 				continue
-			var texto := habilidad.previsualizar(_healer, _apuntada)
+			var texto := mov.previsualizar(_healer, _apuntada)
 			if texto != "":
-				lineas.append({"texto": texto, "color": habilidad.color, "tamano": 12})
+				lineas.append({"texto": texto, "color": mov.color, "tamano": 12})
 
 	return lineas

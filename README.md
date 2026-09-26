@@ -22,7 +22,7 @@ que ordena las prioridades es
 └── godot/                 # El proyecto de Godot (abrir esta carpeta en el editor)
     ├── assets/            # sprites, audio, fonts
     ├── docs/              # diseño: qué es el juego y hacia dónde va
-    ├── resources/         # encuentros, tipos de soldado y habilidades (.tres)
+    ├── resources/         # encuentros, tipos de soldado y movimientos (.tres)
     ├── scenes/            # battle3d.tscn es la escena principal
     ├── scripts/           # scripts de GDScript
     └── tools/             # pruebas headless y generadores de recursos
@@ -31,23 +31,41 @@ que ordena las prioridades es
 ## Cómo está armado
 
 La partida se juega por **encuentros**. Cada uno es un `Resource` que define
-quiénes entran al campo y en qué estado, qué habilidades tiene disponibles el
+quiénes entran al campo y en qué estado, qué movimientos tiene disponibles el
 healer, cuándo termina y con qué semilla se despliega. Eso permite enseñar una
 cosa por vez y repetir exactamente el mismo problema entre intentos.
 
 - `resources/encuentros/campana.tres` — la serie que se juega, en orden.
 - `resources/soldados/` — los tipos de soldado (stats, sprites, estilo).
-- `resources/habilidades3d/` — las habilidades del healer.
+- `resources/movimientos/` — los movimientos del healer y sus combos.
 
-Todo eso lo generan scripts en `tools/` (`gen_encuentros.gd`, `gen_scenes3d.gd`),
-así que el contenido se lee de corrido en un archivo en vez de estar repartido
-por el inspector.
+Todo eso lo generan scripts en `tools/` (`gen_encuentros.gd`,
+`gen_movimientos.gd`, `gen_scenes3d.gd`), así que el contenido se lee de corrido
+en un archivo en vez de estar repartido por el inspector.
 
 ### Controles
 
-`WASD` mover · `Espacio` saltar · click izquierdo y derecho y teclas `1`-`3`
-para las habilidades equipadas · `Shift` impulso · `R` repetir el encuentro ·
-`Enter` pasar al siguiente · `Esc` pausa.
+Sin mouse: tres botones y el movimiento, para uno o dos jugadores.
+
+| | Teclado P1 | Teclado P2 | Joystick (el 1.º es P1, el 2.º es P2) |
+|---|---|---|---|
+| Mover | `WASD` | Flechas | Stick izquierdo y cruceta |
+| Ligera | `J` | `,` (y `Num 1`) | `X` |
+| Pesada | `K` | `.` (y `Num 2`) | `Y` |
+| Saltar | `Espacio` | `/` (y `Num 0`) | `A` |
+| Pausa | `Esc` | | `Start` (cualquier pad) |
+| Seguir al terminar | `Enter` | | `Start` (cualquier pad) |
+| Repetir el encuentro | `R` | | `Back` (cualquier pad) |
+
+Nadie apunta: la ligera le llega al aliado que el healer tiene enfrente (primero
+al que sangra, después al más golpeado) y la pesada a todos los de una caja más
+grande. Qué sale con cada botón depende de lo que vino antes: `L` Toque, `L L`
+Vendaje (corta el sangrado), `P` Plegaria, `L P` Bendición, `L L P` Oleada, `P`
+con un caído adelante Reanimar, y en el aire `L` Impulso y `P` Caída sanadora.
+La tabla completa está en `tools/gen_movimientos.gd`.
+
+Las acciones son `p1_*` y `p2_*` (ver `scripts/jugadores.gd`); cada joystick se
+asigna a su jugador al armar la batalla y cada vez que se conecta uno.
 
 ## Artefactos generados
 
@@ -61,10 +79,10 @@ cambiar algo, se cambia en el generador.
 | `gen_ui.gd` | `resources/ui/tema.tres` y las escenas de menu |
 | `gen_movimientos.gd` | `resources/movimientos/*.tres`: los movimientos del healer y sus combos |
 | `gen_hud.gd` | `scenes/ui/hud.tscn`, el HUD de la batalla (usa el tema) |
-| `gen_scenes3d.gd` | escenas 3D (la batalla instancia el HUD ya generado), habilidades y tipos de soldado |
+| `gen_scenes3d.gd` | escenas 3D (la batalla instancia el HUD ya generado y el healer trae los movimientos) y tipos de soldado |
 | `gen_encuentros.gd` | los encuentros y la campania |
 | `gen_frames.gd` | los `SpriteFrames` de cada personaje |
-| `setup_input.gd` | en `project.godot`: las acciones del Input Map, los nombres de las capas 3D y la importacion por defecto de texturas |
+| `setup_input.gd` | en `project.godot`: el Input Map entero (acciones por jugador y compartidas), los nombres de las capas 3D y la importacion por defecto de texturas |
 
 El orden importa cuando se tocan los assets de interfaz, porque un PNG escrito
 por un script no se puede cargar hasta que Godot lo importe:
@@ -76,6 +94,8 @@ godot --headless --path godot --script res://tools/gen_ui.gd
 godot --headless --path godot --script res://tools/gen_movimientos.gd
 godot --headless --path godot --script res://tools/gen_hud.gd
 godot --headless --path godot --script res://tools/gen_scenes3d.gd
+godot --headless --path godot --script res://tools/gen_encuentros.gd
+godot --headless --path godot --script res://tools/setup_input.gd
 ```
 
 La interfaz usa un pack gratuito de CraftPix; la atribucion y la licencia estan

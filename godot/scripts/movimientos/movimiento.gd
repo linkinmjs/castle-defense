@@ -3,13 +3,13 @@ extends Resource
 ## Un movimiento del healer: que boton lo dispara, en que punto del combo sale
 ## y que hace al conectar.
 ##
-## Reemplaza a Habilidad. El jugador ya no elige de una lista ni apunta: tiene
-## una ligera y una pesada, y el orden en que las toca decide que sale (la
-## tabla completa esta en tools/gen_movimientos.gd). A quien le llega lo decide
-## Apuntado, segun donde este parado el healer.
+## Reemplaza a las habilidades. El jugador ya no elige de una lista ni apunta:
+## tiene una ligera y una pesada, y el orden en que las toca decide que sale
+## (la tabla completa esta en tools/gen_movimientos.gd). A quien le llega lo
+## decide Apuntado, segun donde este parado el healer.
 ##
-## Como Habilidad, no guarda estado de runtime: enfriamientos, secuencia y
-## ventana los lleva ComponenteCombos, asi el mismo recurso sirve para
+## Como las habilidades, no guarda estado de runtime: enfriamientos, secuencia
+## y ventana los lleva ComponenteCombos, asi el mismo recurso sirve para
 ## cualquier healer. El healer se recibe como Node3D y se usa por duck typing,
 ## por la misma razon de siempre: tiparlo ataria el recurso a la escena.
 

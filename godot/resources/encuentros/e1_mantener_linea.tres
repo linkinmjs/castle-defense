@@ -3,9 +3,9 @@
 [ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_ur21h"]
 [ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_34vjt"]
 [ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="3_7idiy"]
-[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="4_v3tay"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="5_gcqin"]
-[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="6_if4js"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="4_v3tay"]
+[ext_resource type="Script" path="res://scripts/movimientos/movimiento.gd" id="5_gcqin"]
+[ext_resource type="Resource" path="res://resources/movimientos/toque.tres" id="6_if4js"]
 [ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="7_cu81y"]
 [ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="8_jcnkd"]
 
@@ -46,7 +46,7 @@ grupos_iniciales = Array[ExtResource("1_ur21h")]([SubResource("Resource_tkyes"),
 oleadas = Array[ExtResource("7_cu81y")]([SubResource("Resource_kwuqm")])
 nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
 sangrado_habilitado = false
-habilidades = Array[ExtResource("4_v3tay")]([ExtResource("5_gcqin")])
+movimientos = Array[ExtResource("5_gcqin")]([ExtResource("6_if4js")])
 condicion = 1
 duracion = 75.0
 bajas_aliadas_maximas = 2

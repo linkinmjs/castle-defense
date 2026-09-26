@@ -1,7 +1,7 @@
 class_name Encuentro
 extends Resource
 ## Todo lo que define una batalla concreta: quienes entran, con que estados,
-## que habilidades tiene el healer y cuando termina.
+## que movimientos tiene el healer y cuando termina.
 ##
 ## La batalla dejaba de ser comparable entre intentos porque la composicion se
 ## decidia con relojes globales y azar sin semilla. Definirla como dato permite
@@ -46,8 +46,10 @@ enum Condicion {
 @export var emergentes_habilitados: bool = false
 
 @export_group("Healer")
-## Lista que se equipa al empezar. Vacia deja la que trae la escena.
-@export var habilidades: Array[Habilidad] = []
+## Lo que se equipa al empezar. Vacia = se equipan todos los que trae la
+## escena del healer. Es explicito a proposito: un encuentro que no dice nada
+## juega con todo, no con lo que dejo equipado el encuentro anterior.
+@export var movimientos: Array[Movimiento] = []
 ## En -1 no se tocan y quedan los de la escena.
 @export var mana_maximo: float = -1.0
 @export var regeneracion_mana: float = -1.0

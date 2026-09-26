@@ -11,6 +11,9 @@ var _fase := 0
 var _ticks := 0
 var _maxima := 0.0
 var _vy_guardada := 0.0
+var _aterrizajes := 0
+## Un movimiento de suelo cualquiera: su pose es "cast".
+var _toque: Movimiento = preload("res://resources/movimientos/toque.tres")
 
 
 func _initialize() -> void:
@@ -19,6 +22,7 @@ func _initialize() -> void:
 	_healer = load("res://scenes/3d/healer3d.tscn").instantiate()
 	_healer.position = Vector3(15, 0, 5)
 	contenedor.add_child(_healer)
+	_healer.aterrizo.connect(func() -> void: _aterrizajes += 1)
 	# Se emite justo antes de que los nodos procesen fisica: lo que se lee aca
 	# es el estado con el que termino el tick anterior.
 	physics_frame.connect(_tick)
@@ -42,6 +46,7 @@ func _tick() -> void:
 				return
 			_ok("vuelve a caer", true)
 			_igual("aterriza a ras del suelo", _healer.global_position.y, 0.0)
+			_ok("y avisa que aterrizo, una vez", _aterrizajes == 1)
 			# Integracion discreta: el pico queda un poco por debajo del ideal.
 			_igual("la altura maxima es la configurada", _maxima, _healer.altura_salto, 0.1)
 			var duracion := _ticks * DT
@@ -78,15 +83,17 @@ func _tick() -> void:
 			if not _healer.esta_en_el_aire():
 				_fase = 8
 		8:
-			print("--- cast en el aire ---")
+			print("--- la pose de un movimiento en el aire ---")
 			_healer.saltar()
-			_healer.gastar_mana(10.0)
+			_healer.animar_movimiento(_toque)
 			_ok("en el aire mantiene la animacion de salto", _healer._sprite.animation == "jump")
 			_fase = 9
 		9:
 			if not _healer.esta_en_el_aire():
 				_healer.gastar_mana(10.0)
-				_ok("en el suelo el cast si se ve", _healer._sprite.animation == "cast")
+				_ok("gastar mana ya no anima nada", _healer._sprite.animation != "cast")
+				_healer.animar_movimiento(_toque)
+				_ok("en el suelo la pose si se ve", _healer._sprite.animation == "cast")
 				_fase = 10
 		10:
 			print("")

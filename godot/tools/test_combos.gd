@@ -65,10 +65,10 @@ func _initialize() -> void:
 			return
 		_todos.append(mov)
 
-	_combos = ComponenteCombos.new()
-	_combos.name = "Combos"
+	# El de la escena: los movimientos lo buscan por el nombre Combos, y uno
+	# segundo colgado del mismo healer quedaria con otro nombre.
+	_combos = _healer.get_node("Combos")
 	_combos.movimientos = _todos.duplicate()
-	_healer.add_child(_combos)
 	_combos.movimiento_usado.connect(_on_usado)
 	_combos.movimiento_fallo.connect(_on_fallo)
 	_combos.combo_cambio.connect(_on_combo_cambio)

@@ -2,6 +2,9 @@ extends SceneTree
 ## Capturas de camara y salto. En cada foto imprime la rotacion de la camara
 ## y la distancia entre lo que mira y el healer: si la rotacion no cambia
 ## mientras el healer se mueve, la camara ya no se ladea.
+##
+## Mueve y hace saltar al healer por las acciones del jugador 1, como un
+## teclado o un joystick. Correr SIN --headless.
 
 var _inicio_ms := 0
 var _paso := 0
@@ -31,7 +34,7 @@ func _process(_delta: float) -> bool:
 				_foto(t, "mov_01_quieto.png")
 		1:
 			if t >= 2.0:
-				Input.action_press("move_right")
+				Input.action_press(&"p1_derecha")
 				_paso += 1
 		2:
 			if t >= 2.6:
@@ -41,10 +44,13 @@ func _process(_delta: float) -> bool:
 			if t >= 4.5:
 				# Ya salio de la zona muerta: la camara lo sigue, sin rotar.
 				_foto(t, "mov_03_siguiendo.png")
-				Input.action_release("move_right")
+				Input.action_release(&"p1_derecha")
 		4:
 			if t >= 5.2:
-				_healer.saltar()
+				# Como evento y no con action_press: el salto lo lee el healer en
+				# su _unhandled_input, no en el tick.
+				Input.parse_input_event(_accion(&"p1_saltar", true))
+				Input.parse_input_event(_accion(&"p1_saltar", false))
 				_paso += 1
 		5:
 			if t >= 5.5:
@@ -63,3 +69,10 @@ func _foto(t: float, nombre: String) -> void:
 		t, r.x, r.y, r.z, _camara.global_position.x,
 		_healer.global_position.x, _healer.global_position.y, nombre])
 	_paso += 1
+
+
+func _accion(nombre: StringName, apretada: bool) -> InputEventAction:
+	var evento := InputEventAction.new()
+	evento.action = nombre
+	evento.pressed = apretada
+	return evento

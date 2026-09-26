@@ -19,7 +19,7 @@ const INTERVALO_FRENTE := 2.0
 
 var _battle: Node
 var _healer: Node
-var _habilidades: ComponenteHabilidades
+var _combos: ComponenteCombos
 
 var _encuentro_id: StringName = &""
 var _semilla: int = 0
@@ -45,7 +45,12 @@ var _sangrados_estabilizados: int = 0
 var _sangrados_sin_tratar: int = 0
 var _tiempo_total_estabilizar: float = 0.0
 
-var _usos_por_habilidad: Dictionary = {}
+var _usos_por_movimiento: Dictionary = {}
+## Golpes al aire: el boton salio sin nadie en la caja. Muchos es que el
+## jugador aprieta antes de pararse frente a alguien.
+var _movimientos_en_vacio: int = 0
+## El combo mas largo que armo: dice si esta encadenando o tocando de a uno.
+var _combo_maximo: int = 0
 var _frente_muestras: Array[Vector2] = []
 var _eventos: Array[Dictionary] = []
 
@@ -61,8 +66,10 @@ func observar_batalla(battle: Node) -> void:
 
 func observar_healer(healer: Node) -> void:
 	_healer = healer
-	_habilidades = healer.get_node("Habilidades")
-	_habilidades.habilidad_usada.connect(_on_habilidad_usada)
+	_combos = healer.get_node("Combos")
+	_combos.movimiento_usado.connect(_on_movimiento_usado)
+	_combos.movimiento_fallo.connect(_on_movimiento_fallo)
+	_combos.combo_cambio.connect(_on_combo_cambio)
 	healer.cayo.connect(func() -> void: registrar(&"healer_cayo"))
 
 
@@ -134,10 +141,21 @@ func _on_curada(solicitada: float, efectiva: float) -> void:
 	_curacion_efectiva += efectiva
 
 
-func _on_habilidad_usada(habilidad: Habilidad, _aviso: String) -> void:
-	_usos_por_habilidad[habilidad.nombre] = _usos_por_habilidad.get(habilidad.nombre, 0) + 1
-	_mana_gastado += habilidad.costo
-	registrar(&"habilidad", {"nombre": habilidad.nombre})
+## Solo llega lo que conecto: es lo unico que cobra. El evento guarda en que
+## punto del combo salio, para ver despues si el jugador encadena.
+func _on_movimiento_usado(mov: Movimiento, _objetivo: Node3D, _efectivo: float) -> void:
+	_usos_por_movimiento[mov.nombre] = _usos_por_movimiento.get(mov.nombre, 0) + 1
+	_mana_gastado += mov.costo
+	registrar(&"movimiento", {"nombre": mov.nombre, "combo": _combos.cuenta_combo()})
+
+
+func _on_movimiento_fallo(_mov: Movimiento, motivo: String) -> void:
+	if motivo == ComponenteCombos.EN_VACIO:
+		_movimientos_en_vacio += 1
+
+
+func _on_combo_cambio(cuenta: int, _nombre: String) -> void:
+	_combo_maximo = maxi(_combo_maximo, cuenta)
 
 
 func _on_derribada(unidad: Unidad3D) -> void:
@@ -149,8 +167,8 @@ func _on_derribada(unidad: Unidad3D) -> void:
 
 
 ## Al anotar una muerte se guarda ademas que tenia el jugador a mano. Es lo que
-## despues permite decir "lo perdiste mientras Estabilizar estaba lista" en vez
-## de solo "lo perdiste".
+## despues permite decir "lo perdiste y Vendaje estaba listo" en vez de solo
+## "lo perdiste".
 func _on_murio(unidad: Unidad3D) -> void:
 	_muertes += 1
 	var causa: StringName = unidad.causa_muerte
@@ -159,21 +177,17 @@ func _on_murio(unidad: Unidad3D) -> void:
 		"unidad": unidad.nombre_unidad,
 		"causa": causa,
 		"fuente": unidad.fuente_ultimo_dano,
-		"curar_disponible": _disponible("Curar"),
-		"estabilizar_disponible": _disponible("Estabilizar"),
+		"toque_disponible": _disponible("Toque"),
+		"vendaje_disponible": _disponible("Vendaje"),
 		"reanimar_disponible": _disponible("Reanimar"),
 	})
 
 
-## Si la habilidad estaba equipada, sin enfriamiento y con mana para pagarla.
+## Si el movimiento estaba equipado, sin enfriamiento y con mana para pagarlo.
 func _disponible(nombre: String) -> bool:
-	if _habilidades == null or _healer == null or not is_instance_valid(_healer):
+	if _combos == null or not is_instance_valid(_combos):
 		return false
-	var habilidad := _habilidades.habilidad_por_nombre(nombre)
-	if habilidad == null:
-		return false
-	return _habilidades.enfriamiento_restante(habilidad) <= 0.0 \
-		and _healer.mana >= habilidad.costo
+	return _combos.disponible(nombre)
 
 
 func _on_batalla_terminada(victoria: bool) -> void:
@@ -204,7 +218,9 @@ func _reiniciar() -> void:
 	_sangrados_estabilizados = 0
 	_sangrados_sin_tratar = 0
 	_tiempo_total_estabilizar = 0.0
-	_usos_por_habilidad.clear()
+	_usos_por_movimiento.clear()
+	_movimientos_en_vacio = 0
+	_combo_maximo = 0
 	_frente_muestras.clear()
 	_eventos.clear()
 
@@ -244,7 +260,9 @@ func resumen(victoria: bool = false) -> Dictionary:
 		"sangrados_sin_tratar": _sangrados_sin_tratar,
 		"tiempo_hasta_estabilizar": promedio_estabilizar,
 
-		"usos_por_habilidad": _usos_por_habilidad.duplicate(),
+		"usos_por_movimiento": _usos_por_movimiento.duplicate(),
+		"movimientos_en_vacio": _movimientos_en_vacio,
+		"combo_maximo": _combo_maximo,
 		"frente_muestras": _frente_muestras.duplicate(),
 	}
 
@@ -263,36 +281,42 @@ func observacion_causal() -> String:
 	var r := resumen()
 
 	# 1. Lo mas caro: perder gente por una causa que se podia cortar.
-	var por_sangrado := _muertes_evitables(&"sangrado", "estabilizar_disponible")
+	var por_sangrado := _muertes_evitables(&"sangrado", "vendaje_disponible")
 	if por_sangrado > 0:
-		return "%s por sangrado mientras Estabilizar estaba lista. Cortar la causa frena el dano que todavia no ocurrio." % 			_contar(por_sangrado, "Perdiste un soldado", "Perdiste %d soldados")
+		return "%s por sangrado. Vendaje estaba listo: ligera dos veces sobre el mismo corta el sangrado." \
+			% _contar(por_sangrado, "Perdiste un soldado", "Perdiste %d soldados")
 
 	# 2. Dejar morir a alguien tirado teniendo con que levantarlo.
 	var sin_atencion := _muertes_evitables(&"sin_atencion", "reanimar_disponible")
 	if sin_atencion > 0:
-		return "%s en el suelo con Reanimar disponible. Un derribado tiene una ventana corta y se agota sola." % 			_contar(sin_atencion, "Se te murio uno", "Se te murieron %d")
+		return "%s en el suelo con Reanimar disponible. Un derribado tiene una ventana corta y se agota sola." \
+			% _contar(sin_atencion, "Se te murio uno", "Se te murieron %d")
 
 	# 3. Derribados que nadie fue a buscar, aunque no hubiera con que.
 	var abandonados: int = _muertes_por_causa.get(&"sin_atencion", 0)
 	if abandonados > 0:
-		return "%s esperando que alguien llegara. Cuando alguien cae, el reloj corre." % 			_contar(abandonados, "Un soldado murio", "%d soldados murieron")
+		return "%s esperando que alguien llegara. Cuando alguien cae, el reloj corre." \
+			% _contar(abandonados, "Un soldado murio", "%d soldados murieron")
 
 	# 4. Curar sin mirar a quien.
 	if r["fraccion_desperdiciada"] > 0.25 and r["curacion_emitida"] > 60.0:
-		return "Se desperdicio el %d%% de tu curacion: llegaste a soldados que ya estaban casi sanos." % 			(r["fraccion_desperdiciada"] * 100.0)
+		return "Se desperdicio el %d%% de tu curacion: llegaste a soldados que ya estaban casi sanos." \
+			% (r["fraccion_desperdiciada"] * 100.0)
 
 	# 5. Sangrados que se agotaron solos, sin muertos de por medio.
 	if _sangrados_sin_tratar > 0:
-		return "%s sin tratar. El sangrado sigue restando vida aunque el soldado aguante." % 			_contar(_sangrados_sin_tratar, "Quedo un sangrado", "Quedaron %d sangrados")
+		return "%s sin tratar. El sangrado sigue restando vida aunque el soldado aguante." \
+			% _contar(_sangrados_sin_tratar, "Quedo un sangrado", "Quedaron %d sangrados")
 
 	# 6. Ganar sin haber hecho nada. El documento lo nombra como señal de
 	# alarma: si el encuentro se resuelve solo, no enseño nada.
-	if _usos_por_habilidad.is_empty() and r["duracion"] > 5.0:
-		return "Terminaste el encuentro sin usar una sola habilidad. Si la linea se sostiene sola, todavia no hay una decision que tomar."
+	if _usos_por_movimiento.is_empty() and r["duracion"] > 5.0:
+		return "Terminaste el encuentro sin usar un solo movimiento. Si la linea se sostiene sola, todavia no hay una decision que tomar."
 
 	# 7. Esperar en vez de intervenir.
 	if r["duracion"] > 10.0 and _segundos_mana_al_tope > r["duracion"] * 0.3:
-		return "Pasaste %.0f s con el mana lleno. Mana guardado no cura a nadie." % 			_segundos_mana_al_tope
+		return "Pasaste %.0f s con el mana lleno. Mana guardado no cura a nadie." \
+			% _segundos_mana_al_tope
 
 	# 8. Nada que corregir: se nombra que salio bien, que tambien enseña.
 	if r["victoria"]:
@@ -300,7 +324,8 @@ func observacion_causal() -> String:
 			return "Cortaste %d sangrados en %.1f s promedio y no perdiste a nadie por esa causa." % [
 				_sangrados_estabilizados, r["tiempo_hasta_estabilizar"]]
 		if _curacion_emitida > 0.0:
-			return "Aprovechaste el %d%% de tu curacion." % 				((1.0 - r["fraccion_desperdiciada"]) * 100.0)
+			return "Aprovechaste el %d%% de tu curacion." \
+				% ((1.0 - r["fraccion_desperdiciada"]) * 100.0)
 	return ""
 
 

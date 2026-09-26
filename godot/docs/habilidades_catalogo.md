@@ -1,5 +1,8 @@
 # Catálogo de habilidades de curación
 
+> **Nota:** las habilidades pasaron a ser movimientos y combos de tres botones (la tabla vigente está en `tools/gen_movimientos.gd`).
+> Lo que sigue queda como registro de las candidatas y de cómo se pensaron.
+
 ## Estado del documento
 
 Este es un **registro de candidatas**, no un plan. Nada de acá está comprometido:

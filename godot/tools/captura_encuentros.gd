@@ -1,15 +1,15 @@
 extends SceneTree
 ## Capturas de la vertical de aprendizaje: como se ve cada encuentro, la
-## tarjeta al apuntar y el resumen del final.
+## tarjeta del que el healer tiene al frente y el resumen del final.
 ##
 ## Sirve para mirar lo que el jugador mira. Las pruebas dicen que los numeros
-## estan bien, pero no si la pantalla se entiende.
+## estan bien, pero no si la pantalla se entiende. Correr SIN --headless.
 
 var _battle: Node
 var _healer: Healer3D
-var _componente: ComponenteHabilidades
 var _inicio_ms := 0
 var _paso := 0
+var _paciente: Unidad3D
 
 
 func _initialize() -> void:
@@ -23,7 +23,6 @@ func _process(_delta: float) -> bool:
 		_healer = _battle.get_node_or_null("%Healer")
 		if _healer == null:
 			return false
-		_componente = _healer.get_node("Habilidades")
 
 	var t := (Time.get_ticks_msec() - _inicio_ms) / 1000.0
 
@@ -32,43 +31,49 @@ func _process(_delta: float) -> bool:
 			if t >= 2.0:
 				_avanzar(t, "enc_1_arranque.png")
 		1:
-			# Apuntar a un herido: es cuando aparece la tarjeta.
-			if t >= 4.0:
-				var herido := _mas_herido()
-				if herido != null:
-					herido.vida = herido.vida_maxima * 0.45
-					_healer.global_position = herido.global_position + Vector3(1.2, 0, 0.3)
-					_apuntar(herido)
-				_avanzar(t, "enc_2_tarjeta.png")
+			# Pararse frente a un herido: es cuando aparece la tarjeta.
+			if t >= 3.8:
+				_paciente = _mas_herido()
+				if _paciente != null:
+					_paciente.vida = _paciente.vida_maxima * 0.45
+				_frente_al_paciente()
+				_paso += 1
 		2:
+			# La marca y la tarjeta salen en el tick de fisica siguiente.
+			if t >= 4.0:
+				_frente_al_paciente()
+				_avanzar(t, "enc_2_tarjeta.png")
+		3:
 			if t >= 5.0:
 				# Terminar el encuentro para ver el resumen.
 				_battle.tiempo_encuentro = _battle._actual.duracion
 				_paso += 1
-		3:
+		4:
 			if t >= 6.0:
 				_avanzar(t, "enc_3_resumen.png")
-		4:
+		5:
 			if t >= 6.5:
 				_battle.avanzar_encuentro()
 				_paso += 1
-		5:
+		6:
 			if t >= 8.0:
 				_avanzar(t, "enc_4_segundo.png")
-		6:
+		7:
 			if t >= 8.5:
 				_battle.avanzar_encuentro()
 				_paso += 1
-		7:
-			# El tercero arranca con dos lanceros sangrando: se apunta a uno
-			# para ver la tarjeta con el reloj del sangrado y dos herramientas.
-			if t >= 10.0:
-				var sangrando := _primer_sangrando()
-				if sangrando != null:
-					_healer.global_position = sangrando.global_position + Vector3(1.2, 0, 0.3)
-					_apuntar(sangrando)
-				_avanzar(t, "enc_5_sangrado.png")
 		8:
+			# El tercero arranca con dos lanceros sangrando: frente a uno se ve
+			# la tarjeta con el reloj del sangrado y los dos movimientos.
+			if t >= 9.8:
+				_paciente = _primer_sangrando()
+				_frente_al_paciente()
+				_paso += 1
+		9:
+			if t >= 10.0:
+				_frente_al_paciente()
+				_avanzar(t, "enc_5_sangrado.png")
+		10:
 			print("listo")
 			return true
 	return false
@@ -81,13 +86,12 @@ func _avanzar(t: float, nombre: String) -> void:
 	_paso += 1
 
 
-func _apuntar(unidad: Unidad3D) -> void:
-	if _healer._apuntada != null and is_instance_valid(_healer._apuntada):
-		_healer._apuntada.resaltada = false
-	_healer._apuntada = unidad
-	unidad.resaltada = true
-	unidad.resaltada_alcanzable = _healer.en_rango(unidad)
-	_healer.apuntada_cambio.emit(unidad)
+## 0.8 m detras del paciente y mirando hacia el: el que recibiria la ligera.
+func _frente_al_paciente() -> void:
+	if _paciente == null or not is_instance_valid(_paciente):
+		return
+	_healer.global_position = _paciente.global_position - Vector3(0.8, 0, 0)
+	_healer._sprite.flip_h = false
 
 
 func _mas_herido() -> Unidad3D:

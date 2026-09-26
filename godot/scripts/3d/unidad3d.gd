@@ -30,9 +30,6 @@ const FRAMES_ENEMIGO := preload("res://assets/sprites/enemy/enemy_frames.tres")
 const TINTE_ALIADO := Color(0.62, 0.78, 1.0)
 const TINTE_ENEMIGO := Color(1.0, 0.58, 0.52)
 
-## Altura del torso: es donde apunta el mouse y donde salen los efectos.
-const ALTURA_TORSO := 1.15
-
 @export var vida_maxima: float = 80.0
 @export var dano: float = 12.0
 @export var cadencia: float = 1.1
@@ -84,7 +81,7 @@ var segundos_sangrando: float = 0.0
 ## Ultima causa de perdida de vida, para saber de que se cayo.
 var _ultima_causa: StringName = &"golpe"
 
-## Las marca el healer segun a quien apunte el mouse; las lee el overlay.
+## Las marca el healer en quien recibiria su ligera; las lee el overlay.
 var resaltada: bool = false
 var resaltada_alcanzable: bool = true
 
@@ -213,11 +210,6 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	global_position.y = 0.0
-
-
-## Punto al que apunta el jugador y donde se dibuja la barra.
-func punto_torso() -> Vector3:
-	return global_position + Vector3(0, ALTURA_TORSO, 0)
 
 
 func _avanzar(delta: float) -> void:

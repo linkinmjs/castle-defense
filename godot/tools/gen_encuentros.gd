@@ -15,12 +15,9 @@ const LANCERO := "res://resources/soldados/lancero.tres"
 const ESPADACHIN := "res://resources/soldados/espadachin.tres"
 const ZOMBIE := "res://resources/soldados/zombie.tres"
 
-const CURAR := "res://resources/habilidades3d/curar.tres"
-const ESTABILIZAR := "res://resources/habilidades3d/estabilizar.tres"
-const OLEADA := "res://resources/habilidades3d/oleada.tres"
-const BENDICION := "res://resources/habilidades3d/bendicion.tres"
-const IMPULSO := "res://resources/habilidades3d/impulso.tres"
-const REANIMAR := "res://resources/habilidades3d/reanimar.tres"
+## Los movimientos los genera gen_movimientos.gd, que corre antes que este.
+const TOQUE := "res://resources/movimientos/toque.tres"
+const VENDAJE := "res://resources/movimientos/vendaje.tres"
 
 # No es const: PackedStringArray no cuenta como expresion constante.
 var NOMBRES := PackedStringArray([
@@ -45,11 +42,13 @@ func _initialize() -> void:
 	quit()
 
 
-## Leccion 1: acercarse, apuntar, curar y ver el efecto sobre el frente.
+## Leccion 1: acercarse, pararse frente al herido, curar y ver el efecto sobre
+## el frente.
 ##
-## Sin sangrado y sin mas herramientas que Curar. El unico problema es la vida
-## que falta, que es la variable que hay que aprender a leer primero. Los
-## escuderos aguantan lo suficiente como para que el error no sea instantaneo.
+## Sin sangrado y sin mas herramientas que Toque: la ligera sola, que con
+## cualquier secuencia sigue siendo Toque. El unico problema es la vida que
+## falta, que es la variable que hay que aprender a leer primero. Los escuderos
+## aguantan lo suficiente como para que el error no sea instantaneo.
 func _mantener_la_linea() -> Encuentro:
 	var enc := Encuentro.new()
 	enc.id = &"e1_mantener_linea"
@@ -58,7 +57,7 @@ func _mantener_la_linea() -> Encuentro:
 	enc.semilla = 71001
 	enc.nombres = NOMBRES
 	enc.sangrado_habilitado = false
-	enc.habilidades = _habilidades([CURAR])
+	enc.movimientos = _movimientos([TOQUE])
 	enc.condicion = Encuentro.Condicion.SOBREVIVIR
 	enc.duracion = 75.0
 	enc.bajas_aliadas_maximas = 2
@@ -94,7 +93,7 @@ func _no_desperdiciar() -> Encuentro:
 	enc.semilla = 71002
 	enc.nombres = NOMBRES
 	enc.sangrado_habilitado = false
-	enc.habilidades = _habilidades([CURAR])
+	enc.movimientos = _movimientos([TOQUE])
 	enc.mana_maximo = 60.0
 	enc.regeneracion_mana = 4.0
 	enc.condicion = Encuentro.Condicion.SOBREVIVIR
@@ -133,19 +132,20 @@ func _no_desperdiciar() -> Encuentro:
 
 ## Leccion 3: cortar la causa antes de reponer la vida.
 ##
-## Entra Estabilizar y el sangrado pasa a ser frecuente. Dos lanceros arrancan
-## sangrando para que la situacion este planteada de entrada y no dependa de
-## que el azar la produzca. Curar sigue funcionando, pero solo compra tiempo.
+## Entra Vendaje (la segunda ligera sobre el mismo paciente) y el sangrado
+## pasa a ser frecuente. Dos lanceros arrancan sangrando para que la situacion
+## este planteada de entrada y no dependa de que el azar la produzca. Toque
+## sigue funcionando, pero solo compra tiempo.
 func _tratar_la_causa() -> Encuentro:
 	var enc := Encuentro.new()
 	enc.id = &"e3_tratar_la_causa"
 	enc.titulo = "Tratar la causa"
-	enc.objetivo_pedagogico = "Estabilizar corta el daño; curar solo lo repone."
+	enc.objetivo_pedagogico = "Vendaje (ligera dos veces sobre el mismo) corta el daño; curar solo lo repone."
 	enc.semilla = 71003
 	enc.nombres = NOMBRES
 	enc.sangrado_habilitado = true
 	enc.probabilidad_sangrado = 0.7
-	enc.habilidades = _habilidades([CURAR, ESTABILIZAR])
+	enc.movimientos = _movimientos([TOQUE, VENDAJE])
 	enc.condicion = Encuentro.Condicion.SOBREVIVIR
 	enc.duracion = 80.0
 	enc.bajas_aliadas_maximas = 2
@@ -178,8 +178,8 @@ func _tratar_la_causa() -> Encuentro:
 	return enc
 
 
-## La batalla completa de siempre: los tres tipos aliados, la horda, las seis
-## habilidades y victoria por llegar a la base. No es parte de la campania;
+## La batalla completa de siempre: los tres tipos aliados, la horda, todos los
+## movimientos y victoria por llegar a la base. No es parte de la campania;
 ## existe para que las pruebas sigan ejercitando el caso abierto.
 func _abierto() -> Encuentro:
 	var enc := Encuentro.new()
@@ -189,7 +189,8 @@ func _abierto() -> Encuentro:
 	enc.semilla = 0
 	enc.nombres = NOMBRES
 	enc.emergentes_habilitados = true
-	enc.habilidades = _habilidades([CURAR, ESTABILIZAR, OLEADA, BENDICION, IMPULSO, REANIMAR])
+	# Vacia: todos los de la escena del healer.
+	enc.movimientos = [] as Array[Movimiento]
 	enc.condicion = Encuentro.Condicion.LLEGAR_A_BASE
 	enc.grupos_iniciales = _grupos([
 		_grupo(ESCUDERO, Unidad3D.Bando.ALIADO, 2, 10.5, 13.5),
@@ -243,8 +244,8 @@ func _grupos(lista: Array) -> Array[GrupoUnidades]:
 	return tipado
 
 
-func _habilidades(rutas: Array) -> Array[Habilidad]:
-	var lista: Array[Habilidad] = []
+func _movimientos(rutas: Array) -> Array[Movimiento]:
+	var lista: Array[Movimiento] = []
 	for ruta: String in rutas:
 		lista.append(load(ruta))
 	return lista

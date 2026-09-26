@@ -3,9 +3,9 @@
 [ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_11vx0"]
 [ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_un5yc"]
 [ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="3_pb4ot"]
-[ext_resource type="Script" path="res://scripts/abilities/habilidad.gd" id="4_e4n3j"]
-[ext_resource type="Resource" path="res://resources/habilidades3d/curar.tres" id="5_ofdf1"]
-[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="6_qraji"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="4_e4n3j"]
+[ext_resource type="Script" path="res://scripts/movimientos/movimiento.gd" id="5_ofdf1"]
+[ext_resource type="Resource" path="res://resources/movimientos/toque.tres" id="6_qraji"]
 [ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="7_unph0"]
 [ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="8_iy5w5"]
 
@@ -39,7 +39,7 @@ x_min = 16.5
 x_max = 18.5
 
 [sub_resource type="Resource" id="Resource_w0ml0"]
-script = ExtResource("6_qraji")
+script = ExtResource("4_e4n3j")
 clave = &"fraccion_desperdiciada"
 comparador = 0
 valor = 0.15
@@ -69,11 +69,11 @@ grupos_iniciales = Array[ExtResource("1_11vx0")]([SubResource("Resource_mljck"),
 oleadas = Array[ExtResource("7_unph0")]([SubResource("Resource_fcfoc")])
 nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
 sangrado_habilitado = false
-habilidades = Array[ExtResource("4_e4n3j")]([ExtResource("5_ofdf1")])
+movimientos = Array[ExtResource("5_ofdf1")]([ExtResource("6_qraji")])
 mana_maximo = 60.0
 regeneracion_mana = 4.0
 condicion = 1
 duracion = 75.0
 bajas_aliadas_maximas = 2
 frente_derrota_x = 8.0
-metas = Array[ExtResource("6_qraji")]([SubResource("Resource_w0ml0")])
+metas = Array[ExtResource("4_e4n3j")]([SubResource("Resource_w0ml0")])

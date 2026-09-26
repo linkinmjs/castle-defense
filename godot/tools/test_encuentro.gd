@@ -35,10 +35,10 @@ func _tick() -> void:
 			print("--- restringe lo que esta en juego ---")
 			# El encuentro 1 apaga el sangrado: el unico problema es la vida.
 			_ok("nadie puede sangrar", _probabilidad_maxima("aliados") == 0.0)
-			var componente = _componente()
-			_igual("equipa solo Curar", componente.habilidades.size(), 1)
-			_ok("y es Curar", componente.habilidad_por_nombre("Curar") != null)
-			_ok("Estabilizar no esta", componente.habilidad_por_nombre("Estabilizar") == null)
+			var combos := _combos()
+			_igual("equipa solo Toque", combos.movimientos.size(), 1)
+			_ok("y es Toque", combos.movimiento_por_nombre("Toque") != null)
+			_ok("Vendaje no esta", combos.movimiento_por_nombre("Vendaje") == null)
 
 			# Redesplegado y medido en el mismo tick: con dejar correr aunque
 			# sea un frame, las unidades ya se movieron y la huella dejaria de
@@ -97,9 +97,9 @@ func _tick() -> void:
 				return
 			_igual("despliega 5 aliados", _vivos("aliados"), 5)
 			_ok("dos arrancan sangrando", _sangrando("aliados") == 2)
-			var componente = _componente()
-			_igual("ahora equipa dos habilidades", componente.habilidades.size(), 2)
-			_ok("sumo Estabilizar", componente.habilidad_por_nombre("Estabilizar") != null)
+			var combos := _combos()
+			_igual("ahora equipa dos movimientos", combos.movimientos.size(), 2)
+			_ok("sumo Vendaje", combos.movimiento_por_nombre("Vendaje") != null)
 			_ticks = 0
 			_fase = 7
 		7:
@@ -134,12 +134,23 @@ func _tick() -> void:
 			_ok("nadie entra sano del todo", fracciones.min() < 0.5)
 			_ok("y no todos estan igual de heridos",
 				absf(fracciones.max() - fracciones.min()) > 0.3)
+			_ticks = 0
 			_fase = 10
 		10:
+			if _ticks < 3:
+				return
+			print("--- un encuentro sin lista equipa todo, no lo del anterior ---")
+			# El anterior (e2) dejo solo Toque. El abierto no pide nada.
+			_igual("venia de uno con Toque solo", _combos().movimientos.size(), 1)
+			_battle.iniciar_encuentro(load("res://resources/encuentros/pruebas/abierto.tres"))
+			_igual("equipa los ocho de la escena", _combos().movimientos.size(), 8)
+			_ok("entre ellos Reanimar", _combos().movimiento_por_nombre("Reanimar") != null)
+			_fase = 11
+		11:
 			print("")
 			print("TODO OK" if _fallos == 0 else "FALLARON %d comprobaciones" % _fallos)
 			quit(1 if _fallos > 0 else 0)
-			_fase = 11
+			_fase = 12
 
 	if _ticks > 900:
 		print("FALLA: el test no termino")
@@ -148,8 +159,8 @@ func _tick() -> void:
 
 # --- Lecturas del campo -------------------------------------------------------
 
-func _componente() -> ComponenteHabilidades:
-	return _battle.get_node("%Healer").get_node("Habilidades")
+func _combos() -> ComponenteCombos:
+	return _battle.get_node("%Healer").get_node("Combos")
 
 
 ## Bando, tipo y posicion de cada unidad, redondeada: es la identidad del

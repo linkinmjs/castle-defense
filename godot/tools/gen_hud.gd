@@ -35,7 +35,8 @@ func _crear_hud() -> void:
 	var raiz := Control.new()
 	raiz.name = "Raiz"
 	raiz.set_anchors_preset(Control.PRESET_FULL_RECT)
-	# Todo el HUD ignora el mouse: los clicks tienen que llegar al campo.
+	# Todo el HUD ignora el mouse: no hay nada que clickear, y un panel que
+	# se quedara con el mouse no tiene por que cambiar el foco de nadie.
 	raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	raiz.theme = load(RUTA_TEMA)
 	hud.add_child(raiz)
@@ -103,12 +104,13 @@ func _hud_centro(raiz: Control, hud: Node) -> void:
 	_colgar(columna, resumen, hud, true)
 
 
-## Abajo a la izquierda: estado del healer, sus acciones y la ayuda.
+## Abajo a la izquierda: los avisos, el combo, el estado del healer y sus
+## controles.
 func _hud_inferior(raiz: Control, hud: Node) -> void:
 	var columna := VBoxContainer.new()
 	columna.name = "Inferior"
-	# Anclado abajo a la izquierda y creciendo hacia arriba: asi el bloque se
-	# acomoda solo cuando un encuentro equipa mas o menos habilidades.
+	# Anclado abajo a la izquierda y creciendo hacia arriba: las barras y la
+	# leyenda quedan fijas contra el borde, y lo de arriba se apila encima.
 	columna.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	columna.grow_vertical = Control.GROW_DIRECTION_BEGIN
 	# Offsets y no position: con position el contenedor arranca ahi y se apila
@@ -123,25 +125,22 @@ func _hud_inferior(raiz: Control, hud: Node) -> void:
 	var aviso := _etiqueta("Aviso", &"Aviso")
 	_colgar(columna, aviso, hud, true)
 
-	var slots := PanelContainer.new()
-	slots.name = "Slots"
-	slots.set_script(load("res://scripts/slots_habilidades.gd"))
-	# Que mida lo que ocupan sus slots y no todo el ancho de la columna, que lo
-	# fija el renglon de ayuda.
-	slots.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	slots.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_colgar(columna, slots, hud, true)
+	# "x2 VENDAJE": en que punto del combo esta, pegado a las barras. Lo
+	# muestra y lo apaga hud.gd.
+	var combo := _etiqueta("Combo", &"Aviso")
+	_colgar(columna, combo, hud, true)
 
 	_barra(columna, hud, "BarraVida", "TextoVida", &"BarraVida")
 	_barra(columna, hud, "BarraMana", "TextoMana", &"BarraMana")
 
-	var ayuda := _etiqueta("Ayuda", &"Chico")
-	ayuda.text = "WASD mover     Espacio saltar     Click sobre un aliado para actuar     Esc pausa"
-	_colgar(columna, ayuda, hud)
+	# Los tres botones y el movimiento: es todo lo que hay que recordar.
+	var leyenda := _etiqueta("Leyenda", &"Chico")
+	leyenda.set_script(load("res://scripts/leyenda_controles.gd"))
+	_colgar(columna, leyenda, hud, true)
 
 
-## La ficha del apuntado, abajo a la derecha: lejos de los slots y del centro,
-## que es por donde pasa la linea de combate.
+## La ficha del que el healer tiene al frente, abajo a la derecha: lejos de las
+## barras y del centro, que es por donde pasa la linea de combate.
 func _hud_tarjeta(raiz: Control, hud: Node) -> void:
 	var tarjeta := PanelContainer.new()
 	tarjeta.name = "Tarjeta"

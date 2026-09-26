@@ -36,6 +36,9 @@ const VENTANA := 0.7
 ## Solo importa el final de la secuencia (la previa mas larga es de dos pasos):
 ## sin tope, un combo largo acumularia historia que nadie lee.
 const MAX_SECUENCIA := 8
+## Motivo de movimiento_fallo para un golpe al aire. Es el unico fallo que no
+## es un rechazo: el HUD lo muestra mas bajo y la telemetria lo cuenta aparte.
+const EN_VACIO := "En vacio"
 
 @export var movimientos: Array[Movimiento] = []
 
@@ -298,7 +301,7 @@ func _ejecutar(mov: Movimiento) -> bool:
 func _errar(mov: Movimiento) -> void:
 	_animar(mov)
 	cortar_combo(&"vacio")
-	movimiento_fallo.emit(mov, "En vacio")
+	movimiento_fallo.emit(mov, EN_VACIO)
 
 
 ## Suelta un movimiento que estaba cargando o esperando el suelo.

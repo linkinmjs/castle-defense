@@ -1,11 +1,11 @@
 extends SceneTree
 ## Capturas de derribado, reanimacion, indicador de frente y victoria.
+## Correr SIN --headless: sin ventana no hay textura que guardar.
 
 var _inicio_ms := 0
 var _paso := 0
 var _battle: Node
 var _healer: Healer3D
-var _componente: ComponenteHabilidades
 var _aliado: Unidad3D
 
 
@@ -20,27 +20,29 @@ func _process(_delta: float) -> bool:
 		_healer = _battle.get_node_or_null("%Healer")
 		if _healer == null:
 			return false
-		_componente = _healer.get_node("Habilidades")
 
 	var t := (Time.get_ticks_msec() - _inicio_ms) / 1000.0
 	match _paso:
 		0:
 			if t >= 2.0:
+				# La campania arranca con Toque solo: sin Reanimar equipado la
+				# pesada no levantaria a nadie.
+				var combos: ComponenteCombos = _healer.get_node("Combos")
+				combos.equipar([load("res://resources/movimientos/toque.tres"),
+					load("res://resources/movimientos/reanimar.tres")] as Array[Movimiento])
 				_aliado = _mas_cercano()
 				_aliado.probabilidad_sangrado = 0.0
 				_aliado.recibir_dano(500.0)
-				_healer.global_position = _aliado.global_position + Vector3(-1.6, 0, 0.3)
-				_healer._apuntada = _aliado
-				_aliado.resaltada = true
-				_aliado.resaltada_alcanzable = true
+				_frente_al_aliado()
 				_paso += 1
 		1:
 			if t >= 2.6:
 				_foto("de_01_derribado.png")
 		2:
 			if t >= 3.2:
-				_healer._apuntada = _aliado
-				_componente.intentar(_componente.habilidad_por_nombre("Reanimar"))
+				# Con un derribado al frente, la pesada es Reanimar.
+				_frente_al_aliado()
+				_healer.pulsar(&"pesada")
 				_paso += 1
 		3:
 			if t >= 3.5:
@@ -55,6 +57,12 @@ func _process(_delta: float) -> bool:
 				_foto("de_03_victoria.png")
 				return true
 	return false
+
+
+## 1.6 m detras del caido, mirando hacia el: dentro de la caja de la pesada.
+func _frente_al_aliado() -> void:
+	_healer.global_position = _aliado.global_position + Vector3(-1.6, 0, 0.3)
+	_healer._sprite.flip_h = false
 
 
 func _mas_cercano() -> Unidad3D:
