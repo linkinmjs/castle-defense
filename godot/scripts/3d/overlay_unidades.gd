@@ -1,3 +1,4 @@
+class_name OverlayUnidades
 extends Control
 ## Barras de vida y marcas de estado del prototipo 3D.
 ##
@@ -7,10 +8,22 @@ extends Control
 
 const COLOR_SANGRADO := Color("c0392b")
 const COLOR_BENDICION := Color("6fd3c7")
+## El color de cada jugador: el de la marca a los pies del que tiene al frente
+## y el del titulo de su ficha en el HUD. Con dos healers, es lo que dice cual
+## de las dos elipses es la de cada uno.
+const COLORES_JUGADOR: Dictionary[int, Color] = {
+	1: Color("e8b84a"),  # dorado
+	2: Color("5fd3c7"),  # turquesa
+}
 ## Distancia a la que la barra se ve a tamano natural.
 const DISTANCIA_BASE := 11.0
 
 var _camara: Camera3D
+
+
+## Blanco para una marca sin dueno (0) o un jugador que no existe.
+static func color_jugador(jugador: int) -> Color:
+	return COLORES_JUGADOR.get(jugador, Color.WHITE)
 
 
 func seguir(camara: Camera3D) -> void:
@@ -73,11 +86,15 @@ func _dibujar_unidad(unidad: Node3D) -> void:
 			0.0, TAU, 12, COLOR_BENDICION, maxf(1.5, 2.0 * escala))
 
 
-## Elipse a los pies del objetivo apuntado. Se proyectan cuatro puntos del
-## contorno en el mundo para que la marca siga la perspectiva del suelo.
+## Elipse a los pies del objetivo apuntado, del color del jugador que lo tiene
+## al frente. Se proyectan veinte puntos del contorno en el mundo para que la
+## marca siga la perspectiva del suelo.
+##
+## Ya no hay color de "fuera de alcance": con el apuntado por posicion, lo que
+## esta marcado esta en la caja de la ligera.
 func _dibujar_resaltado(unidad: Node3D, escala: float) -> void:
-	var color := Color(1, 1, 1, 0.8) if unidad.resaltada_alcanzable \
-		else Color(1.0, 0.45, 0.35, 0.7)
+	var color := color_jugador(unidad.resaltada_por)
+	color.a = 0.9
 
 	var radio := 0.55
 	var puntos := PackedVector2Array()

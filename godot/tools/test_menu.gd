@@ -1,6 +1,6 @@
 extends SceneTree
 ## Menu principal: que esten los botones, que la lista de lecciones salga de la
-## campaña y que el tema este aplicado.
+## campaña, que el tema este aplicado y que se pueda elegir cuantos juegan.
 
 var _menu: Control
 var _pedidos: Array[int] = []
@@ -23,7 +23,7 @@ func _tick() -> void:
 			if _ticks < 3:
 				return
 			print("--- los botones estan ---")
-			for nombre in ["Jugar", "Lecciones_boton", "Opciones_boton", "Salir"]:
+			for nombre in ["Jugar", "Jugadores", "Lecciones_boton", "Opciones_boton", "Salir"]:
 				_ok("boton %s" % nombre, _menu.get_node_or_null("%" + nombre) != null)
 
 			print("--- el tema esta aplicado ---")
@@ -74,6 +74,8 @@ func _tick() -> void:
 			_igual("con anotacion arranca por la pedida",
 				Navegacion.encuentro_pedido(self), 2)
 			remove_meta(Navegacion.ENCUENTRO_INICIAL)
+
+			_cuantos_juegan()
 			_fase = 1
 		1:
 			print("")
@@ -84,6 +86,30 @@ func _tick() -> void:
 	if _ticks > 600:
 		print("FALLA: el test no termino")
 		quit(1)
+
+
+## Uno o dos: el boton alterna y lo deja anotado en el arbol, que es de donde
+## lo lee la batalla al armarse.
+func _cuantos_juegan() -> void:
+	print("--- cuantos juegan ---")
+	var boton: Button = _menu.get_node("%Jugadores")
+	_ok("esta en la botonera", boton.get_parent() == _menu.get_node("%Botonera"))
+	_ok("sin anotacion dice uno (%s)" % boton.text, boton.text == "Jugadores: 1")
+	boton.pressed.emit()
+	_ok("un toque pasa a dos (%s)" % boton.text, boton.text == "Jugadores: 2")
+	_igual("y lo anota para la batalla", Jugadores.cantidad_pedida(self), 2)
+	boton.pressed.emit()
+	_ok("otro toque vuelve a uno (%s)" % boton.text, boton.text == "Jugadores: 1")
+	_igual("y la anotacion tambien", Jugadores.cantidad_pedida(self), 1)
+
+	# Al volver de una partida de a dos, el menu arranca diciendo 2.
+	Jugadores.pedir_cantidad(self, 2)
+	var otro: Control = load("res://scenes/ui/menu_principal.tscn").instantiate()
+	root.add_child(otro)
+	var suyo: Button = otro.get_node("%Jugadores")
+	_ok("un menu nuevo arranca con lo anotado (%s)" % suyo.text, suyo.text == "Jugadores: 2")
+	otro.queue_free()
+	remove_meta(Jugadores.CANTIDAD)
 
 
 func _ok(que: String, condicion: bool) -> void:

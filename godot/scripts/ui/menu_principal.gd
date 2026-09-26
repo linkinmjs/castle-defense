@@ -20,6 +20,8 @@ func _ready() -> void:
 	Opciones.aplicar()
 
 	%Jugar.pressed.connect(jugar.bind(0))
+	%Jugadores.pressed.connect(_alternar_jugadores)
+	_mostrar_jugadores()
 	%Lecciones_boton.pressed.connect(_mostrar_lecciones)
 	%Opciones_boton.pressed.connect(_mostrar_opciones)
 	%Salir.pressed.connect(func() -> void: Navegacion.salir(get_tree()))
@@ -37,6 +39,20 @@ func _ready() -> void:
 func jugar(indice: int) -> void:
 	jugar_pedido.emit(indice)
 	Navegacion.jugar(get_tree(), indice)
+
+
+## Uno o dos: cada toque pasa al otro. Queda anotado en el arbol, que es de
+## donde lo lee la batalla al armarse (ver Jugadores).
+func _alternar_jugadores() -> void:
+	var cantidad := Jugadores.cantidad_pedida(get_tree()) % Jugadores.MAXIMO + 1
+	Jugadores.pedir_cantidad(get_tree(), cantidad)
+	_mostrar_jugadores()
+
+
+## Lo que dice el boton sale de lo anotado, no de un contador propio: al volver
+## de una partida de a dos, el menu arranca diciendo 2.
+func _mostrar_jugadores() -> void:
+	%Jugadores.text = "Jugadores: %d" % Jugadores.cantidad_pedida(get_tree())
 
 
 ## Una fila por encuentro, con su titulo y lo que enseña. Los textos ya estan

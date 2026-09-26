@@ -409,6 +409,11 @@ func _actualizar_al_frente() -> void:
 
 
 ## Mueve la marca del anterior al nuevo y avisa si cambio.
+##
+## La marca lleva el numero del jugador, que el overlay pinta con su color. Se
+## reescribe en cada tick: si los dos healers tienen al mismo soldado al
+## frente, queda la del ultimo que proceso, y al soltarlo uno la marca sigue
+## siendo del otro.
 func _cambiar_al_frente(nuevo: Unidad3D) -> void:
 	var anterior: Unidad3D = _al_frente if _sigue_en_juego(_al_frente) else null
 	_al_frente = nuevo
@@ -417,10 +422,14 @@ func _cambiar_al_frente(nuevo: Unidad3D) -> void:
 		# Si esta en la caja, esta al alcance: con el apuntado por posicion no
 		# hay objetivo marcado que no se pueda tocar.
 		nuevo.resaltada_alcanzable = true
+		nuevo.resaltada_por = jugador
 	if anterior == nuevo:
 		return
-	if anterior != null:
+	# Solo se suelta si todavia es propia: apagarla aunque la tenga el otro la
+	# haria parpadear un frame, hasta que el otro la vuelve a marcar.
+	if anterior != null and anterior.resaltada_por == jugador:
 		anterior.resaltada = false
+		anterior.resaltada_por = 0
 	apuntada_cambio.emit(nuevo)
 
 

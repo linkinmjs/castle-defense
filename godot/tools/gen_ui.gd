@@ -142,6 +142,9 @@ No podes salvar a todos."
 	botonera.add_theme_constant_override("separation", 8)
 	_hijo(columna, botonera, raiz, true)
 	_boton(botonera, raiz, "Jugar", "Jugar")
+	# Cuantos juegan, al lado de Jugar: es lo que se decide antes de arrancar.
+	# El texto lo pone menu_principal.gd con lo que este anotado.
+	_boton(botonera, raiz, "Jugadores", "Jugadores: 1")
 	_boton(botonera, raiz, "Lecciones_boton", "Lecciones")
 	_boton(botonera, raiz, "Opciones_boton", "Opciones")
 	_boton(botonera, raiz, "Salir", "Salir")
@@ -339,6 +342,12 @@ func _tema_etiquetas(tema: Theme) -> void:
 	# Sobre el relleno crema de los paneles el texto claro no se lee.
 	_variacion_etiqueta(tema, "SobrePanel", 16, TINTA_PANEL, false)
 	_variacion_etiqueta(tema, "TituloPanel", 26, TINTA_PANEL, false)
+	# La ficha de cada jugador (FichaJugador): mas chica que el aviso de antes,
+	# porque ahora son dos y van en las esquinas. El color del titulo y el del
+	# combo los pone la ficha: son del jugador y del movimiento.
+	_variacion_etiqueta(tema, "TituloFicha", 16, TINTA)
+	_variacion_etiqueta(tema, "ComboFicha", 18, AVISO)
+	_variacion_etiqueta(tema, "AvisoFicha", 16, AVISO)
 
 
 func _variacion_etiqueta(tema: Theme, nombre: String, tamano: int, color: Color,
@@ -365,8 +374,9 @@ func _tema_paneles(tema: Theme) -> void:
 	_variacion_panel(tema, "PanelOpciones", load(PANEL_OPCIONES), MARCO_OPCIONES)
 	_variacion_panel(tema, "PanelResumen", load(PANEL_DESENLACE), MARCO_DESENLACE)
 
-	# Tarjeta y fila de acciones siguen oscuras y translucidas: van encima del
-	# campo y un panel de madera opaco taparia la batalla.
+	# Las fichas de los jugadores y la fila de acciones siguen oscuras y
+	# translucidas: van encima del campo y un panel de madera opaco taparia la
+	# batalla.
 	_variacion_panel_plano(tema, "PanelFicha", Color(0, 0, 0, 0.72), 10)
 	_variacion_panel_plano(tema, "PanelAcciones", Color(0, 0, 0, 0.45), 8)
 

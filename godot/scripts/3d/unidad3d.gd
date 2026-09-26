@@ -84,6 +84,9 @@ var _ultima_causa: StringName = &"golpe"
 ## Las marca el healer en quien recibiria su ligera; las lee el overlay.
 var resaltada: bool = false
 var resaltada_alcanzable: bool = true
+## Que jugador la marco (0 = nadie): el overlay pinta la marca con su color,
+## para que con dos healers cada uno sepa cual es la suya.
+var resaltada_por: int = 0
 
 var bendicion_restante: float = 0.0
 var _reduccion_dano: float = 0.0

@@ -2,15 +2,15 @@
 
 [ext_resource type="Script" path="res://scripts/hud.gd" id="1_oj5la"]
 [ext_resource type="Theme" path="res://resources/ui/tema.tres" id="2_gss2c"]
-[ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="3_h022r"]
-[ext_resource type="Script" path="res://scripts/resumen_encuentro.gd" id="4_4jqwt"]
-[ext_resource type="Script" path="res://scripts/leyenda_controles.gd" id="5_kicr4"]
-[ext_resource type="Script" path="res://scripts/tarjeta_objetivo.gd" id="6_mj13f"]
+[ext_resource type="Script" path="res://scripts/hud/ficha_jugador.gd" id="3_h022r"]
+[ext_resource type="Script" path="res://scripts/indicador_frente.gd" id="4_4jqwt"]
+[ext_resource type="Script" path="res://scripts/resumen_encuentro.gd" id="5_kicr4"]
+[ext_resource type="Script" path="res://scripts/leyenda_controles.gd" id="6_mj13f"]
 
-[node name="HUD" type="CanvasLayer" unique_id=902274430]
+[node name="HUD" type="CanvasLayer" unique_id=1060974127]
 script = ExtResource("1_oj5la")
 
-[node name="Raiz" type="Control" parent="." unique_id=1263860328]
+[node name="Raiz" type="Control" parent="." unique_id=1489941108]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,52 +18,265 @@ anchor_bottom = 1.0
 mouse_filter = 2
 theme = ExtResource("2_gss2c")
 
-[node name="Contadores" type="Label" parent="Raiz" unique_id=1531425609]
-unique_name_in_owner = true
+[node name="Superior" type="HBoxContainer" parent="Raiz" unique_id=1576095320]
 layout_mode = 0
+anchor_right = 1.0
 offset_left = 24.0
 offset_top = 16.0
-offset_right = 24.0
+offset_right = -24.0
 offset_bottom = 16.0
-theme_type_variation = &"Subtitulo"
-
-[node name="Frente" type="Control" parent="Raiz" unique_id=52208030]
-unique_name_in_owner = true
-anchors_preset = 0
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -200.0
-offset_top = 14.0
-offset_right = 200.0
-offset_bottom = 40.0
 mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Esquina1" type="VBoxContainer" parent="Raiz/Superior" unique_id=1922045775]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Ficha1" type="PanelContainer" parent="Raiz/Superior/Esquina1" unique_id=2091702562]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"PanelFicha"
 script = ExtResource("3_h022r")
 
-[node name="Encabezado" type="Label" parent="Raiz" unique_id=1495661300]
+[node name="Columna" type="VBoxContainer" parent="Raiz/Superior/Esquina1/Ficha1" unique_id=1048476074]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Cabecera" type="HBoxContainer" parent="Raiz/Superior/Esquina1/Ficha1/Columna" unique_id=2024069858]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Titulo" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna/Cabecera" unique_id=1579773822]
+layout_mode = 2
+theme_type_variation = &"TituloFicha"
+text = "Jugador 1"
+vertical_alignment = 1
+
+[node name="Combo" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna/Cabecera" unique_id=181791911]
 unique_name_in_owner = true
-layout_mode = 0
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -320.0
-offset_top = 46.0
-offset_right = 320.0
-offset_bottom = 98.0
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"ComboFicha"
+horizontal_alignment = 2
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="Vida" type="HBoxContainer" parent="Raiz/Superior/Esquina1/Ficha1/Columna" unique_id=1384938674]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BarraVida" type="ProgressBar" parent="Raiz/Superior/Esquina1/Ficha1/Columna/Vida" unique_id=1795438134]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"BarraVida"
+show_percentage = false
+
+[node name="TextoVida" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna/Vida" unique_id=1179150261]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"Chico"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Mana" type="HBoxContainer" parent="Raiz/Superior/Esquina1/Ficha1/Columna" unique_id=728621892]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BarraMana" type="ProgressBar" parent="Raiz/Superior/Esquina1/Ficha1/Columna/Mana" unique_id=359270147]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"BarraMana"
+show_percentage = false
+
+[node name="TextoMana" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna/Mana" unique_id=35108927]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"Chico"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Aviso" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna" unique_id=1138553796]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"AvisoFicha"
+text_overrun_behavior = 3
+
+[node name="Objetivo" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna" unique_id=2085872975]
+layout_mode = 2
+theme_type_variation = &"Chico"
+text_overrun_behavior = 3
+
+[node name="Ligera" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna" unique_id=1427558887]
+layout_mode = 2
+theme_type_variation = &"Chico"
+text_overrun_behavior = 3
+
+[node name="Pesada" type="Label" parent="Raiz/Superior/Esquina1/Ficha1/Columna" unique_id=459954623]
+layout_mode = 2
+theme_type_variation = &"Chico"
+text_overrun_behavior = 3
+
+[node name="Encuentro" type="VBoxContainer" parent="Raiz/Superior" unique_id=2054428893]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 6
+
+[node name="Frente" type="Control" parent="Raiz/Superior/Encuentro" unique_id=1319281275]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 26)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("4_4jqwt")
+
+[node name="Encabezado" type="Label" parent="Raiz/Superior/Encuentro" unique_id=521911572]
+unique_name_in_owner = true
+layout_mode = 2
 theme_type_variation = &"Subtitulo"
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=1143513227]
+[node name="Contadores" type="Label" parent="Raiz/Superior/Encuentro" unique_id=45175386]
+unique_name_in_owner = true
+layout_mode = 2
+theme_type_variation = &"Chico"
+horizontal_alignment = 1
+
+[node name="Esquina2" type="VBoxContainer" parent="Raiz/Superior" unique_id=1858083414]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Ficha2" type="PanelContainer" parent="Raiz/Superior/Esquina2" unique_id=170133316]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_type_variation = &"PanelFicha"
+script = ExtResource("3_h022r")
+jugador = 2
+
+[node name="Columna" type="VBoxContainer" parent="Raiz/Superior/Esquina2/Ficha2" unique_id=1003908782]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 4
+
+[node name="Cabecera" type="HBoxContainer" parent="Raiz/Superior/Esquina2/Ficha2/Columna" unique_id=1408675854]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Titulo" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna/Cabecera" unique_id=1811891112]
+layout_mode = 2
+theme_type_variation = &"TituloFicha"
+text = "Jugador 2"
+vertical_alignment = 1
+
+[node name="Combo" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna/Cabecera" unique_id=767926204]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"ComboFicha"
+horizontal_alignment = 2
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="Vida" type="HBoxContainer" parent="Raiz/Superior/Esquina2/Ficha2/Columna" unique_id=1205824279]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BarraVida" type="ProgressBar" parent="Raiz/Superior/Esquina2/Ficha2/Columna/Vida" unique_id=1784687004]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"BarraVida"
+show_percentage = false
+
+[node name="TextoVida" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna/Vida" unique_id=1218398573]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"Chico"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Mana" type="HBoxContainer" parent="Raiz/Superior/Esquina2/Ficha2/Columna" unique_id=1410221885]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="BarraMana" type="ProgressBar" parent="Raiz/Superior/Esquina2/Ficha2/Columna/Mana" unique_id=548206655]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+theme_type_variation = &"BarraMana"
+show_percentage = false
+
+[node name="TextoMana" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna/Mana" unique_id=101583902]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_type_variation = &"Chico"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Aviso" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna" unique_id=1002888505]
+layout_mode = 2
+theme_type_variation = &"AvisoFicha"
+text_overrun_behavior = 3
+
+[node name="Objetivo" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna" unique_id=886306375]
+layout_mode = 2
+theme_type_variation = &"Chico"
+text_overrun_behavior = 3
+
+[node name="Ligera" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna" unique_id=671867801]
+layout_mode = 2
+theme_type_variation = &"Chico"
+text_overrun_behavior = 3
+
+[node name="Pesada" type="Label" parent="Raiz/Superior/Esquina2/Ficha2/Columna" unique_id=1330831924]
+layout_mode = 2
+theme_type_variation = &"Chico"
+text_overrun_behavior = 3
+
+[node name="Invitacion" type="Label" parent="Raiz/Superior/Esquina2" unique_id=796194411]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_type_variation = &"Chico"
+text = "Jugador 2: apreta un boton para entrar"
+horizontal_alignment = 2
+autowrap_mode = 3
+
+[node name="Centro" type="CenterContainer" parent="Raiz" unique_id=628111459]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 
-[node name="ColumnaCentro" type="VBoxContainer" parent="Raiz/Centro" unique_id=1525532564]
+[node name="ColumnaCentro" type="VBoxContainer" parent="Raiz/Centro" unique_id=168497958]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 12
 alignment = 1
 
-[node name="Desenlace" type="Label" parent="Raiz/Centro/ColumnaCentro" unique_id=1781875067]
+[node name="Desenlace" type="Label" parent="Raiz/Centro/ColumnaCentro" unique_id=309596413]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -71,87 +284,39 @@ theme_type_variation = &"Titulo"
 theme_override_font_sizes/font_size = 48
 horizontal_alignment = 1
 
-[node name="Resumen" type="PanelContainer" parent="Raiz/Centro/ColumnaCentro" unique_id=1107906972]
+[node name="Resumen" type="PanelContainer" parent="Raiz/Centro/ColumnaCentro" unique_id=610360003]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 mouse_filter = 2
-script = ExtResource("4_4jqwt")
-
-[node name="Inferior" type="VBoxContainer" parent="Raiz" unique_id=672364502]
-layout_mode = 0
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_left = 24.0
-offset_bottom = -20.0
-grow_vertical = 0
-mouse_filter = 2
-theme_override_constants/separation = 6
-
-[node name="Aviso" type="Label" parent="Raiz/Inferior" unique_id=63982174]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Aviso"
-
-[node name="Combo" type="Label" parent="Raiz/Inferior" unique_id=580389280]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Aviso"
-
-[node name="BarraVidaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=1544289888]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 10
-
-[node name="BarraVida" type="ProgressBar" parent="Raiz/Inferior/BarraVidaFila" unique_id=2042293892]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 18)
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"BarraVida"
-show_percentage = false
-
-[node name="TextoVida" type="Label" parent="Raiz/Inferior/BarraVidaFila" unique_id=1588614729]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Chico"
-vertical_alignment = 1
-
-[node name="BarraManaFila" type="HBoxContainer" parent="Raiz/Inferior" unique_id=489864790]
-layout_mode = 2
-mouse_filter = 2
-theme_override_constants/separation = 10
-
-[node name="BarraMana" type="ProgressBar" parent="Raiz/Inferior/BarraManaFila" unique_id=439558220]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(280, 18)
-layout_mode = 2
-mouse_filter = 2
-theme_type_variation = &"BarraMana"
-show_percentage = false
-
-[node name="TextoMana" type="Label" parent="Raiz/Inferior/BarraManaFila" unique_id=1721175899]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Chico"
-vertical_alignment = 1
-
-[node name="Leyenda" type="Label" parent="Raiz/Inferior" unique_id=657095102]
-unique_name_in_owner = true
-layout_mode = 2
-theme_type_variation = &"Chico"
 script = ExtResource("5_kicr4")
 
-[node name="Tarjeta" type="PanelContainer" parent="Raiz" unique_id=381650394]
-unique_name_in_owner = true
+[node name="Inferior" type="HBoxContainer" parent="Raiz" unique_id=111623815]
 layout_mode = 0
-anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = -20.0
 offset_right = -24.0
 offset_bottom = -20.0
-grow_horizontal = 0
 grow_vertical = 0
 mouse_filter = 2
+theme_override_constants/separation = 16
+
+[node name="Leyenda" type="Label" parent="Raiz/Inferior" unique_id=1202138498]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Chico"
 script = ExtResource("6_mj13f")
+
+[node name="Leyenda2" type="Label" parent="Raiz/Inferior" unique_id=1115639519]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_type_variation = &"Chico"
+horizontal_alignment = 2
+script = ExtResource("6_mj13f")
+jugador = 2

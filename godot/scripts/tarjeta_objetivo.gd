@@ -1,148 +1,89 @@
-extends PanelContainer
-## Ficha del soldado que el healer tiene al frente: el que recibiria la ligera.
+class_name TarjetaObjetivo
+extends RefCounted
+## Lo que dice la tarjeta compacta de cada ficha del HUD: a quien tiene el
+## healer al frente y que saldria ahora con cada boton.
 ##
-## El campo muestra un solo problema por unidad para que se pueda leer de un
-## vistazo con quince soldados amontonados; el detalle completo va aca. Dice
-## que haria cada movimiento equipado sobre ese paciente, pero nunca cual
-## conviene: elegir es el juego.
+## Antes era un panel aparte que listaba lo que haria cada movimiento equipado,
+## hasta ocho renglones. Con dos jugadores no entra, y tampoco hacia falta: lo
+## unico que se decide en el momento es que boton apretar, y
+## ComponenteCombos.resolver() ya sabe que sale con cada uno segun el combo en
+## curso, el aire y lo que haya tirado adelante. Por eso la tarjeta cambia
+## sola a mitad de un combo: despues de una ligera, la ligera ya es Vendaje.
 ##
-## No hay "fuera de alcance": con el apuntado por posicion, el que no esta en
-## la caja de la ligera no es el de la ficha.
+## Muestra la consecuencia, nunca cual conviene: elegir es el juego. Tampoco
+## hay "fuera de alcance": con el apuntado por posicion, el que no esta en la
+## caja de la ligera no es el de la tarjeta.
 ##
-## _armar_lineas() dice que mostrar y los nodos lo reflejan. Los Labels se
-## rehacen solo cuando cambia la cantidad de renglones: recrearlos en cada
-## frame, como se redibujaba antes, seria tirar asignaciones al pedo.
+## Son datos y no nodos, y estaticos: FichaJugador los pinta y las pruebas los
+## leen sin armar ningun HUD.
 
-const ANCHO := 280.0
-
-const COLOR_NOMBRE := Color(0.94, 0.95, 1.0)
-const COLOR_TENUE := Color(0.70, 0.74, 0.85)
-
-## Un color por familia de problema, el mismo que usa el overlay del campo.
-const COLORES := {
-	&"derribada": Color(0.95, 0.62, 0.2),
-	&"sangrado": Color("c0392b"),
-	&"vida_baja": Color("d9c04a"),
-	&"retirada": Color(0.75, 0.78, 0.9),
-	&"bendicion": Color("6fd3c7"),
-}
-
-const ETIQUETAS := {
-	&"derribada": "Derribado",
-	&"sangrado": "Sangrado",
-	&"vida_baja": "Malherido",
-	&"retirada": "Retirandose",
-	&"bendicion": "Bendecido",
-}
-
-var _healer: Node
-var _combos: ComponenteCombos
-var _apuntada: Unidad3D
-var _columna: VBoxContainer
-var _renglones: Array[Label] = []
+## Lo que ocupa el lugar del movimiento cuando el boton no tiene ninguno: en el
+## primer encuentro solo esta Toque, y la pesada no hace nada.
+const SIN_MOVIMIENTO := "—"
+const NADIE := "Nadie al frente"
+const SEPARADOR := " · "
+## Un renglon por boton, en este orden, con la letra con que se nombra.
+const BOTONES: Array[StringName] = [&"ligera", &"pesada"]
+const LETRAS: Dictionary[StringName, String] = {&"ligera": "L", &"pesada": "P"}
 
 
-func seguir(healer: Node, combos: ComponenteCombos) -> void:
-	_healer = healer
-	_combos = combos
-	healer.apuntada_cambio.connect(_on_apuntada_cambio)
+## Tres renglones: quien esta al frente, la ligera y la pesada. Cada uno es
+## {texto, apagado} y, si lo pinta el movimiento, {color}; sin color va el del
+## tema. Apagado es que no dice nada que sirva (nadie al frente, un boton sin
+## movimiento): se muestra igual, para que la ficha no cambie de alto.
+static func renglones(healer: Healer3D) -> Array[Dictionary]:
+	var paciente: Unidad3D = null
+	var combos: ComponenteCombos = null
+	if healer != null and healer.is_inside_tree():
+		paciente = healer.unidad_apuntada()
+		combos = healer.get_node_or_null(^"Combos") as ComponenteCombos
+	var lista: Array[Dictionary] = [_renglon_paciente(paciente)]
+	for entrada in BOTONES:
+		var mov: Movimiento = combos.resolver(entrada) if combos != null else null
+		lista.append(_renglon_boton(healer, entrada, mov, paciente))
+	return lista
 
 
-func _on_apuntada_cambio(unidad: Unidad3D) -> void:
-	_apuntada = unidad
+## Solo los textos: "Mara · Lancero · 40 / 80 HP", "L · Toque: +18 HP",
+## "P · Plegaria: +40 HP".
+static func lineas(healer: Healer3D) -> PackedStringArray:
+	var textos := PackedStringArray()
+	for renglon in renglones(healer):
+		textos.append(renglon["texto"])
+	return textos
 
 
-func _ready() -> void:
-	theme_type_variation = &"PanelFicha"
-	custom_minimum_size = Vector2(ANCHO, 0)
-	# Nada del HUD se lleva el mouse: no hay nada que clickear.
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	visible = false
-
-	_columna = VBoxContainer.new()
-	_columna.add_theme_constant_override("separation", 3)
-	_columna.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(_columna)
-
-
-func _process(_delta: float) -> void:
-	# La vida y los relojes cambian solos aunque el healer no se mueva.
-	if _healer != null:
-		_apuntada = _healer.unidad_apuntada()
-
-	if _apuntada == null or not is_instance_valid(_apuntada):
-		visible = false
-		return
-
-	visible = true
-	var lineas := _armar_lineas()
-	if lineas.size() != _renglones.size():
-		_rehacer(lineas)
-	else:
-		_refrescar(lineas)
+## Nombre, rol y vida en un renglon. La vida se redondea hacia arriba: con 0.3
+## todavia esta vivo, y la tarjeta no puede decir 0.
+static func _renglon_paciente(paciente: Unidad3D) -> Dictionary:
+	if paciente == null:
+		return {"texto": NADIE, "apagado": true}
+	var partes := PackedStringArray()
+	if paciente.nombre_unidad != "":
+		partes.append(paciente.nombre_unidad)
+	if paciente.tipo != null and paciente.tipo.nombre != "":
+		partes.append(paciente.tipo.nombre)
+	if partes.is_empty():
+		partes.append("Soldado")
+	partes.append("%d / %d HP" % [ceilf(paciente.vida), paciente.vida_maxima])
+	return {"texto": SEPARADOR.join(partes), "apagado": false}
 
 
-## Un Label por renglon. Solo cuando cambia la cantidad: mientras el paciente
-## siga teniendo los mismos datos, alcanza con reescribir el texto.
-func _rehacer(lineas: Array[Dictionary]) -> void:
-	for hijo in _columna.get_children():
-		hijo.queue_free()
-	_renglones.clear()
-
-	for linea: Dictionary in lineas:
-		var etiqueta := Label.new()
-		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_columna.add_child(etiqueta)
-		_renglones.append(etiqueta)
-	_refrescar(lineas)
-
-
-func _refrescar(lineas: Array[Dictionary]) -> void:
-	for i in lineas.size():
-		var linea: Dictionary = lineas[i]
-		var etiqueta := _renglones[i]
-		etiqueta.text = linea["texto"]
-		etiqueta.add_theme_color_override("font_color", linea["color"])
-		etiqueta.add_theme_font_size_override("font_size", linea.get("tamano", 13))
-
-
-
-## Cuatro bloques: quien es, como esta, cual es su problema, y que haria cada
-## movimiento equipado.
-func _armar_lineas() -> Array[Dictionary]:
-	var lineas: Array[Dictionary] = []
-
-	var titulo: String = _apuntada.nombre_unidad
-	var rol: String = _apuntada.tipo.nombre if _apuntada.tipo != null else ""
-	if titulo != "" and rol != "":
-		titulo = "%s · %s" % [titulo, rol]
-	elif titulo == "":
-		titulo = rol if rol != "" else "Soldado"
-	lineas.append({"texto": titulo, "color": COLOR_NOMBRE, "tamano": 15})
-
-	lineas.append({
-		"texto": "%d / %d HP" % [ceilf(_apuntada.vida), _apuntada.vida_maxima],
-		"color": COLOR_TENUE,
-	})
-
-	var estado: StringName = _apuntada.estado_dominante()
-	if ETIQUETAS.has(estado):
-		var texto: String = ETIQUETAS[estado]
-		var segundos: float = _apuntada.segundos_estado()
-		if segundos > 0.0:
-			texto += " · %.1f s" % segundos
-		lineas.append({"texto": texto, "color": COLORES.get(estado, COLOR_TENUE)})
-
-	# Solo los movimientos equipados en este encuentro: el primero tiene uno
-	# solo, y la ficha tiene que verse igual de simple que el encuentro. Los
-	# que no le harian nada a este paciente no dicen nada.
-	if _combos != null:
-		for mov in _combos.movimientos:
-			if mov == null:
-				continue
-			var texto := mov.previsualizar(_healer, _apuntada)
-			if texto != "":
-				lineas.append({"texto": texto, "color": mov.color, "tamano": 12})
-
-	return lineas
+## "L · Toque: +18 HP". Sin nadie al frente, o si al que esta no le haria
+## nada, solo el nombre: igual sirve saber que sale.
+static func _renglon_boton(healer: Healer3D, entrada: StringName, mov: Movimiento,
+		paciente: Unidad3D) -> Dictionary:
+	var letra: String = LETRAS[entrada]
+	if mov == null:
+		return {"texto": letra + SEPARADOR + SIN_MOVIMIENTO, "apagado": true}
+	# Reanimar no es para el de la ligera, que nunca es un caido, sino para el
+	# derribado que el healer tiene adelante: la consecuencia es sobre ese.
+	var objetivo: Unidad3D = paciente
+	if mov.requiere_derribado and healer != null:
+		objetivo = Apuntado.derribado_al_frente(healer)
+	var previa := mov.previsualizar(healer, objetivo) if objetivo != null else ""
+	return {
+		"texto": letra + SEPARADOR + (previa if previa != "" else mov.nombre),
+		"color": mov.color,
+		"apagado": false,
+	}

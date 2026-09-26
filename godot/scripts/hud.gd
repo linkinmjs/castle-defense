@@ -1,79 +1,54 @@
 extends CanvasLayer
-## HUD del prototipo: lo minimo para poder jugar y para leer como va la batalla.
+## HUD de la batalla: una ficha por jugador en las esquinas de arriba, el
+## encuentro entre las dos, el desenlace al centro y los controles abajo.
+##
+## Lo de cada jugador (barras, combo, avisos, tarjeta) lo lleva su
+## FichaJugador. Aca se reparte que ficha y que leyenda le toca a cada healer,
+## y se muestra lo que es de todos: el frente, el encuentro en curso, los
+## conteos y el cierre.
+##
+## El segundo jugador puede entrar en cualquier momento: la batalla avisa con
+## jugador_agregado. Hasta entonces su esquina lo invita a entrar y su leyenda
+## no se muestra: con uno solo, los controles del otro serian ruido.
 
-const COLOR_MANA := Color("4a9fd4")
-const COLOR_VIDA := Color("c94b3f")
-const DURACION_AVISO := 1.8
-## Un golpe al aire se avisa, pero mas bajo: el jugador ya vio que no paso
-## nada, y un aviso a pleno taparia uno que si importa ("Sin mana", "+18").
-const ALFA_VACIO := 0.5
-## Cuanto queda en pantalla el remate despues de cerrar el combo. Los demas
-## cortes (un golpe, uno al aire, el tiempo) lo apagan en el acto: no hay
-## nada que festejar.
-const DURACION_REMATE := 1.2
-
-@onready var _barra_mana: ProgressBar = %BarraMana
-@onready var _texto_mana: Label = %TextoMana
-@onready var _barra_vida: ProgressBar = %BarraVida
-@onready var _texto_vida: Label = %TextoVida
+@onready var _fichas: Array[FichaJugador] = [%Ficha1, %Ficha2]
+@onready var _leyendas: Array[Label] = [%Leyenda, %Leyenda2]
+@onready var _invitacion: Label = %Invitacion
 @onready var _contadores: Label = %Contadores
-@onready var _aviso: Label = %Aviso
-@onready var _combo: Label = %Combo
-@onready var _leyenda: Label = %Leyenda
 @onready var _frente: Control = %Frente
-@onready var _desenlace: Label = %Desenlace
-@onready var _tarjeta: Control = %Tarjeta
 @onready var _encabezado: Label = %Encabezado
+@onready var _desenlace: Label = %Desenlace
 @onready var _resumen: Control = %Resumen
 
-var _tiempo_aviso: float = 0.0
-## Hasta donde sube la opacidad del aviso actual: 1, o menos si es de los que
-## se dicen bajo.
-var _alfa_aviso: float = 1.0
-## Lo que falta del festejo de un remate. 0 = el combo se muestra fijo
-## mientras dure, o no se muestra.
-var _tiempo_remate: float = 0.0
 var _battle: Node
 var _encuentro: Encuentro
+## Si la batalla deja entrar a un jugador con el encuentro andando. Sin eso no
+## se invita a nadie: el cartel prometeria algo que no pasa.
+var _admite_ingreso: bool = false
 
 
 func _ready() -> void:
-	_estilizar(_barra_mana, COLOR_MANA)
-	_estilizar(_barra_vida, COLOR_VIDA)
-	_aviso.modulate.a = 0.0
-	_combo.text = ""
-	_ocultar_combo()
 	_desenlace.visible = false
 	_resumen.visible = false
+	# Del segundo en adelante arrancan afuera: entran con seguir().
+	for i in range(1, _fichas.size()):
+		_fichas[i].visible = false
+		_leyendas[i].visible = false
+	_actualizar_invitacion()
 
 
-func _estilizar(barra: ProgressBar, color: Color) -> void:
-	var relleno := StyleBoxFlat.new()
-	relleno.bg_color = color
-	relleno.set_corner_radius_all(2)
-	barra.add_theme_stylebox_override("fill", relleno)
-	var fondo := StyleBoxFlat.new()
-	fondo.bg_color = Color(0, 0, 0, 0.55)
-	barra.add_theme_stylebox_override("background", fondo)
-
-
-## La batalla llama a esto cuando el healer ya esta en el arbol.
-func seguir(healer: Node) -> void:
-	healer.mana_cambio.connect(_on_mana_cambio)
-	healer.vida_cambio.connect(_on_vida_cambio)
-	healer.aviso.connect(_on_aviso)
-	healer.combo_cambio.connect(_on_combo_cambio)
-	_on_mana_cambio(healer.mana, healer.mana_maximo)
-	_on_vida_cambio(healer.vida, healer.vida_maxima)
-
-	# El aviso de lo que conecto ("+18", "Reanimado") y el de lo que no ("Sin
-	# mana", "En vacio") salen del componente, que es el que sabe que paso.
-	var combos: ComponenteCombos = healer.get_node("Combos")
-	combos.aviso.connect(_on_aviso)
-	combos.movimiento_fallo.connect(_on_movimiento_fallo)
-	combos.combo_cortado.connect(_on_combo_cortado)
-	_tarjeta.seguir(healer, combos)
-	_leyenda.seguir(healer)
+## Le da a este healer la ficha y la leyenda de su jugador. La batalla llama
+## con el del jugador 1 al arrancar; los que entran despues llegan por
+## jugador_agregado. Repetir el mismo healer no hace nada.
+func seguir(healer: Healer3D) -> void:
+	if healer == null:
+		return
+	var i := _indice(healer.jugador)
+	_fichas[i].seguir(healer)
+	_fichas[i].visible = true
+	_leyendas[i].seguir(healer)
+	_leyendas[i].visible = true
+	_actualizar_invitacion()
 
 
 func seguir_batalla(battle: Node) -> void:
@@ -82,72 +57,50 @@ func seguir_batalla(battle: Node) -> void:
 	battle.encuentro_iniciado.connect(_on_encuentro_iniciado)
 	battle.telemetria().encuentro_cerrado.connect(_on_encuentro_cerrado)
 	_frente.seguir(battle)
+	# Por nombre y preguntando: una batalla de un solo jugador no la tiene, y
+	# entonces no hay a quien invitar.
+	_admite_ingreso = battle.has_signal(&"jugador_agregado")
+	if _admite_ingreso:
+		battle.connect(&"jugador_agregado", seguir)
+	_actualizar_invitacion()
 
 
-func _process(delta: float) -> void:
+## La ficha de ese jugador. Un numero fuera de rango da la mas cercana.
+func ficha(jugador: int) -> FichaJugador:
+	return _fichas[_indice(jugador)]
+
+
+func leyenda(jugador: int) -> Label:
+	return _leyendas[_indice(jugador)]
+
+
+## Si el combo de ese jugador se esta viendo. Sin decir cual, el del primero:
+## es lo que miran las capturas del HUD de uno solo.
+func combo_visible(jugador: int = 1) -> bool:
+	return ficha(jugador).combo_visible()
+
+
+## Si la esquina del segundo esta invitandolo a entrar.
+func invitando() -> bool:
+	return _invitacion.visible
+
+
+func _indice(jugador: int) -> int:
+	return clampi(jugador, 1, _fichas.size()) - 1
+
+
+## "Jugador 2: apreta un boton para entrar", en el lugar de su ficha mientras
+## no entro.
+func _actualizar_invitacion() -> void:
+	_invitacion.visible = _admite_ingreso and not _fichas[1].visible
+
+
+func _process(_delta: float) -> void:
 	var aliados := "Aliados %d" % _vivos("aliados")
 	var caidos := _derribados("aliados")
 	if caidos > 0:
 		aliados += "  (%d en el suelo)" % caidos
 	_contadores.text = "%s      Enemigos %d" % [aliados, _vivos("enemigos")]
-
-	if _tiempo_aviso > 0.0:
-		_tiempo_aviso -= delta
-		_aviso.modulate.a = clampf(_tiempo_aviso / DURACION_AVISO, 0.0, 1.0) * _alfa_aviso
-
-	if _tiempo_remate > 0.0:
-		_tiempo_remate -= delta
-		_combo.modulate.a = clampf(_tiempo_remate / DURACION_REMATE, 0.0, 1.0)
-		if _tiempo_remate <= 0.0:
-			_ocultar_combo()
-
-
-func _on_mana_cambio(actual: float, maximo: float) -> void:
-	_barra_mana.max_value = maximo
-	_barra_mana.value = actual
-	_texto_mana.text = "%d / %d" % [actual, maximo]
-
-
-func _on_vida_cambio(actual: float, maximo: float) -> void:
-	_barra_vida.max_value = maximo
-	_barra_vida.value = actual
-	_texto_vida.text = "%d / %d" % [actual, maximo]
-
-
-func _on_movimiento_fallo(_mov: Movimiento, motivo: String) -> void:
-	_mostrar_aviso(motivo, ALFA_VACIO if motivo == ComponenteCombos.EN_VACIO else 1.0)
-
-
-## "x2 VENDAJE" mientras el combo siga abierto. Con cuenta 0 se apaga, salvo
-## que el corte sea un remate: eso lo decide _on_combo_cortado, que llega justo
-## despues y vuelve a mostrar el ultimo texto.
-func _on_combo_cambio(cuenta: int, nombre: String) -> void:
-	if cuenta <= 0:
-		_ocultar_combo()
-		return
-	_combo.text = "x%d %s" % [cuenta, nombre.to_upper()]
-	_combo.modulate.a = 1.0
-	_tiempo_remate = 0.0
-
-
-func _on_combo_cortado(motivo: StringName) -> void:
-	if motivo != &"remate" or _combo.text == "":
-		return
-	_combo.modulate.a = 1.0
-	_tiempo_remate = DURACION_REMATE
-
-
-## Oculto con transparencia y no con visible: el renglon sigue ocupando su
-## lugar, y el aviso de arriba no salta cada vez que un combo empieza o se
-## corta. El texto queda: es el que festeja el remate.
-func _ocultar_combo() -> void:
-	_tiempo_remate = 0.0
-	_combo.modulate.a = 0.0
-
-
-## Si el combo se esta viendo: lo usan las pruebas y las capturas.
-func combo_visible() -> bool:
-	return _combo.text != "" and _combo.modulate.a > 0.0
 
 
 func _on_encuentro_iniciado(encuentro: Encuentro, _semilla: int, indice: int) -> void:
@@ -178,19 +131,6 @@ func _on_encuentro_cerrado(datos: Dictionary) -> void:
 	_resumen.mostrar(
 		titulo, datos, _battle.telemetria().observacion_causal(), metas,
 		"R / Back para repetir el mismo     Enter / Start para seguir")
-
-
-func _on_aviso(texto: String) -> void:
-	_mostrar_aviso(texto)
-
-
-func _mostrar_aviso(texto: String, alfa: float = 1.0) -> void:
-	if texto == "":
-		return
-	_aviso.text = texto
-	_alfa_aviso = alfa
-	_tiempo_aviso = DURACION_AVISO
-	_aviso.modulate.a = alfa
 
 
 func _derribados(grupo: String) -> int:
