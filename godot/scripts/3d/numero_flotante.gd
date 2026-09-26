@@ -27,6 +27,8 @@ extends Label3D
 const COLOR_CURA := Color("#7ddc7d")
 const COLOR_DESPERDICIO := Color("#9a9aa8")
 const COLOR_DANO := Color("#e07a6a")
+## La fuente pixel del HUD, para que los numeros no salgan con la de fabrica.
+const RUTA_FUENTE := "res://assets/fonts/ui.ttf"
 
 ## Nunca mas que estos a la vez. Una plegaria sobre la linea en medio de una
 ## pelea larga puede pedir docenas: pasado el tope, otro numero tapa el campo en
@@ -89,6 +91,9 @@ func _armar(texto: String, color: Color, tamano: float) -> void:
 	name = "Numero"
 	text = texto
 	modulate = color
+	# La misma fuente pixel del HUD: Label3D no lee el tema, hay que dársela.
+	if ResourceLoader.exists(RUTA_FUENTE):
+		font = load(RUTA_FUENTE)
 	font_size = TAMANO_FUENTE
 	pixel_size = METROS_POR_PIXEL * maxf(tamano, 0.05)
 	outline_size = CONTORNO
