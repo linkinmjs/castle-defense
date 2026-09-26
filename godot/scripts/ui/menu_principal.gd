@@ -13,7 +13,6 @@ extends Control
 ## prueba termine cargando la batalla entera.
 signal jugar_pedido(indice: int)
 
-const RUTA_CAMPANA := "res://resources/encuentros/campana.tres"
 ## Pixeles de pantalla por segundo de cada capa. Muy despacio: es un fondo, no
 ## una persecucion, y las lejanas casi no se mueven.
 const VELOCIDADES: Dictionary[StringName, float] = {
@@ -46,7 +45,7 @@ func _ready() -> void:
 	Opciones.cargar()
 	Opciones.aplicar()
 
-	%Jugar.pressed.connect(jugar.bind(0))
+	%Jugar.pressed.connect(jugar.bind(0, Navegacion.RUTA_NIVELES))
 	%Jugadores.pressed.connect(_alternar_jugadores)
 	_mostrar_jugadores()
 	%Lecciones_boton.pressed.connect(_mostrar_lecciones)
@@ -80,9 +79,12 @@ func _process(delta: float) -> void:
 		capa.offset_right = ancho - corrimiento
 
 
-func jugar(indice: int) -> void:
+## "Jugar" arranca los niveles; cada leccion, la serie de lecciones. La ruta va
+## siempre explicita: sin ella Navegacion deja la serie que ya estaba anotada,
+## y volver de los niveles a una leccion terminaria en un nivel.
+func jugar(indice: int, ruta_campana: String = Navegacion.RUTA_LECCIONES) -> void:
 	jugar_pedido.emit(indice)
-	Navegacion.jugar(get_tree(), indice)
+	Navegacion.jugar(get_tree(), indice, ruta_campana)
 
 
 ## Cuanto se corrio esa capa, en pixeles de pantalla. Para las pruebas.
@@ -114,9 +116,9 @@ func _armar_lecciones() -> void:
 	for hijo in lista.get_children():
 		hijo.queue_free()
 
-	if not ResourceLoader.exists(RUTA_CAMPANA):
+	if not ResourceLoader.exists(Navegacion.RUTA_LECCIONES):
 		return
-	var campana: Campana = load(RUTA_CAMPANA)
+	var campana: Campana = load(Navegacion.RUTA_LECCIONES)
 
 	for i in campana.encuentros.size():
 		var encuentro: Encuentro = campana.encuentros[i]
