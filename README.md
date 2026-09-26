@@ -1,16 +1,21 @@
 # Castle Defense
 
-Sos un **médico de guerra** dentro de una batalla 2.5D que no controlás. Dos
-ejércitos automáticos empujan una línea de frente; vos no atacás y podés morir.
-Se gana leyendo mejor qué intervención cambia el destino del frente: a quién
-curar, a quién estabilizar, a quién levantar del suelo y a quién dejar ir.
+Sos un **médico de guerra** en un beat-em-up 2.5D: dos ejércitos automáticos
+empujan una línea de frente por un campo largo y vos, solo o con otro jugador
+en la misma pantalla, no atacás: curás. Tres botones (curación ligera, curación
+pesada y salto) y el orden en que los apretás deciden qué sale; dónde te parás
+decide a quién le llega. Se gana leyendo mejor qué intervención cambia el
+destino del frente: a quién curar, a quién vendar, a quién levantar del suelo y
+a quién dejar ir.
 
 Desarrollado con **Godot 4.7** (renderer GL Compatibility, para que corra en
 navegador). Cada push a `master` exporta el juego a HTML5 y lo publica
 automáticamente en itch.io.
 
-El diseño y hacia dónde va están en [`godot/docs/`](godot/docs/); el documento
-que ordena las prioridades es
+El diseño está en [`godot/docs/`](godot/docs/): qué sale con cada botón en
+[`movimientos_y_combos.md`](godot/docs/movimientos_y_combos.md), los niveles en
+[`niveles.md`](godot/docs/niveles.md), y el documento que ordena las
+prioridades de diseño es
 [`mejoras_desde_a_theory_of_fun.md`](godot/docs/mejoras_desde_a_theory_of_fun.md).
 
 ## Estructura del repositorio
@@ -20,28 +25,45 @@ que ordena las prioridades es
 ├── .github/workflows/     # Pipeline de export + deploy a itch.io
 ├── builds/                # Salida de los exports (ignorada por git)
 └── godot/                 # El proyecto de Godot (abrir esta carpeta en el editor)
-    ├── assets/            # sprites, audio, fonts
+    ├── assets/            # sprites, fondos, efectos, fuente y UI (generados desde _raw/)
     ├── docs/              # diseño: qué es el juego y hacia dónde va
     ├── resources/         # encuentros, tipos de soldado y movimientos (.tres)
-    ├── scenes/            # battle3d.tscn es la escena principal
+    ├── scenes/            # menu_principal.tscn es la escena principal; battle3d.tscn la batalla
     ├── scripts/           # scripts de GDScript
-    └── tools/             # pruebas headless y generadores de recursos
+    └── tools/             # pruebas headless, capturas y generadores de recursos
 ```
 
 ## Cómo está armado
 
-La partida se juega por **encuentros**. Cada uno es un `Resource` que define
-quiénes entran al campo y en qué estado, qué movimientos tiene disponibles el
-healer, cuándo termina y con qué semilla se despliega. Eso permite enseñar una
-cosa por vez y repetir exactamente el mismo problema entre intentos.
+- **Movimientos y combos** (`scripts/movimientos/`): cada movimiento es un
+  `Resource` sin estado (`Movimiento`) y `ComponenteCombos`, hijo del healer,
+  recuerda qué botones conectaron y resuelve qué sale (`Toque`, `Vendaje`,
+  `Oleada`, `Bendicion`, `Plegaria`, `Reanimar`, `Impulso`, `Caida sanadora`).
+  `Apuntado` elige a quién le llega según la caja que el healer tiene enfrente.
+- **Dos jugadores** (`scripts/jugadores.gd`, `scripts/3d/camara_batalla.gd`):
+  cada healer lee sólo las acciones de su jugador (`p1_*`, `p2_*`); el segundo
+  entra desde el menú o apretando cualquiera de sus botones en plena batalla.
+  La cámara sigue el punto medio y ninguno se sale de cuadro.
+- **Encuentros y sectores** (`scripts/encuentros/`): un `Encuentro` define
+  quiénes entran al campo, qué movimientos hay, cómo se gana y con qué semilla;
+  un nivel largo se parte en `Sector`es que frenan el avance hasta que se
+  liberan. `resources/encuentros/campana.tres` son las tres lecciones y
+  `niveles.tres` los tres niveles.
+- **Soldados** (`scripts/3d/unidad3d.gd`, `resources/soldados/`): escudero,
+  lancero, espadachín y zombi, más el **bruto** (golpe lento anunciado en el
+  suelo, se esquiva saltando) y el **demonio** (jefe con dos ataques en área).
+- **Presentación** (`scripts/3d/mundo.gd`, `scripts/3d/particulas.gd`,
+  `scripts/3d/numero_flotante.gd`, `scripts/ui/vineta.gd`,
+  `scripts/presentacion.gd`): el mundo del atardecer, las partículas, los
+  números flotantes, la viñeta de daño, el hit-stop y la sacudida de cámara. Todo
+  lo que no cambia el juego se apaga en headless para que las pruebas sigan
+  deterministas.
+- **HUD** (`scripts/hud.gd`, `scripts/hud/`): una ficha por jugador, barra de
+  nivel con los sectores, cartel de avanzar, barra de jefe y resumen.
 
-- `resources/encuentros/campana.tres` — la serie que se juega, en orden.
-- `resources/soldados/` — los tipos de soldado (stats, sprites, estilo).
-- `resources/movimientos/` — los movimientos del healer y sus combos.
-
-Todo eso lo generan scripts en `tools/` (`gen_encuentros.gd`,
-`gen_movimientos.gd`, `gen_scenes3d.gd`), así que el contenido se lee de corrido
-en un archivo en vez de estar repartido por el inspector.
+Todo el contenido lo generan scripts en `tools/` (`gen_encuentros.gd`,
+`gen_movimientos.gd`, `gen_scenes3d.gd`...), así que se lee de corrido en un
+archivo en vez de estar repartido por el inspector.
 
 ### Controles
 
@@ -83,7 +105,7 @@ cambiar algo, se cambia en el generador.
 | `gen_hud.gd` | `scenes/ui/hud.tscn`, el HUD de la batalla (usa el tema) |
 | `gen_scenes3d.gd` | escenas 3D (la batalla instancia el HUD ya generado y el healer trae los movimientos) y tipos de soldado |
 | `gen_encuentros.gd` | los encuentros y la campania |
-| `gen_frames.gd` | los `SpriteFrames` de cada personaje |
+| `gen_frames.gd` | los `SpriteFrames` de cada personaje (healer, tropa, bruto, demonio) y de los efectos |
 | `setup_input.gd` | en `project.godot`: el Input Map entero (acciones por jugador y compartidas), los nombres de las capas 3D y la importacion por defecto de texturas |
 
 El orden importa cuando se tocan los assets de interfaz, porque un PNG escrito
@@ -127,8 +149,21 @@ antes de exportar, y una a una:
 godot --headless --path godot --script res://tools/test_encuentro.gd
 ```
 
-Están todas en `godot/tools/test_*.gd`. Ninguna instancia el HUD para medir: el
-modelo de combate tiene que poder probarse sin interfaz.
+Están todas en `godot/tools/test_*.gd` (las nuevas extienden `tools/prueba_base.gd`,
+que trae los helpers y el avance por ticks de física). El modelo de combate se
+prueba sin interfaz; el HUD y el menú tienen sus propias suites. Todo lo que es
+puro dibujo (partículas, números, sacudidas) se apaga en headless, así que los
+resultados son deterministas.
+
+Lo que no se puede medir sin pantalla se mira: los `tools/captura_*.gd` sacan
+fotos de la batalla, el HUD, el mundo, los combos, el bruto y los niveles. Van
+**sin** `--headless` y guardan PNG en la carpeta de usuario de Godot
+(`%APPDATA%\Godot\app_userdata\castle-defense\`):
+
+```bash
+godot --path godot --script res://tools/captura_hud.gd
+godot --path godot --resolution 1920x1080 --script res://tools/captura_mundo.gd
+```
 
 ### Exportar a Web localmente
 
