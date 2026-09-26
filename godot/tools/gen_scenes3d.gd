@@ -329,9 +329,7 @@ func _crear_battle() -> void:
 	battle.set("profundidad_campo", PROFUNDIDAD)
 
 	_agregar_entorno(battle)
-	_agregar_suelo(battle)
-	_agregar_base(battle, Vector3(1.0, 0, PROFUNDIDAD * 0.5), Color("4a7fd4"), "BaseAliada")
-	_agregar_base(battle, Vector3(ANCHO - 1.0, 0, PROFUNDIDAD * 0.5), Color("c4553f"), "BaseEnemiga")
+	_agregar_mundo(battle)
 
 	var unidades := Node3D.new()
 	unidades.name = "Unidades"
@@ -399,67 +397,235 @@ func _crear_battle() -> void:
 	_guardar(battle, "res://scenes/3d/battle3d.tscn")
 
 
+## Atardecer: el sol bajo y tibio viene de atras y de la izquierda, del lado del
+## resplandor del cielo, y tira sombras largas hacia la derecha y hacia la
+## camara. Los sprites y las capas del fondo no tienen luz propia (traen la
+## suya pintada): lo que el sol cambia es el suelo y las sombras.
 func _agregar_entorno(battle: Node3D) -> void:
 	var entorno := WorldEnvironment.new()
 	entorno.name = "Entorno"
 	var env := Environment.new()
+	# Detras de todo esta el quad del cielo. El color de fondo es el del
+	# resplandor de abajo, por si alguna rendija lo deja asomar en el horizonte.
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("161a27")
+	env.background_color = Color("e8a05a")
+	# Con el sol de frente a la camara casi todo lo que se ve del suelo esta a
+	# contraluz: el ambiente es el cielo lila que lo rellena.
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color("5a6180")
-	env.ambient_light_energy = 0.9
-	# Niebla suave: da sensacion de distancia y despega el fondo del frente.
+	env.ambient_light_color = Color("4a3a62")
+	env.ambient_light_energy = 1.2
+	# Los sprites y las capas no tienen luz: el tonemap es lo unico que les
+	# cambia el color. Con white en 1 (el de fabrica), el filmic aclara todos
+	# los medios (un 0.5 lineal sale 0.69) y los soldados se veian lavados; en
+	# 3 los medios quedan casi como los pinto el arte y solo se aplastan las
+	# luces altas.
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	env.tonemap_white = 3.0
+	env.tonemap_exposure = 1.05
+	# Glow solo para lo que brilla de verdad (destellos y efectos): con el
+	# umbral en 0.9 casi nada del arte llega. El bloom se suma parejo a toda
+	# la pantalla y era lo que lavaba los sprites: queda apenas.
+	env.glow_enabled = true
+	env.glow_intensity = 0.6
+	env.glow_bloom = 0.05
+	env.glow_hdr_threshold = 0.9
+	# Niebla por distancia a la camara, del color del monte: apenas toca las
+	# esquinas del fondo del campo (un cuarto), oscurece el pasto de atras y lo
+	# lleva del todo al color de los arboles donde el suelo se mete bajo su
+	# capa, asi no queda la raya recta (con 0.85 quedaba un escalon). Las capas
+	# del fondo no la ven: la perspectiva aerea ya la traen pintada.
 	env.fog_enabled = true
-	env.fog_light_color = Color("161a27")
-	env.fog_density = 0.03
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color("1c1730")
+	env.fog_depth_begin = 16.0
+	env.fog_depth_end = 26.0
+	env.fog_density = 1.0
 	entorno.environment = env
 	battle.add_child(entorno)
 	entorno.owner = battle
 
 	var luz := DirectionalLight3D.new()
 	luz.name = "Sol"
-	luz.rotation_degrees = Vector3(-52, -130, 0)
-	luz.light_energy = 1.1
-	luz.light_color = Color("fff2d8")
+	# A 30 grados sobre el horizonte, desde atras a la izquierda: un soldado de
+	# 2 m tira una sombra de 3.5 m, 3 hacia +X y 1.7 hacia la camara. Mas
+	# hacia la camara la de la fila de adelante se saldria por abajo.
+	luz.rotation_degrees = Vector3(-30, -120, 0)
+	luz.light_energy = 0.8
+	luz.light_color = Color("ffcf9a")
 	luz.shadow_enabled = true
+	# Negra del todo, la sombra se tragaba las piernas oscuras de los sprites.
+	luz.shadow_opacity = 0.8
+	# El campo entero queda a menos de 25 m de la camara: con el alcance por
+	# defecto (100 m) la resolucion de la sombra se reparte en lo que no se ve.
+	luz.directional_shadow_max_distance = 40.0
 	battle.add_child(luz)
 	luz.owner = battle
 
 
-func _agregar_suelo(battle: Node3D) -> void:
+# --- Mundo --------------------------------------------------------------------
+
+const DIR_FONDOS := "res://assets/fondos"
+
+
+## El escenario: %Mundo con las capas del fondo, el suelo, el camino y las
+## murallas. Aca se arma cada nodo con su textura y su material; donde va y
+## cuanto mide cada uno lo decide Mundo.configurar(), que se llama al final
+## con el campo de la escena para que quede armado tal como lo va a ver un
+## encuentro de esas medidas.
+func _agregar_mundo(battle: Node3D) -> void:
+	var mundo := Mundo.new()
+	mundo.name = "Mundo"
+	battle.add_child(mundo)
+	mundo.owner = battle
+	mundo.unique_name_in_owner = true
+
+	for nombre: StringName in Mundo.CAPAS:
+		_agregar_capa(mundo, nombre, Mundo.CAPAS[nombre])
+	_agregar_suelo(mundo)
+	_agregar_camino(mundo)
+	_agregar_muro(mundo, "MuroAliado")
+	_agregar_muro(mundo, "MuroEnemigo")
+	_agregar_porton(mundo)
+
+	mundo.configurar(battle.get("ancho_campo"), battle.get("profundidad_campo"),
+		battle.get("base_aliada_x"), battle.get("base_enemiga_x"))
+
+
+## Una capa del fondo: un quad con el nodo en el borde de abajo, paralelo al
+## plano de la camara, que repite la textura en X. Mide Mundo.ANCHO_CAPA, o
+## una sola vuelta de la textura si la capa es "una_vuelta"; con "filas" solo
+## muestra esas filas de abajo de la textura.
+func _agregar_capa(mundo: Mundo, nombre: StringName, datos: Dictionary) -> void:
+	var textura := _textura_fondo(String(datos["textura"]))
+	var repeticion := float(datos["repeticion"])
+	var quad := QuadMesh.new()
+	var ancho := repeticion if datos.get("una_vuelta", false) else Mundo.ANCHO_CAPA
+	quad.size = Vector2(ancho, float(datos["alto"]))
+	quad.center_offset = Vector3(0, quad.size.y * 0.5, 0)
+
+	var material := _material_recorte(textura)
+	# La perspectiva aerea ya esta pintada: con niebla, las montanas quedarian
+	# tres cuartos del color del monte.
+	material.disable_fog = true
+	material.uv1_scale = Vector3(ancho / repeticion, 1, 1)
+	if datos.has("filas"):
+		var parte := float(datos["filas"]) / textura.get_height()
+		material.uv1_scale.y = parte
+		material.uv1_offset.y = 1.0 - parte
+	# configurar() le corre el uv1_offset.x en cada encuentro.
+	material.resource_local_to_scene = true
+	_agregar_parado(mundo, nombre, quad, material)
+
+
+func _agregar_suelo(mundo: Mundo) -> void:
 	var suelo := MeshInstance3D.new()
 	suelo.name = "Suelo"
 	var plano := PlaneMesh.new()
-	plano.size = Vector2(ANCHO * 2.2, PROFUNDIDAD * 3.0)
+	plano.resource_local_to_scene = true
 	suelo.mesh = plano
-	suelo.position = Vector3(ANCHO * 0.5, 0, PROFUNDIDAD * 0.5)
+	# Recibe sombras pero no tira: debajo no hay nada, y con el sol rasante un
+	# plano en el mapa de sombras solo agrega acne.
+	suelo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	suelo.material_override = _material_piso(_textura_fondo("suelo"))
+	mundo.add_child(suelo)
+	suelo.owner = mundo.owner
 
+
+## El camino es un plano apenas encima del suelo, con la misma luz y las mismas
+## sombras. Recorte y no mezcla: asi se dibuja con lo opaco, sin ordenarse
+## contra los sprites.
+func _agregar_camino(mundo: Mundo) -> void:
+	var camino := MeshInstance3D.new()
+	camino.name = "Camino"
+	var plano := PlaneMesh.new()
+	plano.resource_local_to_scene = true
+	camino.mesh = plano
+	camino.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var material := _material_piso(_textura_fondo("camino"))
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	camino.material_override = material
+	mundo.add_child(camino)
+	camino.owner = mundo.owner
+
+
+## Piso mate, a la luz del sol. Con el especular de fabrica (0.5), mirando
+## hacia el sol el pasto del fondo brillaba como mojado y aclaraba justo la
+## union con los arboles.
+func _material_piso(textura: Texture2D) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
-	var textura: Texture2D = load(RUTA_GRILLA)
 	material.albedo_texture = textura
 	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-	# Una repeticion por metro: cada celda del piso mide 1 m.
-	material.uv1_scale = Vector3(plano.size.x, plano.size.y, 1.0)
 	material.roughness = 1.0
-	suelo.material_override = material
-	battle.add_child(suelo)
-	suelo.owner = battle
+	material.metallic = 0.0
+	material.metallic_specular = 0.25
+	# configurar() le cambia la escala de la textura en cada encuentro.
+	material.resource_local_to_scene = true
+	return material
 
 
-func _agregar_base(battle: Node3D, pos: Vector3, color: Color, nombre: String) -> void:
-	var base := MeshInstance3D.new()
-	base.name = nombre
-	var caja := BoxMesh.new()
-	caja.size = Vector3(1.6, 4.0, 5.0)
-	base.mesh = caja
-	base.position = pos + Vector3(0, 2.0, 0)
+## Las murallas y el porton miran a la camara con el sol atras: la cara que se
+## ve esta a contraluz. Con los colores tal cual eran lo mas claro de la
+## pantalla y le competian a los soldados; asi quedan del tono del castillo
+## lejano, sin perder los sillares ni el arco.
+const CONTRALUZ := Color(0.62, 0.6, 0.72)
 
+
+## Una muralla: un solo quad que repite muro.png, estirado por configurar().
+func _agregar_muro(mundo: Mundo, nombre: String) -> void:
+	var textura := _textura_fondo("muro")
+	var quad := _quad_a_escala(textura)
+	quad.resource_local_to_scene = true
+	var material := _material_recorte(textura)
+	material.albedo_color = CONTRALUZ
+	material.resource_local_to_scene = true
+	_agregar_parado(mundo, nombre, quad, material)
+
+
+func _agregar_porton(mundo: Mundo) -> void:
+	var textura := _textura_fondo("porton")
+	var material := _material_recorte(textura)
+	material.albedo_color = CONTRALUZ
+	# Un solo porton: no se repite.
+	material.texture_repeat = false
+	_agregar_parado(mundo, "Porton", _quad_a_escala(textura), material)
+
+
+## Quad del tamano de la textura a la escala de los sprites, con el nodo en el
+## borde de abajo.
+func _quad_a_escala(textura: Texture2D) -> QuadMesh:
+	var quad := QuadMesh.new()
+	quad.size = Vector2(textura.get_width(), textura.get_height()) / Mundo.TEXELES_POR_METRO
+	quad.center_offset = Vector3(0, quad.size.y * 0.5, 0)
+	return quad
+
+
+## Sin luz (los colores ya son los del atardecer), recorte duro y nearest: lo
+## mismo que los sprites.
+func _material_recorte(textura: Texture2D) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = 0.9
-	base.material_override = material
-	battle.add_child(base)
-	base.owner = battle
+	material.albedo_texture = textura
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	return material
+
+
+## Parado como los fondos: rotado -15 grados en X, paralelo al plano de la
+## camara, para que no se vea torcido. Sin sombra: el sol viene de atras y la
+## silueta tiraria una franja de sombra sobre el campo.
+func _agregar_parado(mundo: Mundo, nombre: String, quad: QuadMesh, material: Material) -> void:
+	var nodo := MeshInstance3D.new()
+	nodo.name = nombre
+	nodo.mesh = quad
+	nodo.material_override = material
+	nodo.rotation_degrees = Vector3(-15, 0, 0)
+	nodo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mundo.add_child(nodo)
+	nodo.owner = mundo.owner
+
+
+func _textura_fondo(nombre: String) -> Texture2D:
+	return load("%s/%s.png" % [DIR_FONDOS, nombre])
 
 
 func _guardar(nodo: Node, ruta: String) -> void:

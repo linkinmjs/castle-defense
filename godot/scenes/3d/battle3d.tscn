@@ -1,105 +1,301 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/3d/battle3d.gd" id="1_g13fl"]
-[ext_resource type="Texture2D" path="res://assets/texturas/grilla.png" id="2_073nq"]
-[ext_resource type="PackedScene" path="res://scenes/3d/healer3d.tscn" id="3_l7i6f"]
-[ext_resource type="Script" path="res://scripts/3d/healer3d.gd" id="4_b02fv"]
-[ext_resource type="Script" path="res://scripts/3d/camara_batalla.gd" id="5_ur1wm"]
-[ext_resource type="Script" path="res://scripts/3d/overlay_unidades.gd" id="6_n2h16"]
-[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="7_d38fa"]
-[ext_resource type="Script" path="res://scripts/hud.gd" id="8_q8jvo"]
-[ext_resource type="PackedScene" path="res://scenes/ui/menu_pausa.tscn" id="9_b1sul"]
-[ext_resource type="Script" path="res://scripts/ui/menu_pausa.gd" id="10_shpvq"]
+[ext_resource type="Script" path="res://scripts/3d/battle3d.gd" id="1_b1sul"]
+[ext_resource type="Script" path="res://scripts/3d/mundo.gd" id="2_shpvq"]
+[ext_resource type="Texture2D" path="res://assets/fondos/cielo.png" id="3_ipdr2"]
+[ext_resource type="Texture2D" path="res://assets/fondos/montanas.png" id="4_ln2o5"]
+[ext_resource type="Texture2D" path="res://assets/fondos/castillo.png" id="5_loeg0"]
+[ext_resource type="Texture2D" path="res://assets/fondos/arboles.png" id="6_vl7ca"]
+[ext_resource type="Texture2D" path="res://assets/fondos/suelo.png" id="7_ej82q"]
+[ext_resource type="Texture2D" path="res://assets/fondos/camino.png" id="8_pejnj"]
+[ext_resource type="Texture2D" path="res://assets/fondos/muro.png" id="9_qwkrd"]
+[ext_resource type="Texture2D" path="res://assets/fondos/porton.png" id="10_kg0a6"]
+[ext_resource type="PackedScene" path="res://scenes/3d/healer3d.tscn" id="11_anmhl"]
+[ext_resource type="Script" path="res://scripts/3d/healer3d.gd" id="12_c2lvq"]
+[ext_resource type="Script" path="res://scripts/3d/camara_batalla.gd" id="13_wgud4"]
+[ext_resource type="Script" path="res://scripts/3d/overlay_unidades.gd" id="14_ii3dg"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="15_e8qe5"]
+[ext_resource type="Script" path="res://scripts/hud.gd" id="16_kdi5a"]
+[ext_resource type="PackedScene" path="res://scenes/ui/menu_pausa.tscn" id="17_8j5y0"]
+[ext_resource type="Script" path="res://scripts/ui/menu_pausa.gd" id="18_hm8sp"]
 
-[sub_resource type="Environment" id="Environment_ipdr2"]
+[sub_resource type="Environment" id="Environment_t2jm4"]
 background_mode = 1
-background_color = Color(0.08627451, 0.101960786, 0.15294118, 1)
+background_color = Color(0.9098039, 0.627451, 0.3529412, 1)
 ambient_light_source = 2
-ambient_light_color = Color(0.3529412, 0.38039216, 0.5019608, 1)
-ambient_light_energy = 0.9
+ambient_light_color = Color(0.2901961, 0.22745098, 0.38431373, 1)
+ambient_light_energy = 1.2
+tonemap_mode = 2
+tonemap_exposure = 1.05
+tonemap_white = 3.0
+glow_enabled = true
+glow_intensity = 0.6
+glow_bloom = 0.05
+glow_hdr_threshold = 0.9
 fog_enabled = true
-fog_light_color = Color(0.08627451, 0.101960786, 0.15294118, 1)
-fog_density = 0.03
+fog_mode = 1
+fog_light_color = Color(0.10980392, 0.09019608, 0.1882353, 1)
+fog_density = 1.0
+fog_depth_begin = 16.0
+fog_depth_end = 26.0
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ln2o5"]
-albedo_texture = ExtResource("2_073nq")
-uv1_scale = Vector3(66, 30, 1)
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nrfj7"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+disable_fog = true
+albedo_texture = ExtResource("3_ipdr2")
 texture_filter = 0
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_loeg0"]
-size = Vector2(66, 30)
+[sub_resource type="QuadMesh" id="QuadMesh_32hqh"]
+size = Vector2(240, 15)
+center_offset = Vector3(0, 7.5, 0)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vl7ca"]
-albedo_color = Color(0.2901961, 0.49803922, 0.83137256, 1)
-roughness = 0.9
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cf0t1"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+disable_fog = true
+albedo_texture = ExtResource("4_ln2o5")
+uv1_scale = Vector3(2.4033647, 1, 1)
+uv1_offset = Vector3(0.34838775, 0, 0)
+texture_filter = 0
 
-[sub_resource type="BoxMesh" id="BoxMesh_ej82q"]
-size = Vector3(1.6, 4, 5)
+[sub_resource type="QuadMesh" id="QuadMesh_fvlep"]
+size = Vector2(240, 24.96)
+center_offset = Vector3(0, 12.48, 0)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pejnj"]
-albedo_color = Color(0.76862746, 0.33333334, 0.24705882, 1)
-roughness = 0.9
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_efoep"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+disable_fog = true
+albedo_texture = ExtResource("5_loeg0")
+uv1_scale = Vector3(3.440367, 0.1171875, 1)
+uv1_offset = Vector3(0.6794725, 0.8828125, 0)
+texture_filter = 0
 
-[sub_resource type="BoxMesh" id="BoxMesh_qwkrd"]
-size = Vector3(1.6, 4, 5)
+[sub_resource type="QuadMesh" id="QuadMesh_88mb0"]
+size = Vector2(240, 2.04375)
+center_offset = Vector3(0, 1.021875, 0)
 
-[node name="Battle3D" type="Node3D" unique_id=694921374]
-script = ExtResource("1_g13fl")
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p05yj"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+disable_fog = true
+albedo_texture = ExtResource("5_loeg0")
+uv1_offset = Vector3(1, 0, 0)
+texture_filter = 0
 
-[node name="Entorno" type="WorldEnvironment" parent="." unique_id=1473293781]
-environment = SubResource("Environment_ipdr2")
+[sub_resource type="QuadMesh" id="QuadMesh_lba2e"]
+size = Vector2(69.76, 17.44)
+center_offset = Vector3(0, 8.72, 0)
 
-[node name="Sol" type="DirectionalLight3D" parent="." unique_id=168220737]
-transform = Transform3D(-0.64278764, 0.6036512, -0.47162408, 0, 0.6156615, 0.7880107, 0.76604444, 0.50652355, -0.39573961, 0, 0, 0)
-light_color = Color(1, 0.9490196, 0.84705883, 1)
-light_energy = 1.1
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rgx8l"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+disable_fog = true
+albedo_texture = ExtResource("6_vl7ca")
+uv1_scale = Vector3(4.587156, 1, 1)
+uv1_offset = Vector3(0.20642202, 0, 0)
+texture_filter = 0
+
+[sub_resource type="QuadMesh" id="QuadMesh_tnx28"]
+size = Vector2(240, 9.81)
+center_offset = Vector3(0, 4.905, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_812gk"]
+resource_local_to_scene = true
+albedo_texture = ExtResource("7_ej82q")
+metallic_specular = 0.25
+uv1_scale = Vector3(18.59375, 6.90625, 1)
+texture_filter = 0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_8nvcq"]
+resource_local_to_scene = true
+size = Vector2(70, 26)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3vrx7"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+albedo_texture = ExtResource("8_pejnj")
+metallic_specular = 0.25
+uv1_scale = Vector3(18.59375, 1, 1)
+texture_filter = 0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_t8pxa"]
+resource_local_to_scene = true
+size = Vector2(70, 1.882353)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y86ce"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+albedo_color = Color(0.62, 0.6, 0.72, 1)
+albedo_texture = ExtResource("9_qwkrd")
+uv1_scale = Vector3(7.2291665, 1, 1)
+uv1_offset = Vector3(0.7083333, 0, 0)
+texture_filter = 0
+
+[sub_resource type="QuadMesh" id="QuadMesh_uqqqb"]
+resource_local_to_scene = true
+size = Vector2(20.411764, 5.647059)
+center_offset = Vector3(0, 2.8235295, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ps8j"]
+resource_local_to_scene = true
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+albedo_color = Color(0.62, 0.6, 0.72, 1)
+albedo_texture = ExtResource("9_qwkrd")
+uv1_scale = Vector3(6.310417, 1, 1)
+texture_filter = 0
+
+[sub_resource type="QuadMesh" id="QuadMesh_q4p2d"]
+resource_local_to_scene = true
+size = Vector2(17.817648, 5.647059)
+center_offset = Vector3(0, 2.8235295, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f5n3w"]
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+shading_mode = 0
+albedo_color = Color(0.62, 0.6, 0.72, 1)
+albedo_texture = ExtResource("10_kg0a6")
+texture_filter = 0
+texture_repeat = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_fe5mu"]
+size = Vector2(3.764706, 5.647059)
+center_offset = Vector3(0, 2.8235295, 0)
+
+[node name="Battle3D" type="Node3D" unique_id=332000537]
+script = ExtResource("1_b1sul")
+
+[node name="Entorno" type="WorldEnvironment" parent="." unique_id=499717313]
+environment = SubResource("Environment_t2jm4")
+
+[node name="Sol" type="DirectionalLight3D" parent="." unique_id=79412008]
+transform = Transform3D(-0.50000006, 0.4330127, -0.75, 0, 0.8660254, 0.5, 0.8660254, 0.25000003, -0.43301275, 0, 0, 0)
+light_color = Color(1, 0.8117647, 0.6039216, 1)
+light_energy = 0.8
 shadow_enabled = true
+shadow_opacity = 0.8
+directional_shadow_max_distance = 40.0
 
-[node name="Suelo" type="MeshInstance3D" parent="." unique_id=558908238]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 5)
-material_override = SubResource("StandardMaterial3D_ln2o5")
-mesh = SubResource("PlaneMesh_loeg0")
+[node name="Mundo" type="Node3D" parent="." unique_id=1186187837]
+unique_name_in_owner = true
+script = ExtResource("2_shpvq")
 
-[node name="BaseAliada" type="MeshInstance3D" parent="." unique_id=1757450176]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2, 5)
-material_override = SubResource("StandardMaterial3D_vl7ca")
-mesh = SubResource("BoxMesh_ej82q")
+[node name="Cielo" type="MeshInstance3D" parent="Mundo" unique_id=1069850926]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 15, -1.5, -60)
+material_override = SubResource("StandardMaterial3D_nrfj7")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_32hqh")
 
-[node name="BaseEnemiga" type="MeshInstance3D" parent="." unique_id=2070356454]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29, 2, 5)
-material_override = SubResource("StandardMaterial3D_pejnj")
-mesh = SubResource("BoxMesh_qwkrd")
+[node name="Montanas" type="MeshInstance3D" parent="Mundo" unique_id=653096378]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 15, -2.5, -30)
+material_override = SubResource("StandardMaterial3D_cf0t1")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_fvlep")
 
-[node name="Unidades" type="Node3D" parent="." unique_id=1392785220]
+[node name="Loma" type="MeshInstance3D" parent="Mundo" unique_id=114913153]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 15, -1.5, -16.01)
+material_override = SubResource("StandardMaterial3D_efoep")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_88mb0")
+
+[node name="Castillo" type="MeshInstance3D" parent="Mundo" unique_id=2133239099]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 22, -1.5, -16)
+material_override = SubResource("StandardMaterial3D_p05yj")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_lba2e")
+
+[node name="Arboles" type="MeshInstance3D" parent="Mundo" unique_id=534289071]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 15, -0.5, -8)
+material_override = SubResource("StandardMaterial3D_rgx8l")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_tnx28")
+
+[node name="Suelo" type="MeshInstance3D" parent="Mundo" unique_id=588004308]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0, 3)
+material_override = SubResource("StandardMaterial3D_812gk")
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_8nvcq")
+
+[node name="Camino" type="MeshInstance3D" parent="Mundo" unique_id=240473399]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 0.005, 5)
+material_override = SubResource("StandardMaterial3D_3vrx7")
+cast_shadow = 0
+mesh = SubResource("PlaneMesh_t8pxa")
+
+[node name="MuroAliado" type="MeshInstance3D" parent="Mundo" unique_id=22715075]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, -9.794118, 0, -0.35)
+material_override = SubResource("StandardMaterial3D_y86ce")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_uqqqb")
+
+[node name="MuroEnemigo" type="MeshInstance3D" parent="Mundo" unique_id=86841083]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 41.091175, 0, -0.35)
+material_override = SubResource("StandardMaterial3D_6ps8j")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_q4p2d")
+
+[node name="Porton" type="MeshInstance3D" parent="Mundo" unique_id=65230357]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 30.5, 0, -0.3)
+material_override = SubResource("StandardMaterial3D_f5n3w")
+cast_shadow = 0
+mesh = SubResource("QuadMesh_fe5mu")
+
+[node name="Unidades" type="Node3D" parent="." unique_id=1388530578]
 unique_name_in_owner = true
 
-[node name="Healer" type="CharacterBody3D" parent="Unidades" unique_id=746272802 instance=ExtResource("3_l7i6f")]
+[node name="Healer" type="CharacterBody3D" parent="Unidades" unique_id=983527709 instance=ExtResource("11_anmhl")]
 unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 0, 5)
-script = ExtResource("4_b02fv")
+script = ExtResource("12_c2lvq")
 tinte_jugador = Color(1, 0.96, 0.85, 1)
 
-[node name="Camara" type="Camera3D" parent="." unique_id=1491335329]
+[node name="Camara" type="Camera3D" parent="." unique_id=1282674439]
 unique_name_in_owner = true
 fov = 42.0
-script = ExtResource("5_ur1wm")
+script = ExtResource("13_wgud4")
 
-[node name="CapaUnidades" type="CanvasLayer" parent="." unique_id=131559288]
+[node name="CapaUnidades" type="CanvasLayer" parent="." unique_id=1217058202]
 
-[node name="Overlay" type="Control" parent="CapaUnidades" unique_id=790685261]
+[node name="Overlay" type="Control" parent="CapaUnidades" unique_id=1902095044]
 unique_name_in_owner = true
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
-script = ExtResource("6_n2h16")
+script = ExtResource("14_ii3dg")
 
-[node name="HUD" type="CanvasLayer" parent="." unique_id=1060974127 instance=ExtResource("7_d38fa")]
+[node name="HUD" type="CanvasLayer" parent="." unique_id=1060974127 instance=ExtResource("15_e8qe5")]
 unique_name_in_owner = true
-script = ExtResource("8_q8jvo")
+script = ExtResource("16_kdi5a")
 
-[node name="MenuPausa" type="CanvasLayer" parent="." unique_id=803733551 instance=ExtResource("9_b1sul")]
+[node name="MenuPausa" type="CanvasLayer" parent="." unique_id=803733551 instance=ExtResource("17_8j5y0")]
 unique_name_in_owner = true
 layer = 10
-script = ExtResource("10_shpvq")
+script = ExtResource("18_hm8sp")

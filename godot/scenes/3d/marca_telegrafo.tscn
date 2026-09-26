@@ -23,16 +23,16 @@ top_radius = 1.0
 bottom_radius = 1.0
 height = 0.04
 
-[node name="MarcaTelegrafo" type="Node3D" unique_id=732351969]
+[node name="MarcaTelegrafo" type="Node3D" unique_id=1699075072]
 script = ExtResource("1_cb7jy")
 
-[node name="Area" type="MeshInstance3D" parent="." unique_id=2028589464]
+[node name="Area" type="MeshInstance3D" parent="." unique_id=1858352922]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0)
 material_override = SubResource("StandardMaterial3D_6kl60")
 cast_shadow = 0
 mesh = SubResource("CylinderMesh_xynrp")
 
-[node name="Carga" type="MeshInstance3D" parent="." unique_id=982980495]
+[node name="Carga" type="MeshInstance3D" parent="." unique_id=2018484868]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
 material_override = SubResource("StandardMaterial3D_lnpcr")
 cast_shadow = 0
