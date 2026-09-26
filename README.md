@@ -59,6 +59,7 @@ cambiar algo, se cambia en el generador.
 |---|---|
 | `extraer_ui.gd` | `assets/ui/` desde los packs de `assets/_raw/`, escalado x2 |
 | `gen_ui.gd` | `resources/ui/tema.tres` y las escenas de menu |
+| `gen_movimientos.gd` | `resources/movimientos/*.tres`: los movimientos del healer y sus combos |
 | `gen_hud.gd` | `scenes/ui/hud.tscn`, el HUD de la batalla (usa el tema) |
 | `gen_scenes3d.gd` | escenas 3D (la batalla instancia el HUD ya generado), habilidades y tipos de soldado |
 | `gen_encuentros.gd` | los encuentros y la campania |
@@ -72,6 +73,7 @@ por un script no se puede cargar hasta que Godot lo importe:
 godot --headless --path godot --script res://tools/extraer_ui.gd
 godot --headless --path godot --import
 godot --headless --path godot --script res://tools/gen_ui.gd
+godot --headless --path godot --script res://tools/gen_movimientos.gd
 godot --headless --path godot --script res://tools/gen_hud.gd
 godot --headless --path godot --script res://tools/gen_scenes3d.gd
 ```

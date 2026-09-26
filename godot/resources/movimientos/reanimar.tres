@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MovimientoReanimar" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/habilidades/reanimar.png" id="1_vpas6"]
+[ext_resource type="Script" path="res://scripts/movimientos/mov_reanimar.gd" id="2_qh22g"]
+
+[resource]
+script = ExtResource("2_qh22g")
+nombre = "Reanimar"
+entrada = &"pesada"
+requiere_derribado = true
+costo = 40.0
+enfriamiento = 4.0
+recuperacion = 0.6
+color = Color(0.9098039, 0.5294118, 0.22745098, 1)
+icono = ExtResource("1_vpas6")
+descripcion = "Pesada con un caido adelante: lo levantas, venga de donde venga el combo."

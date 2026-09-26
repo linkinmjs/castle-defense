@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MovimientoBendicion" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/habilidades/bendicion.png" id="1_dg24x"]
+[ext_resource type="Script" path="res://scripts/movimientos/mov_bendicion.gd" id="2_m40ih"]
+
+[resource]
+script = ExtResource("2_m40ih")
+nombre = "Bendicion"
+entrada = &"pesada"
+secuencia_previa = Array[StringName]([&"ligera"])
+costo = 30.0
+enfriamiento = 8.0
+recuperacion = 0.6
+efecto = "shield"
+color = Color(0.43529412, 0.827451, 0.78039217, 1)
+icono = ExtResource("1_dg24x")
+descripcion = "Pesada despues de una ligera: bendecis al que tocaste, 35% menos de dano y mas ritmo por 8 s."

@@ -48,13 +48,24 @@ const HOJAS := {
 ## Que poción le toca a cada habilidad: la carpeta es el color del liquido y el
 ## numero es la silueta. Las 11 carpetas son el mismo set recoloreado, asi que
 ## el color se elige por significado y la forma se mantiene coherente.
+##
+## Los movimientos (resources/movimientos) buscan su icono por su propio nombre
+## de archivo. Los que heredan el gesto de una habilidad heredan su pocion:
+## Toque es Curar y Vendaje es Estabilizar. Oleada y Bendicion mantienen la
+## silueta pero cambian de color, porque el turquesa ahora es el de Bendicion y
+## una cura en area no puede compartirlo: pasan a burbujas doradas (las curas
+## que alcanzan a varios) y a estrella turquesa.
 const ICONOS := {
 	"curar": [1, 1],          # frasco redondo rojo: la curacion de todos los dias
 	"estabilizar": [6, 52],   # frasco gris con una banda cruzada, como un vendaje
-	"bendicion": [11, 30],    # estrella crema: luz, proteccion
-	"oleada": [2, 40],        # burbujas turquesa: alcanza a varios
+	"bendicion": [2, 30],     # estrella turquesa: luz, proteccion
+	"oleada": [7, 40],        # burbujas doradas: alcanza a varios
 	"impulso": [7, 78],       # llama naranja en diagonal: velocidad
 	"reanimar": [10, 81],     # rojo oscuro: levantar a alguien del suelo
+	"toque": [1, 1],          # el frasco de Curar: la misma cura de todos los dias
+	"vendaje": [6, 52],       # el de Estabilizar: la banda que ahora tambien cura
+	"plegaria": [11, 28],     # aro crema, como una aureola: la cura que se reza
+	"caida": [3, 39],         # flecha verde hacia abajo: la cura que cae del aire
 }
 
 

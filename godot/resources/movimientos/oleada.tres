@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MovimientoArea" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/habilidades/oleada.png" id="1_pjgxt"]
+[ext_resource type="Script" path="res://scripts/movimientos/mov_area.gd" id="2_4u0d2"]
+
+[resource]
+script = ExtResource("2_4u0d2")
+nombre = "Oleada"
+entrada = &"pesada"
+secuencia_previa = Array[StringName]([&"ligera", &"ligera"])
+termina_combo = true
+costo = 35.0
+enfriamiento = 6.0
+recuperacion = 0.6
+color = Color(0.8784314, 0.72156864, 0.2901961, 1)
+icono = ExtResource("1_pjgxt")
+descripcion = "Remate de ligera, ligera, pesada: curas 30 a todos los que tenes a 4 m."

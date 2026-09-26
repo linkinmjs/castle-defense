@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MovimientoCurar" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/ui/habilidades/vendaje.png" id="1_gdy5m"]
+[ext_resource type="Script" path="res://scripts/movimientos/mov_curar.gd" id="2_gncam"]
+
+[resource]
+script = ExtResource("2_gncam")
+corta_sangrado = true
+preferir_ultimo_objetivo = true
+nombre = "Vendaje"
+secuencia_previa = Array[StringName]([&"ligera"])
+costo = 10.0
+enfriamiento = 0.35
+color = Color(0.37254903, 0.7490196, 0.37254903, 1)
+icono = ExtResource("1_gdy5m")
+descripcion = "Segunda ligera sobre el mismo: le curas 18 y le cortas el sangrado."
