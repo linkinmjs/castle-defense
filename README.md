@@ -76,6 +76,7 @@ cambiar algo, se cambia en el generador.
 | Script | Que produce |
 |---|---|
 | `extraer_ui.gd` | `assets/ui/` desde los packs de `assets/_raw/`, escalado x2 |
+| `gen_fondos.gd` | `assets/fondos/`: cielo, siluetas parallax, suelo, camino, muro y porton, dibujados por codigo |
 | `gen_ui.gd` | `resources/ui/tema.tres` y las escenas de menu |
 | `gen_movimientos.gd` | `resources/movimientos/*.tres`: los movimientos del healer y sus combos |
 | `gen_hud.gd` | `scenes/ui/hud.tscn`, el HUD de la batalla (usa el tema) |
@@ -89,6 +90,7 @@ por un script no se puede cargar hasta que Godot lo importe:
 
 ```bash
 godot --headless --path godot --script res://tools/extraer_ui.gd
+godot --headless --path godot --script res://tools/gen_fondos.gd
 godot --headless --path godot --import
 godot --headless --path godot --script res://tools/gen_ui.gd
 godot --headless --path godot --script res://tools/gen_movimientos.gd
