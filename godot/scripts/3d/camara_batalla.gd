@@ -24,6 +24,13 @@ extends Camera3D
 ## healer se recorta contra el rango de la X anterior, asi que queda justo en el
 ## borde o a un redondeo de distancia.
 const TOLERANCIA_BORDE := 0.05
+## Metros de Z que la batalla deja libres a cada lado del campo: la fila mas
+## cercana a la camara por la que puede andar un jugador esta a esa distancia
+## del borde.
+const MARGEN_PROFUNDIDAD := 1.5
+## Altura a la que se mide el ancho de pantalla de un jugador: el pecho, con el
+## margen_jugador cubriendo el resto del cuerpo.
+const ALTURA_PECHO := 1.0
 ## Frecuencias de la sacudida en X y en Y, en rad/s. Distintas y sin multiplo
 ## comun para que el dibujo no se repita; altas para que se lea como temblor y
 ## no como vaiven.
@@ -118,9 +125,10 @@ func limitar_x(x_max: float) -> void:
 ## Un paso de la camara. La llama la batalla desde su _process.
 func actualizar(delta: float) -> void:
 	var mitad := mitad_visible()
+	var mitad_jug := mitad_jugadores()
 	# El rango contra el que se recortaron los jugadores en su ultimo paso de
 	# fisica: el de la X de antes de mover la camara.
-	var rango := _rango(mitad)
+	var rango := _rango(mitad_jug)
 	var minimo := INF
 	var maximo := -INF
 	var empuja_derecha := false
@@ -149,7 +157,7 @@ func actualizar(delta: float) -> void:
 		var medio := (minimo + maximo) * 0.5
 		_x_objetivo = clampf(_x_objetivo, medio - zona_muerta, medio + zona_muerta)
 		_x_objetivo = _empujar(_x_objetivo, empuja_derecha, empuja_izquierda,
-				minimo, maximo, mitad, delta)
+				minimo, maximo, mitad_jug, delta)
 	_x_objetivo = _recortar(_x_objetivo, mitad)
 	_x_actual = lerpf(_x_actual, _x_objetivo, 1.0 - exp(-suavizado * delta))
 	_avanzar_efectos(delta)
@@ -181,7 +189,27 @@ func mitad_visible() -> float:
 ## Entre que X puede estar un jugador sin salir de cuadro, segun lo que se ve
 ## ahora. El healer se recorta contra esto despues de moverse.
 func rango_x_jugadores() -> Vector2:
-	return _rango(mitad_visible())
+	return _rango(mitad_jugadores())
+
+
+## Media anchura que entra en pantalla en la fila mas cercana a la camara por
+## la que puede andar un jugador. Mas cerca de la camara entra menos campo:
+## medida en el plano del medio, un healer en la fila delantera quedaba fuera
+## de cuadro contra el borde. La batalla deja MARGEN_PROFUNDIDAD de Z libre a
+## cada lado del campo, asi que esa es la fila delantera.
+func mitad_jugadores() -> float:
+	return mitad_visible_en(_profundidad - MARGEN_PROFUNDIDAD, ALTURA_PECHO)
+
+
+## Media anchura visible en el plano paralelo a la camara que pasa por un punto
+## del mundo a esa profundidad y altura (la X no importa). Es la distancia
+## perpendicular a la camara por la tangente del medio fov y el aspecto.
+func mitad_visible_en(z: float, y: float = 0.0) -> float:
+	var radianes := deg_to_rad(angulo)
+	var camara_y := altura_objetivo + sin(radianes) * distancia
+	var camara_z := _profundidad * 0.5 + cos(radianes) * distancia
+	var perpendicular := (camara_z - z) * cos(radianes) + (camara_y - y) * sin(radianes)
+	return tan(deg_to_rad(_fov_sin_efectos() * 0.5)) * maxf(perpendicular, 0.1) * _aspecto()
 
 
 ## La X de la camara tal como se ve: ya suavizada y sin sacudida.

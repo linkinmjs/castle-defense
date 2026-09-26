@@ -188,8 +188,11 @@ func _probar_sector() -> void:
 	_correr(4.0)
 	_igual("con limite en 20 el borde derecho visible queda en 20",
 		_cam.x_actual() + _cam.mitad_visible(), 20.0, 0.001)
-	_igual("y los jugadores se frenan a margen de el",
-		_cam.rango_x_jugadores().y, 20.0 - _cam.margen_jugador, 0.001)
+	# El rango de los jugadores se mide en la fila delantera, mas angosta que
+	# el plano del medio con el que se recorta la camara.
+	_igual("y los jugadores se frenan a margen de la fila delantera",
+		_cam.rango_x_jugadores().y,
+		20.0 - _cam.mitad_visible() + _cam.mitad_jugadores() - _cam.margen_jugador, 0.001)
 
 	# El tramo [0, 12] es mas angosto que la pantalla (unos 15 m): no hay X que
 	# no muestre algo de afuera, y la camara se centra en el.
@@ -220,8 +223,11 @@ func _probar_mitad_y_rango() -> void:
 	_igual("es tan(fov/2)*distancia*16/9", mitad,
 		tan(deg_to_rad(FOV * 0.5)) * 11.0 * 1280.0 / 720.0, 0.0001)
 	var rango := _cam.rango_x_jugadores()
-	_igual("rango_x_jugadores() mide 2*(mitad - 0.8)", rango.y - rango.x,
-		2.0 * (mitad - 0.8), 0.0001)
+	var mitad_jug := _cam.mitad_jugadores()
+	_ok("la fila delantera muestra menos campo que el medio (%.3f < %.3f)" % [mitad_jug, mitad],
+		mitad_jug < mitad and mitad_jug > 4.0)
+	_igual("rango_x_jugadores() mide 2*(mitad_jugadores - 0.8)", rango.y - rango.x,
+		2.0 * (mitad_jug - 0.8), 0.0001)
 	_igual("centrado en la X de la camara", (rango.x + rango.y) * 0.5, _cam.x_actual(), 0.0001)
 
 	# El rango sigue a la X suavizada, no a la que la camara quiere mirar.
@@ -284,24 +290,25 @@ func _probar_quien_cuenta() -> void:
 func _probar_empuje_borde() -> void:
 	print("--- empujar contra el borde de la pantalla ---")
 	# El de atras deja el punto medio dentro de la zona muerta: lo unico que
-	# puede mover la camara es el empuje.
-	var con := _empujar_un_segundo(15.0, 11.0, true, 3.0)
+	# puede mover la camara es el empuje. Queda a 2 m del centro para que el
+	# rango de la fila delantera (mas angosto) todavia deje lugar a 1.5 m de empuje.
+	var con := _empujar_un_segundo(15.0, 13.0, true, 3.0)
 	_ok("pegado al borde derecho con velocity.x = 3 la corre a la derecha (%.2f m)" % con,
 		con > 0.5)
 	_ok("sin pasar de empuje_borde (%.2f <= 1.5 m en 1 s)" % con, con <= 1.5 + 0.0001)
-	var quieto := _empujar_un_segundo(15.0, 11.0, true, 0.0)
+	var quieto := _empujar_un_segundo(15.0, 13.0, true, 0.0)
 	_igual("con velocity.x = 0 no la mueve", quieto, 0.0, 0.0001)
-	var hacia_adentro := _empujar_un_segundo(15.0, 11.0, true, -3.0)
+	var hacia_adentro := _empujar_un_segundo(15.0, 13.0, true, -3.0)
 	_ok("caminando hacia adentro tampoco empuja (%.2f m)" % hacia_adentro, hacia_adentro <= 0.0)
-	var sin_empuje := _empujar_un_segundo(15.0, 11.0, true, 3.0, 0.0)
+	var sin_empuje := _empujar_un_segundo(15.0, 13.0, true, 3.0, 0.0)
 	_igual("con empuje_borde en 0 no se mueve: era el empuje", sin_empuje, 0.0, 0.0001)
-	var izquierda := _empujar_un_segundo(15.0, 19.0, false, -3.0)
+	var izquierda := _empujar_un_segundo(15.0, 17.0, false, -3.0)
 	_ok("contra el borde izquierdo la corre a la izquierda (%.2f m)" % izquierda,
 		izquierda < -0.5)
 
 	# El de atras ya esta en su propio borde: correr la vista lo sacaria de
 	# cuadro, asi que el que empuja se queda esperando.
-	var hueco := _cam.mitad_visible() - _cam.margen_jugador
+	var hueco := _cam.mitad_jugadores() - _cam.margen_jugador
 	var trabado := _empujar_un_segundo(15.0, 15.0 - hueco, true, 3.0)
 	_igual("no saca de cuadro al que quedo atras", trabado, 0.0, 0.001)
 
