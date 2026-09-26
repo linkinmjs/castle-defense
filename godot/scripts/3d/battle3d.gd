@@ -533,7 +533,7 @@ func _desplegar_grupo(grupo: GrupoUnidades) -> void:
 		var unidad: Unidad3D = ESCENA_UNIDAD.instantiate()
 		unidad.configurar(grupo.bando, grupo.tipo)
 		unidad.sembrar(_rng.randi())
-		unidad.base_x = base_aliada_x if grupo.bando == Unidad3D.Bando.ALIADO \
+		unidad.base_x = _base_retirada_aliados() if grupo.bando == Unidad3D.Bando.ALIADO \
 			else base_enemiga_x
 		unidad.position = Vector3(
 			_rng.randf_range(grupo.x_min, grupo.x_max),
@@ -718,6 +718,11 @@ func _entrar_sector(i: int) -> void:
 			_desplegar_grupo(grupo)
 		for grupo in sector.refuerzos_aliados:
 			_desplegar_grupo(grupo)
+		# Con el sector entrado, la tropa que ya estaba se retira hasta la
+		# puerta anterior y no cruza todo el nivel hacia atras.
+		for nodo in get_tree().get_nodes_in_group("aliados"):
+			if nodo is Unidad3D:
+				(nodo as Unidad3D).base_x = _base_retirada_aliados()
 	# El sector que los prende arranca con el intervalo entero: el primero no
 	# puede salir apenas se cruza la puerta.
 	if _emergentes_activos() and not emergentes_antes:
@@ -731,6 +736,18 @@ func _entrar_sector(i: int) -> void:
 	_aplicar_limite_avance()
 	_acotar_healers()
 	sector_iniciado.emit(i, sector)
+
+
+## Hasta donde se retira un aliado herido. Sin sectores, hasta su base; con
+## sectores, hasta unos metros antes de la puerta que ya cruzo: un lancero que
+## cruzara los 90 m del nivel para curarse se perdia para la pelea.
+func _base_retirada_aliados() -> float:
+	if _indice_sector <= 0:
+		return base_aliada_x
+	var anterior := _sector_en(_indice_sector - 1)
+	if anterior == null:
+		return base_aliada_x
+	return maxf(base_aliada_x, anterior.x_fin - 3.0)
 
 
 ## El sector en curso quedo resuelto: el limite pasa al x_fin del siguiente, o

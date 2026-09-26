@@ -151,14 +151,14 @@ func _revisar_bruto_y_demonio() -> void:
 	_ok("sus sprites tienen el ataque", _bruto.frames != null
 		and _bruto.frames.has_animation(&"attack"))
 
-	_igual("vida del demonio", _demonio.vida_maxima, 900.0)
-	_igual("dano del demonio", _demonio.dano, 30.0)
+	_igual("vida del demonio", _demonio.vida_maxima, 700.0)
+	_igual("dano del demonio", _demonio.dano, 24.0)
 	_igual("cadencia del demonio", _demonio.cadencia, 3.0)
 	_igual("alcance del demonio", _demonio.alcance, 2.6)
 	_igual("velocidad del demonio", _demonio.velocidad, 0.8)
 	_igual("aviso del demonio", _demonio.telegrafiado, 1.4)
 	_ok("el demonio no barre: saltar no lo esquiva", not _demonio.barrido)
-	_igual("radio del golpe del demonio", _demonio.radio_golpe, 2.5)
+	_igual("radio del golpe del demonio", _demonio.radio_golpe, 1.8)
 	_ok("alterna con attack2", _demonio.anim_ataque_2 == "attack2")
 	_igual("que pega 1.5 veces", _demonio.factor_ataque_2, 1.5)
 	_ok("y es el jefe", _demonio.es_jefe)

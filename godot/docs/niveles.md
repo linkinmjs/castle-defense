@@ -184,13 +184,14 @@ refuerzo, con el demonio entrando al 60-75 % de la vida y con la oleada cada
 
 Salió al medir, y no se arregla con datos:
 
-- **El demonio decide N3.** Con 900 de vida, 30/45 de daño en 2.5 m cada 3 s
-  y alcance 2.6, cada golpe alcanza a 5 o 6 de una tropa amontonada: ~75 de
-  daño por segundo en área, contra ~20-37 que sostiene un healer y ~30 que la
-  tropa le hace a él. Más tropa empeora (más cuerpos en el área) y la escolta
-  delante lo empeora más (la tropa pelea con los zombis mientras él pega desde
-  la segunda fila). Para aflojarlo, en `demonio.tres`: `radio_golpe` 2.5 → ~1.6,
-  o daño ~20/30, o vida ~600; y volver a medir.
+- **El demonio decide N3.** Con los valores de arranque (900 de vida, 30/45 de
+  daño en 2.5 m cada 3 s, alcance 2.6) cada golpe alcanzaba a 5 o 6 de una
+  tropa amontonada: ~75 de daño por segundo en área, contra ~20-37 que sostiene
+  un healer y ~30 que la tropa le hace a él; el bot ganaba 1 de 4. Se aflojó en
+  `gen_scenes3d.gd` (`demonio.tres`): **700 de vida, 24/36 de daño y 1.8 m de
+  radio**. Queda pendiente volver a medirlo con el simulador; si sigue duro, el
+  siguiente paso es que el demonio entre al 70 % de vida o con una escolta
+  menor.
 - **La tropa en su tope pelea mal contra lo que llega de adelante.** Frenados
   en `x_fin − 2.6`, sólo 1 o 2 aliados alcanzan a los enemigos que se paran a
   su alcance; el resto no puede avanzar. Cada par de zombis tarda 10-15 s en

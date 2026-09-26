@@ -114,14 +114,14 @@ func _crear_tipos() -> void:
 	var demonio := TipoSoldado.new()
 	demonio.nombre = "Demonio"
 	demonio.frames = load("res://assets/sprites/demonio/demonio_frames.tres")
-	demonio.vida_maxima = 900.0
-	demonio.dano = 30.0
+	demonio.vida_maxima = 700.0
+	demonio.dano = 24.0
 	demonio.cadencia = 3.0
 	demonio.alcance = 2.6
 	demonio.velocidad = 0.8
 	demonio.telegrafiado = 1.4
 	demonio.barrido = false
-	demonio.radio_golpe = 2.5
+	demonio.radio_golpe = 1.8
 	demonio.anim_ataque_2 = "attack2"
 	demonio.factor_ataque_2 = 1.5
 	demonio.lado_frame = 96

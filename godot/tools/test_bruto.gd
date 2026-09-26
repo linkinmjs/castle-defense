@@ -401,7 +401,7 @@ func _demonio_esperar() -> void:
 		if caida["quien"] != primero:
 			continue
 		var anim: StringName = secuencias[0][indice]
-		var esperado := 30.0 * (1.5 if anim == &"attack2" else 1.0)
+		var esperado := 24.0 * (1.5 if anim == &"attack2" else 1.0)
 		_igual("golpe %d (%s) pega %d" % [indice + 1, anim, esperado],
 			vida_antes - float(caida["vida_objetivo"]), esperado)
 		vida_antes = float(caida["vida_objetivo"])
@@ -414,7 +414,7 @@ func _demonio_esperar() -> void:
 		var duracion := 0.4 if anuncio["anim"] == &"attack" else 8.0 / 11.0
 		_igual("%s estirado a 1.4 s" % anuncio["anim"], float(anuncio["escala"]),
 			duracion / 1.4, 0.001)
-	_igual("la marca del jefe abarca 2.5 m", float(_anuncios[0]["radio"]), 2.5)
+	_igual("la marca del jefe abarca 1.8 m", float(_anuncios[0]["radio"]), 1.8)
 	primero.recibir_dano(10.0)
 	_ok("al jefe tampoco lo interrumpe un golpe", primero._sprite.animation != &"hurt")
 	_limpiar()
