@@ -46,7 +46,9 @@ func _draw() -> void:
 
 
 func _dibujar_unidad(unidad: Node3D) -> void:
-	var cabeza: Vector3 = unidad.global_position + Vector3(0, 2.1, 0)
+	# Cada tipo dice a que altura va su barra: el oso es mas bajo y el jefe mucho
+	# mas alto que un soldado de 2 m.
+	var cabeza: Vector3 = unidad.punto_cabeza()
 	if _camara.is_position_behind(cabeza):
 		return
 
