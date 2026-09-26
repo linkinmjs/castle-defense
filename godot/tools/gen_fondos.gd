@@ -1,5 +1,5 @@
 extends SceneTree
-## Genera los fondos del campo de batalla y deja lista la fuente pixel de la UI.
+## Genera los fondos del campo de batalla.
 ##
 ## Todo es procedural y con semillas fijas: dos corridas escriben los mismos
 ## bytes. El tileset del pack 141897 es de prototipo (cada tile lleva un "32"
@@ -7,20 +7,13 @@ extends SceneTree
 ## ningun pixel: de ahi salen el modulo de 32 px y las pendientes de 45 y 27
 ## grados (escalones 1:1 y 2:1) que usan las siluetas.
 ##
-## Los PNG no se pueden cargar como recurso en la misma corrida, y ui.ttf.import
-## recien existe despues de importar, asi que son dos vueltas:
-##   godot --headless --path godot --script res://tools/gen_fondos.gd
-##   godot --headless --path godot --import
-##   godot --headless --path godot --script res://tools/gen_fondos.gd
-##   godot --headless --path godot --import
-## La segunda vuelta solo cambia ui.ttf.import si todavia no estaba ajustado.
+## Los PNG no se pueden cargar como recurso en la misma corrida: despues de
+## este script va `godot --headless --path godot --import`. La fuente de la UI
+## (`assets/fonts/ui.ttf`, Pixelify Sans, OFL) no la genera nadie: esta
+## versionada con su licencia.
 ## Las vistas previas quedan en user:// (fuera del repo).
 
 const DIR := "res://assets/fondos"
-const DIR_FUENTES := "res://assets/fonts"
-const RUTA_FUENTE := "res://assets/fonts/ui.ttf"
-const ZIP_FUENTE := "res://assets/_raw/craftpix-671189-10-magic-sprite-sheet-effects-pixel-art.zip"
-const FUENTE_EN_ZIP := "Font/Planes_ValMore.ttf"
 
 # --- Paletas ------------------------------------------------------------------
 
@@ -103,7 +96,6 @@ const CAMPO_PROFUNDIDAD := 10.0
 func _initialize() -> void:
 	var fallos := 0
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DIR))
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DIR_FUENTES))
 
 	print("--- fondos ---")
 	var imagenes := {
@@ -127,11 +119,6 @@ func _initialize() -> void:
 			nombre, m["z"], m["base"], m["ancho"], m["alto"],
 			(imagenes[nombre] as Image).get_width() / float(m["ancho"]), 240.0 / float(m["ancho"])])
 
-	print("--- fuente ---")
-	if not _extraer_fuente():
-		fallos += 1
-	_ajustar_import_fuente()
-
 	print("--- LEEME ---")
 	if not _escribir_leemes(imagenes):
 		fallos += 1
@@ -143,7 +130,7 @@ func _initialize() -> void:
 	if fallos > 0:
 		print("FALLARON %d archivos" % fallos)
 	else:
-		print("TODO OK (correr --import para que Godot tome los PNG y la fuente)")
+		print("TODO OK (correr --import para que Godot tome los PNG)")
 	quit(1 if fallos > 0 else 0)
 
 
@@ -900,69 +887,6 @@ func _porton() -> Image:
 	return imagen
 
 
-# --- Fuente -------------------------------------------------------------------
-
-## Copia la fuente tal cual: el EULA que trae adentro prohibe modificarla, y
-## renombrar el archivo no toca sus bytes.
-func _extraer_fuente() -> bool:
-	var zip := ZIPReader.new()
-	if zip.open(ProjectSettings.globalize_path(ZIP_FUENTE)) != OK:
-		push_error("no se pudo abrir %s" % ZIP_FUENTE)
-		return false
-	var bytes := zip.read_file(FUENTE_EN_ZIP)
-	zip.close()
-	if bytes.is_empty():
-		push_error("falta %s en el zip" % FUENTE_EN_ZIP)
-		return false
-	# Si ya esta igual no se toca: reescribirla le cambia la fecha y Godot
-	# puede querer reimportarla por nada.
-	if FileAccess.file_exists(RUTA_FUENTE) and FileAccess.get_file_as_bytes(RUTA_FUENTE) == bytes:
-		print("  %-14s ya estaba (%d bytes, %s)" % [RUTA_FUENTE.get_file(), bytes.size(), FUENTE_EN_ZIP])
-		return true
-	var archivo := FileAccess.open(RUTA_FUENTE, FileAccess.WRITE)
-	if archivo == null:
-		push_error("no se pudo escribir %s" % RUTA_FUENTE)
-		return false
-	archivo.store_buffer(bytes)
-	archivo.close()
-	print("  %-14s %d bytes (%s)" % [RUTA_FUENTE.get_file(), bytes.size(), FUENTE_EN_ZIP])
-	return true
-
-
-## Valores del importador de fuentes para que los glifos salgan duros: sin
-## antialiasing, sin hinting que mueva los bordes y sin posicion subpixel, que
-## en una fuente pixel parte los trazos en dos columnas a medio tono.
-const IMPORT_FUENTE := {
-	"antialiasing": "0",
-	"hinting": "0",
-	"subpixel_positioning": "0",
-	"multichannel_signed_distance_field": "false",
-	"oversampling": "0.0",
-	"generate_mipmaps": "false",
-}
-
-
-func _ajustar_import_fuente() -> void:
-	var ruta := ProjectSettings.globalize_path(RUTA_FUENTE + ".import")
-	if not FileAccess.file_exists(ruta):
-		print("  ui.ttf.import todavia no existe: correr --import y volver a correr este script")
-		return
-	var lineas := FileAccess.get_file_as_string(ruta).split("\n")
-	var cambios := 0
-	for i in lineas.size():
-		var partes := lineas[i].split("=", true, 1)
-		if partes.size() == 2 and IMPORT_FUENTE.has(partes[0]) and partes[1] != IMPORT_FUENTE[partes[0]]:
-			lineas[i] = "%s=%s" % [partes[0], IMPORT_FUENTE[partes[0]]]
-			cambios += 1
-	if cambios == 0:
-		print("  ui.ttf.import ya estaba ajustado para pixel art")
-		return
-	var archivo := FileAccess.open(ruta, FileAccess.WRITE)
-	archivo.store_string("\n".join(lineas))
-	archivo.close()
-	print("  ui.ttf.import: %d valores ajustados (correr --import de nuevo)" % cambios)
-
-
 # --- LEEME ----------------------------------------------------------------------
 
 func _escribir_leemes(imagenes: Dictionary) -> bool:
@@ -1074,46 +998,7 @@ Licencia del pack: https://craftpix.net/file-licenses/
 		"offset_castillo": "%.3f" % fposmod(0.5 - (22.0 - (15.0 - 120.0)) / float(castillo["ancho"]), 1.0),
 	})
 
-	var fuentes := """# Fuente de la interfaz
-
-`ui.ttf` es **Planes_ValMore** ("Typeface (c) ValMore. 2019. All Rights
-Reserved", version 1.00), copiada sin tocar un byte de
-`_raw/craftpix-671189-10-magic-sprite-sheet-effects-pixel-art.zip`
-(`Font/Planes_ValMore.ttf`; la misma viene en los packs 897123 y 987745).
-La extrae `tools/gen_fondos.gd`, que tambien deja `ui.ttf.import` sin
-antialiasing, sin hinting y sin posicion subpixel.
-
-## Licencia: pendiente de verificar
-
-- El zip no trae `Font.txt` ni licencia de la fuente: solo `License.txt` con
-  la URL de CraftPix, https://craftpix.net/file-licenses/ .
-- La fuente trae adentro (tabla `name`, campo de descripcion de licencia) un
-  EULA de ValMore en ruso. Resumido: la licencia es para un usuario o
-  empresa; la fuente sigue siendo de ValMore; se pueden hacer copias de
-  respaldo pero **no modificarla** ni hacer fuentes derivadas; para usarla en
-  un juego u otro software **no hace falta una licencia especial**; se puede
-  usar en proyectos ilimitados; y el uso comercial es "despues de comprar la
-  fuente". El contacto del autor esta en ese mismo campo.
-- Lo que falta confirmar: si la licencia de CraftPix del pack gratuito cubre
-  el uso comercial de una fuente de terceros que el EULA ata a una compra.
-  Hasta entonces, tratarla como apta para el prototipo y revisarla antes de
-  publicar.
-
-## Uso
-
-- La grilla de la fuente es de 68 unidades sobre 1000: un pixel de la fuente
-  mide 0.068 em. Los tamanos nitidos son 15 (x1), 29 o 30 (x2) y 44 (x3); en
-  16 o en 32 algunos pixeles salen dobles. Importada asi, los glifos salen
-  sin un solo pixel de alpha intermedio.
-- Glifos: ASCII menos `$ & ' < > ^ ~` y el acento grave, cirilico, comillas
-  y rayas. **No trae acentos, ni ene, ni signos de apertura**: esos
-  caracteres caen al fallback (en web, sin fuentes del sistema, se ven como
-  cajitas). Hoy los usan el objetivo de e3 ("dano" con ene) y los botones
-  "<" y ">" de `menu_principal.tscn` y `menu_pausa.tscn`: antes de aplicar
-  la fuente a todo el tema hay que darles un fallback o cambiarlos.
-"""
 	var ok := _escribir_texto("%s/LEEME.md" % DIR, fondos)
-	ok = _escribir_texto("%s/LEEME.md" % DIR_FUENTES, fuentes) and ok
 	return ok
 
 
