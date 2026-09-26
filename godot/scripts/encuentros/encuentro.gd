@@ -37,6 +37,14 @@ enum Condicion {
 ## distinto que uno sin nombre cuando hay que elegir a quien salvar.
 @export var nombres: PackedStringArray = []
 
+@export_group("Sectores")
+## Los tramos de un nivel largo, en orden: cada uno frena a la camara, a los
+## healers y a la tropa en su x_fin hasta que se libera (ver Sector). Vacio es
+## el comportamiento de siempre: todo el campo es un solo sector implicito.
+## Los grupos_iniciales siguen siendo la tropa del arranque, y el primer sector
+## entra junto con ella.
+@export var sectores: Array[Sector] = []
+
 @export_group("Que esta en juego")
 ## Con el sangrado apagado, el unico problema es la vida que falta. Es lo que
 ## permite enseñar a curar antes de enseñar a tratar la causa.

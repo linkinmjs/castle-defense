@@ -16,6 +16,12 @@ extends Node3D
 ## (drop-in). Desde ahi es de la partida como el 1: cada encuentro lo reubica y
 ## ninguno lo saca. Los dos quedan siempre en cuadro: la camara dice entre que
 ## X puede andar cada uno, y la batalla se lo pasa en cada tick.
+##
+## Un nivel largo se juega por sectores (ver Sector). Mientras uno esta en
+## curso, la camara, los healers y la tropa no pasan de su x_fin; cuando se
+## libera, la batalla avisa, el limite pasa al del siguiente, y ese entra
+## cuando alguien llega a su puerta. Un encuentro sin sectores es un solo tramo
+## con todo el campo, como siempre.
 
 const ESCENA_UNIDAD := preload("res://scenes/3d/unidad3d.tscn")
 const RUTA_CAMPANA := "res://resources/encuentros/campana.tres"
@@ -30,6 +36,21 @@ const RUTA_FRAMES_JUGADOR_2 := "res://assets/sprites/healer2/healer2_frames.tres
 const LADO_DEL_1 := Vector3(-1.2, 0.0, 0.8)
 ## Lo que los healers no pisan en cada borde del campo.
 const MARGEN_HEALERS := 1.5
+## Cuanto antes del limite del sector se frena la tropa. En la practica a los
+## healers los frena la camara unos 3 m antes del limite, asi que los soldados
+## siguen esperando adelante de ellos, que es donde se pelea. No menos de 2.6:
+## la fila mas cercana a la camara ve menos campo, y un soldado parado a 1.2 m
+## de la puerta quedaba cortado por el borde de la pantalla.
+const RETRASO_ALIADOS := 2.6
+## A cuanto del x_fin de un sector liberado tiene que llegar alguien para que
+## entre el siguiente. Menos que los dos margenes de arriba: con el sector en
+## curso nadie llega a la puerta, y el siguiente no entra antes de tiempo.
+const PUERTA_SECTOR := 1.0
+## Mas cerca que esto de la puerta, los enemigos de un sector se ven aparecer:
+## la media pantalla es de unos 7.5 m.
+const DISTANCIA_ENTRADA := 9.0
+## El tope de avance de la tropa lo agrega Unidad3D en otro cambio.
+const LIMITE_AVANCE := &"limite_avance_x"
 
 signal batalla_terminada(victoria: bool)
 ## Arranco un encuentro, propio o el siguiente de la campania.
@@ -43,6 +64,14 @@ signal unidad_creada(unidad: Unidad3D)
 ## sale en ese momento, con el encuentro andando o ya terminado. El 1 no pasa
 ## por aca: viene en la escena.
 signal jugador_agregado(healer: Healer3D)
+## Entro un sector: su tropa ya esta desplegada y su limite puesto. El primero
+## sale al arrancar el encuentro, despues de encuentro_iniciado, y otra vez en
+## cada reinicio. Un encuentro sin sectores no lo emite nunca.
+signal sector_iniciado(indice: int, sector: Sector)
+## El sector en curso se libero: el limite ya paso al x_fin del siguiente (o a
+## todo el campo, si era el ultimo) y la tropa puede avanzar. Es el momento del
+## cartel de avanzar.
+signal sector_liberado(indice: int)
 
 @export var ancho_campo: float = 30.0
 @export var profundidad_campo: float = 10.0
@@ -87,6 +116,9 @@ var indice_encuentro: int = 0
 ## limite de duracion; reemplaza a los Timer, que no se podian reiniciar sin
 ## recrearlos y no sobrevivian a un reinicio sin recargar la escena.
 var tiempo_encuentro: float = 0.0
+## Segundos desde que entro el sector en curso: el reloj de sus oleadas y de
+## su liberacion por tiempo. Va con la fisica, igual que tiempo_encuentro.
+var tiempo_sector: float = 0.0
 var _actual: Encuentro
 ## Creada por codigo y no puesta en la escena: asi no hay que tocar battle3d
 ## para medir, y las pruebas pueden armar una a mano sin instanciar el HUD.
@@ -108,6 +140,14 @@ var _oleadas_lanzadas: Dictionary = {}
 ## Por indice de oleada: si su disparador por flanco puede volver a disparar.
 ## Falta la clave hasta la primera vez que se evalua, y eso cuenta como armada.
 var _disparador_armado: Dictionary = {}
+## Sector en curso, por su indice en el encuentro. -1 si no tiene sectores.
+var _indice_sector: int = -1
+## Si el sector en curso ya se libero: el limite es el del siguiente.
+var _sector_liberado: bool = false
+## Como _oleadas_lanzadas y _disparador_armado, para las oleadas del sector en
+## curso: sus indices son de otra lista, y se vacian al entrar a cada sector.
+var _oleadas_sector_lanzadas: Dictionary = {}
+var _disparador_sector_armado: Dictionary = {}
 
 
 func _ready() -> void:
@@ -180,7 +220,13 @@ func _physics_process(delta: float) -> void:
 		return
 
 	tiempo_encuentro += delta
+	if _indice_sector >= 0:
+		tiempo_sector += delta
 	_revisar_oleadas()
+	# Despues de las oleadas: una que entra al quedar el campo vacio sostiene
+	# el sector, en vez de llegar con el cartel de avanzar ya puesto. Antes del
+	# desenlace: lo que entra con un sector cuenta en el mismo tick.
+	_revisar_sector()
 	_revisar_emergentes(delta)
 	_revisar_desenlace()
 
@@ -214,6 +260,13 @@ func iniciar_encuentro(enc: Encuentro, nueva_semilla: int = -1) -> void:
 	tiempo_encuentro = 0.0
 	_oleadas_lanzadas.clear()
 	_disparador_armado.clear()
+	# Antes de ubicar a nadie: los limites de los healers salen del sector en
+	# curso, y el del encuentro anterior no puede filtrarse a este.
+	_indice_sector = -1
+	_sector_liberado = false
+	tiempo_sector = 0.0
+	_oleadas_sector_lanzadas.clear()
+	_disparador_sector_armado.clear()
 	_limpiar_campo()
 
 	if _actual == null:
@@ -226,6 +279,7 @@ func iniciar_encuentro(enc: Encuentro, nueva_semilla: int = -1) -> void:
 	base_aliada_x = _actual.base_aliada_x
 	base_enemiga_x = _actual.base_enemiga_x
 	_emergente_restante = intervalo_emergentes
+	_configurar_mundo()
 
 	# Todos por el mismo camino, el 2 al lado del 1: igual que cuando entra a
 	# mitad de un encuentro.
@@ -243,6 +297,12 @@ func iniciar_encuentro(enc: Encuentro, nueva_semilla: int = -1) -> void:
 
 	for grupo in _actual.grupos_iniciales:
 		_desplegar_grupo(grupo)
+
+	# Despues de la tropa inicial, que asi queda frenada por el primer limite,
+	# y de encuentro_iniciado, por lo mismo que los grupos: quien mide ya
+	# arranco y cuenta a los que entran con el sector.
+	if not _actual.sectores.is_empty():
+		_entrar_sector(0)
 
 
 ## Repite el mismo encuentro con la misma semilla: el problema es identico y lo
@@ -279,6 +339,15 @@ func _limpiar_campo() -> void:
 	for hijo in get_children():
 		if hijo is Emergente3D:
 			hijo.queue_free()
+
+
+## Lo que se ve del campo (suelo, bases, fondo) se estira al del encuentro. Es
+## opcional: una escena sin %Mundo, o con uno que no se configura, se juega
+## igual.
+func _configurar_mundo() -> void:
+	var mundo := get_node_or_null("%Mundo")
+	if mundo != null and mundo.has_method(&"configurar"):
+		mundo.configurar(ancho_campo, profundidad_campo, base_aliada_x, base_enemiga_x)
 
 
 func _primer_encuentro() -> Encuentro:
@@ -396,10 +465,11 @@ func _configurar_healer(h: Healer3D, posicion: Vector3) -> void:
 		_combos_de(h).equipar(_movimientos_base)
 
 
-## Por donde pueden caminar los healers: el campo menos un margen en cada borde.
+## Por donde pueden caminar los healers: el campo hasta el limite del sector en
+## curso, menos un margen en cada borde. Sin sectores, todo el campo.
 func _limites_campo() -> Rect2:
 	return Rect2(MARGEN_HEALERS, MARGEN_HEALERS,
-		ancho_campo - 2.0 * MARGEN_HEALERS, profundidad_campo - 2.0 * MARGEN_HEALERS)
+		limite_x_actual() - 2.0 * MARGEN_HEALERS, profundidad_campo - 2.0 * MARGEN_HEALERS)
 
 
 ## Donde se para el 2 si el 1 esta en pos_1, sin salirse del campo.
@@ -412,9 +482,10 @@ func _al_lado_del_1(pos_1: Vector3) -> Vector3:
 		clampf(pos.z, campo.position.y, campo.end.y))
 
 
-## Por donde puede andar cada healer en este tick: el campo y lo que se ve. Va
-## en la fisica de la batalla porque el padre procesa antes que sus hijos: cada
-## healer se mueve y se recorta despues, contra lo que muestra la camara ahora.
+## Por donde puede andar cada healer en este tick: el campo (hasta el limite del
+## sector) y lo que se ve. Va en la fisica de la batalla porque el padre procesa
+## antes que sus hijos: cada healer se mueve y se recorta despues, contra lo que
+## muestra la camara ahora.
 func _acotar_healers() -> void:
 	var campo := _limites_campo()
 	var pantalla := _camara.rango_x_jugadores()
@@ -470,6 +541,9 @@ func _desplegar_grupo(grupo: GrupoUnidades) -> void:
 
 		_unidades.add_child(unidad)
 		_aplicar_estado_inicial(unidad, grupo)
+		# Con un sector en curso, el que llega tampoco se adelanta a la camara.
+		if grupo.bando == Unidad3D.Bando.ALIADO and _indice_sector >= 0:
+			_fijar_limite_avance(unidad, _limite_avance_aliados())
 		unidad.murio.connect(_on_unidad_murio)
 		unidad_creada.emit(unidad)
 
@@ -498,32 +572,46 @@ func _on_unidad_murio(unidad: Unidad3D) -> void:
 
 # --- Oleadas ------------------------------------------------------------------
 
+## Las del encuentro y, detras, las del sector en curso: con la misma regla,
+## cada lista con su reloj y su propia cuenta de lanzadas y de armadas.
 func _revisar_oleadas() -> void:
-	for i in _actual.oleadas.size():
-		var oleada: OleadaEncuentro = _actual.oleadas[i]
+	_lanzar_oleadas(_actual.oleadas, tiempo_encuentro, _oleadas_lanzadas, _disparador_armado)
+	var sector := sector_activo()
+	if sector != null:
+		_lanzar_oleadas(sector.oleadas, tiempo_sector, _oleadas_sector_lanzadas,
+				_disparador_sector_armado)
+
+
+## Despliega las oleadas de la lista cuyo disparador se cumple. Los diccionarios
+## son los de esa lista, por indice, y se actualizan aca mismo.
+func _lanzar_oleadas(oleadas: Array[OleadaEncuentro], reloj: float,
+		lanzadas_por_indice: Dictionary, armadas: Dictionary) -> void:
+	for i in oleadas.size():
+		var oleada: OleadaEncuentro = oleadas[i]
 		if oleada == null:
 			continue
-		var lanzadas: int = _oleadas_lanzadas.get(i, 0)
+		var lanzadas: int = lanzadas_por_indice.get(i, 0)
 		if lanzadas > 0 and not oleada.repetir:
 			continue
-		if not _disparador_cumplido(i, oleada, lanzadas):
+		if not _disparador_cumplido(oleada, lanzadas, reloj, armadas, i):
 			continue
 		for grupo in oleada.grupos:
 			_desplegar_grupo(grupo)
-		_oleadas_lanzadas[i] = lanzadas + 1
+		lanzadas_por_indice[i] = lanzadas + 1
 
 
-func _disparador_cumplido(indice: int, oleada: OleadaEncuentro, lanzadas: int) -> bool:
+func _disparador_cumplido(oleada: OleadaEncuentro, lanzadas: int, reloj: float,
+		armadas: Dictionary, indice: int) -> bool:
 	match oleada.disparador:
 		OleadaEncuentro.Disparador.RELOJ:
 			# Al repetirse, la siguiente entra un intervalo mas tarde.
-			return tiempo_encuentro >= oleada.valor * (lanzadas + 1)
+			return reloj >= oleada.valor * (lanzadas + 1)
 		OleadaEncuentro.Disparador.BAJAS_ALIADAS:
 			return _bajas_aliadas >= int(oleada.valor) * (lanzadas + 1)
 		OleadaEncuentro.Disparador.FRENTE_PASA_X:
-			return _flanco(indice, frente_x() <= oleada.valor)
+			return _flanco(armadas, indice, frente_x() <= oleada.valor)
 		OleadaEncuentro.Disparador.SIN_ENEMIGOS:
-			return _flanco(indice, _vivos("enemigos") == 0)
+			return _flanco(armadas, indice, _vivos("enemigos") == 0)
 	return false
 
 
@@ -534,27 +622,218 @@ func _disparador_cumplido(indice: int, oleada: OleadaEncuentro, lanzadas: int) -
 ## volver a disparar tiene que dejar de cumplirse antes.
 ##
 ## Arranca armada: si la condicion ya se cumple al empezar, dispara enseguida.
-func _flanco(indice: int, cumplida: bool) -> bool:
+## Las de un sector arrancan cuando se entra a el.
+func _flanco(armadas: Dictionary, indice: int, cumplida: bool) -> bool:
 	if not cumplida:
-		_disparador_armado[indice] = true
+		armadas[indice] = true
 		return false
-	var armado: bool = _disparador_armado.get(indice, true)
+	var armado: bool = armadas.get(indice, true)
 	if not armado:
 		return false
-	_disparador_armado[indice] = false
+	armadas[indice] = false
 	return true
+
+
+# --- Sectores -----------------------------------------------------------------
+
+## El sector en curso, o null si el encuentro no tiene sectores.
+func sector_activo() -> Sector:
+	return _sector_en(_indice_sector)
+
+
+## Su indice en el encuentro; -1 si el encuentro no tiene sectores.
+func indice_sector() -> int:
+	return _indice_sector
+
+
+func cantidad_sectores() -> int:
+	return _actual.sectores.size() if _actual != null else 0
+
+
+## Si el sector en curso ya se libero, y se puede avanzar hasta el siguiente.
+func sector_esta_liberado() -> bool:
+	return _sector_liberado
+
+
+## Hasta que X se puede llegar ahora: el x_fin del sector en curso, o el del
+## siguiente si ya se libero. Sin sectores, o liberado el ultimo, todo el campo.
+func limite_x_actual() -> float:
+	var sector := sector_activo()
+	if sector != null and _sector_liberado:
+		sector = _sector_en(_indice_sector + 1)
+	if sector == null:
+		return ancho_campo
+	return minf(sector.x_fin, ancho_campo)
+
+
+## Cuanto del nivel se recorrio, de 0 en la base aliada a 1 en la enemiga, por
+## el healer mas adelantado: es lo que el jugador siente como avanzar. Para la
+## barra del HUD.
+func progreso_nivel() -> float:
+	var tramo := base_enemiga_x - base_aliada_x
+	var adelante := -INF
+	for h in _healers():
+		adelante = maxf(adelante, h.global_position.x)
+	if tramo <= 0.0 or is_inf(adelante):
+		return 0.0
+	return clampf((adelante - base_aliada_x) / tramo, 0.0, 1.0)
+
+
+func _sector_en(indice: int) -> Sector:
+	if _actual == null or indice < 0 or indice >= _actual.sectores.size():
+		return null
+	return _actual.sectores[indice]
+
+
+## Si todavia falta entrar a algun sector.
+func _quedan_sectores() -> bool:
+	return _indice_sector + 1 < cantidad_sectores()
+
+
+## Pone en juego el sector i: su tropa, sus refuerzos, su reloj, sus oleadas,
+## sus emergentes y su limite, que vale para la camara, los healers y los
+## aliados que ya estan y los que lleguen.
+func _entrar_sector(i: int) -> void:
+	var emergentes_antes := _emergentes_activos()
+	_indice_sector = i
+	_sector_liberado = false
+	tiempo_sector = 0.0
+	_oleadas_sector_lanzadas.clear()
+	_disparador_sector_armado.clear()
+
+	var sector := sector_activo()
+	if sector != null:
+		_avisar_enemigos_a_la_vista(sector, _sector_en(i - 1))
+		for grupo in sector.grupos:
+			_desplegar_grupo(grupo)
+		for grupo in sector.refuerzos_aliados:
+			_desplegar_grupo(grupo)
+	# El sector que los prende arranca con el intervalo entero: el primero no
+	# puede salir apenas se cruza la puerta.
+	if _emergentes_activos() and not emergentes_antes:
+		_emergente_restante = intervalo_emergentes
+
+	_camara.limitar_x(limite_x_actual())
+	if i == 0:
+		# El primero entra con el encuentro recien armado: la camara arranca ya
+		# dentro de el, sin deslizarse desde lo que el sector no muestra.
+		_camara.saltar_a(_x_media_healers())
+	_aplicar_limite_avance()
+	_acotar_healers()
+	sector_iniciado.emit(i, sector)
+
+
+## El sector en curso quedo resuelto: el limite pasa al x_fin del siguiente, o
+## se abre todo el campo si era el ultimo, y la tropa puede seguir.
+func _liberar_sector() -> void:
+	_sector_liberado = true
+	_camara.limitar_x(limite_x_actual())
+	_aplicar_limite_avance()
+	_acotar_healers()
+	sector_liberado.emit(_indice_sector)
+
+
+## Libera el sector en curso cuando se cumple lo suyo. Liberado, y si hay otro
+## despues, ese entra en cuanto alguien llega a la puerta.
+func _revisar_sector() -> void:
+	var sector := sector_activo()
+	if sector == null:
+		return
+	if not _sector_liberado and _liberacion_cumplida(sector):
+		_liberar_sector()
+	if _sector_liberado and _sector_en(_indice_sector + 1) != null \
+			and _alguien_en_pie_llega_a(sector.x_fin - PUERTA_SECTOR):
+		_entrar_sector(_indice_sector + 1)
+
+
+func _liberacion_cumplida(sector: Sector) -> bool:
+	match sector.liberacion:
+		Sector.Liberacion.SIN_ENEMIGOS:
+			# Como en las oleadas y en LIMPIAR_ENEMIGOS: un enemigo tirado
+			# sigue en juego hasta que muere.
+			return _vivos("enemigos") == 0
+		Sector.Liberacion.FRENTE_PASA_X:
+			# Al reves que el disparador de las oleadas, que mira al frente
+			# retroceder: un sector se libera avanzando.
+			return frente_x() >= sector.valor_liberacion
+		Sector.Liberacion.RELOJ:
+			return tiempo_sector >= sector.valor_liberacion
+	return false
+
+
+## Si algun healer o aliado en pie llego a esa X. Uno tirado en la puerta no
+## la cruzo.
+func _alguien_en_pie_llega_a(x: float) -> bool:
+	for h in _healers():
+		if h.esta_viva() and h.global_position.x >= x:
+			return true
+	for u in get_tree().get_nodes_in_group("aliados"):
+		var n := u as Unidad3D
+		if n != null and n.esta_viva() and not n.esta_derribada() \
+				and not n.is_queued_for_deletion() and n.global_position.x >= x:
+			return true
+	return false
+
+
+## Hasta donde avanza sola la tropa: un poco antes del limite actual. Sin
+## sectores, o liberado el ultimo, sin tope: tiene que poder llegar a la base.
+func _limite_avance_aliados() -> float:
+	if sector_activo() == null:
+		return INF
+	if _sector_liberado and _sector_en(_indice_sector + 1) == null:
+		return INF
+	return limite_x_actual() - RETRASO_ALIADOS
+
+
+## A todos los aliados en el campo, con el tope que corresponde ahora.
+func _aplicar_limite_avance() -> void:
+	var limite := _limite_avance_aliados()
+	for u in get_tree().get_nodes_in_group("aliados"):
+		_fijar_limite_avance(u, limite)
+
+
+## Por nombre y preguntando: el tope entro en Unidad3D por separado, y la
+## batalla no depende de el. Sin el, los sectores igual frenan a la camara y a
+## los healers, y la tropa avanza como siempre.
+static func _fijar_limite_avance(unidad: Node, x: float) -> void:
+	if LIMITE_AVANCE in unidad:
+		unidad.set(LIMITE_AVANCE, x)
+
+
+## Los enemigos de un sector se despliegan donde dice el recurso. Si arrancan a
+## menos de DISTANCIA_ENTRADA de la puerta del anterior, el jugador los ve
+## aparecer: el aviso es para quien arma el nivel. El primer sector no tiene
+## puerta: entra con el campo, como los grupos iniciales.
+func _avisar_enemigos_a_la_vista(sector: Sector, anterior: Sector) -> void:
+	if anterior == null:
+		return
+	var puerta := anterior.x_fin - PUERTA_SECTOR
+	for grupo in sector.grupos:
+		if grupo != null and grupo.bando == Unidad3D.Bando.ENEMIGO \
+				and grupo.x_min < puerta + DISTANCIA_ENTRADA:
+			push_warning("Sector \"%s\": un grupo enemigo arranca en x %.1f, a menos de %.0f m"
+				% [sector.titulo, grupo.x_min, DISTANCIA_ENTRADA]
+				+ " de la puerta (x %.1f): se lo ve aparecer." % puerta)
 
 
 # --- Emergentes ---------------------------------------------------------------
 
 func _revisar_emergentes(delta: float) -> void:
-	if _actual == null or not _actual.emergentes_habilitados:
+	if not _emergentes_activos():
 		return
 	_emergente_restante -= delta
 	if _emergente_restante > 0.0:
 		return
 	_emergente_restante = intervalo_emergentes
 	_lanzar_emergentes()
+
+
+## Los prende el encuentro entero o el sector en curso.
+func _emergentes_activos() -> bool:
+	if _actual == null:
+		return false
+	var sector := sector_activo()
+	return _actual.emergentes_habilitados or (sector != null and sector.emergentes)
 
 
 ## Marca el suelo cerca de un healer; cuando el aviso termina, sale el enemigo.
@@ -567,8 +846,10 @@ func _lanzar_emergentes() -> void:
 		var radio := _rng.randf_range(2.0, radio_emergentes)
 		var pos := healer.global_position + Vector3(cos(angulo) * radio, 0.0, sin(angulo) * radio)
 		# Nunca dentro de una base: un zombi que nace en la zona de derrota
-		# la dispararia solo, sin que nadie haya llegado a nada.
-		pos.x = clampf(pos.x, base_aliada_x + 2.5, base_enemiga_x - 2.5)
+		# la dispararia solo, sin que nadie haya llegado a nada. Ni pasado el
+		# limite del sector, donde no se ve y los healers no pueden ir.
+		pos.x = clampf(pos.x, base_aliada_x + 2.5,
+				minf(base_enemiga_x - 2.5, limite_x_actual() - MARGEN_HEALERS))
 		pos.z = clampf(pos.z, 1.5, profundidad_campo - 1.5)
 		pos.y = 0.0
 
@@ -610,11 +891,23 @@ func _emerger_enemigo(pos: Vector3) -> void:
 
 
 ## Los emergentes son del mismo tipo que los enemigos del encuentro, para no
-## meter una silueta que el jugador no vio nunca.
+## meter una silueta que el jugador no vio nunca. Con sectores, los del tramo
+## en curso o, si no trae, los del ultimo que trajo: un nivel largo puede no
+## tener ningun enemigo entre los grupos iniciales.
 func _tipo_enemigo() -> TipoSoldado:
 	if _actual == null:
 		return null
-	for grupo in _actual.grupos_iniciales:
+	for i in range(_indice_sector, -1, -1):
+		var sector := _sector_en(i)
+		if sector != null:
+			var del_sector := _primer_tipo_enemigo(sector.grupos)
+			if del_sector != null:
+				return del_sector
+	return _primer_tipo_enemigo(_actual.grupos_iniciales)
+
+
+func _primer_tipo_enemigo(grupos: Array[GrupoUnidades]) -> TipoSoldado:
+	for grupo in grupos:
 		if grupo != null and grupo.bando == Unidad3D.Bando.ENEMIGO and grupo.tipo != null:
 			return grupo.tipo
 	return null
@@ -637,7 +930,9 @@ func _revisar_desenlace() -> void:
 			if _actual.duracion > 0.0 and tiempo_encuentro >= _actual.duracion:
 				_terminar(true)
 		Encuentro.Condicion.LIMPIAR_ENEMIGOS:
-			if _vivos("enemigos") == 0:
+			# Con sectores, dejar limpio uno que no es el ultimo es poder
+			# avanzar, no ganar: los enemigos que faltan todavia no entraron.
+			if _vivos("enemigos") == 0 and not _quedan_sectores():
 				_terminar(true)
 			elif _vivos("aliados") == 0:
 				_terminar(false)
