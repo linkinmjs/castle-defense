@@ -24,7 +24,6 @@ extends Node3D
 ## con todo el campo, como siempre.
 
 const ESCENA_UNIDAD := preload("res://scenes/3d/unidad3d.tscn")
-const RUTA_CAMPANA := "res://resources/encuentros/campana.tres"
 ## Cargada en runtime y no con preload, como la del emergente: la genera el
 ## mismo script que genera esta escena.
 const RUTA_HEALER := "res://scenes/3d/healer3d.tscn"
@@ -81,7 +80,8 @@ signal sector_liberado(indice: int)
 @export var base_enemiga_x: float = 28.5
 
 @export_group("Encuentros")
-## La serie que se juega. Si queda vacia se carga la de RUTA_CAMPANA.
+## La serie que se juega. Si queda vacia se carga la que anoto el menu
+## (Navegacion.campana_pedida), que sin anotacion son las lecciones.
 @export var campana: Campana
 ## Encuentro suelto: si esta puesto se juega solo este y se ignora la campania.
 ## Lo usan las pruebas y sirve para probar uno desde el editor.
@@ -172,12 +172,22 @@ func _ready() -> void:
 	_hud.seguir(_healer)
 	_hud.seguir_batalla(self)
 
+	# El borde rojo del golpe al healer. Por codigo y no en la escena: solo hay
+	# que verla, y en headless (las pruebas) no se crea. Quien la pulse lo hace
+	# por su grupo (Vineta.GRUPO), sin tenerla a mano.
+	if Presentacion.activa():
+		add_child(Vineta.new())
+
 	# Cargado en runtime y no con preload: la escena la genera el mismo script
 	# que genera esta, y un preload rompe el parseo si todavia no existe.
 	_escena_emergente = load("res://scenes/3d/emergente3d.tscn")
 
-	if campana == null and encuentro == null and ResourceLoader.exists(RUTA_CAMPANA):
-		campana = load(RUTA_CAMPANA)
+	# Lecciones o niveles, segun lo que eligio el menu. Sin anotacion (pruebas,
+	# F6 sobre esta escena) las lecciones, como siempre.
+	if campana == null and encuentro == null:
+		var ruta_campana := Navegacion.campana_pedida(get_tree())
+		if ResourceLoader.exists(ruta_campana):
+			campana = load(ruta_campana)
 
 	var pausa := get_node_or_null("%MenuPausa")
 	if pausa != null:
@@ -837,7 +847,11 @@ func _emergentes_activos() -> bool:
 
 
 ## Marca el suelo cerca de un healer; cuando el aviso termina, sale el enemigo.
+## Sin un tipo que pueda salir (ver _tipo_enemigo) no marca nada: un aviso del
+## que no sale nadie enseña a ignorar los avisos.
 func _lanzar_emergentes() -> void:
+	if _tipo_enemigo() == null:
+		return
 	for i in emergentes_por_tanda:
 		var healer := _healer_para_emergente()
 		if healer == null:
@@ -874,9 +888,14 @@ func _healer_para_emergente() -> Healer3D:
 
 
 func _emerger_enemigo(pos: Vector3) -> void:
+	# El sector pudo cambiar durante el aviso. Sin tipo saldria una unidad con
+	# los valores de la escena, que no es ninguno de los del nivel.
+	var tipo := _tipo_enemigo()
+	if tipo == null:
+		return
 	var grupo := GrupoUnidades.new()
 	grupo.bando = Unidad3D.Bando.ENEMIGO
-	grupo.tipo = _tipo_enemigo()
+	grupo.tipo = tipo
 	grupo.cantidad = 1
 	grupo.x_min = pos.x
 	grupo.x_max = pos.x
@@ -893,7 +912,10 @@ func _emerger_enemigo(pos: Vector3) -> void:
 ## Los emergentes son del mismo tipo que los enemigos del encuentro, para no
 ## meter una silueta que el jugador no vio nunca. Con sectores, los del tramo
 ## en curso o, si no trae, los del ultimo que trajo: un nivel largo puede no
-## tener ningun enemigo entre los grupos iniciales.
+## tener ningun enemigo entre los grupos iniciales. Nunca uno de golpe
+## telegrafiado ni el jefe: un oso o un demonio que sale del suelo al lado del
+## healer no deja tiempo de leer su aviso, y el jefe es uno solo. Si no queda
+## ninguno comun, null: ese tramo no tiene emergentes.
 func _tipo_enemigo() -> TipoSoldado:
 	if _actual == null:
 		return null
@@ -908,8 +930,11 @@ func _tipo_enemigo() -> TipoSoldado:
 
 func _primer_tipo_enemigo(grupos: Array[GrupoUnidades]) -> TipoSoldado:
 	for grupo in grupos:
-		if grupo != null and grupo.bando == Unidad3D.Bando.ENEMIGO and grupo.tipo != null:
-			return grupo.tipo
+		if grupo == null or grupo.bando != Unidad3D.Bando.ENEMIGO or grupo.tipo == null:
+			continue
+		if grupo.tipo.telegrafiado > 0.0 or grupo.tipo.es_jefe:
+			continue
+		return grupo.tipo
 	return null
 
 

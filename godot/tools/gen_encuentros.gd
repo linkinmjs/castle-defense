@@ -1,11 +1,12 @@
 extends SceneTree
-## Genera los encuentros de la vertical de aprendizaje y la campania que los
-## ordena.
+## Genera los encuentros de la vertical de aprendizaje, la campania que los
+## ordena y los tres niveles largos del juego (niveles.tres).
 ##
 ## Estan escritos como codigo y no a mano en el editor por la misma razon que
 ## las escenas: son muchos recursos anidados, y verlos juntos en un archivo
 ## hace evidente que cambia de un encuentro al siguiente. La progresion es el
-## contenido, y aca se lee de corrido.
+## contenido, y aca se lee de corrido. Los numeros de los niveles y por que
+## son esos estan en docs/niveles.md.
 
 const DIR := "res://resources/encuentros"
 const DIR_PRUEBAS := "res://resources/encuentros/pruebas"
@@ -14,10 +15,26 @@ const ESCUDERO := "res://resources/soldados/escudero.tres"
 const LANCERO := "res://resources/soldados/lancero.tres"
 const ESPADACHIN := "res://resources/soldados/espadachin.tres"
 const ZOMBIE := "res://resources/soldados/zombie.tres"
+const BRUTO := "res://resources/soldados/bruto.tres"
+const DEMONIO := "res://resources/soldados/demonio.tres"
 
 ## Los movimientos los genera gen_movimientos.gd, que corre antes que este.
 const TOQUE := "res://resources/movimientos/toque.tres"
 const VENDAJE := "res://resources/movimientos/vendaje.tres"
+const PLEGARIA := "res://resources/movimientos/plegaria.tres"
+const IMPULSO := "res://resources/movimientos/impulso.tres"
+const BENDICION := "res://resources/movimientos/bendicion.tres"
+const REANIMAR := "res://resources/movimientos/reanimar.tres"
+const CAIDA := "res://resources/movimientos/caida.tres"
+
+const ALIADO := Unidad3D.Bando.ALIADO
+const ENEMIGO := Unidad3D.Bando.ENEMIGO
+## Las filas por las que se despliega en el puente, que tiene 6 m de
+## profundidad y no 10: el mismo margen de 1.5 m que dejan los healers.
+const FRANJA_PUENTE := Vector2(1.5, 4.5)
+## Cuanto mas alla del x_fin de su sector nace una oleada como minimo, para no
+## verse aparecer (ver la nota de los niveles).
+const ENTRADA_OLEADA := 3.0
 
 # No es const: PackedStringArray no cuenta como expresion constante.
 var NOMBRES := PackedStringArray([
@@ -36,6 +53,12 @@ func _initialize() -> void:
 	var campana := Campana.new()
 	campana.encuentros = [e1, e2, e3] as Array[Encuentro]
 	_guardar(campana, DIR + "/campana.tres")
+
+	# Cada nivel se guarda en su archivo antes que la serie, para que la serie
+	# los referencie en vez de copiarlos adentro.
+	var niveles := Campana.new()
+	niveles.encuentros = [_el_camino(), _el_puente(), _las_puertas()] as Array[Encuentro]
+	_guardar(niveles, DIR + "/niveles.tres")
 
 	_guardar(_abierto(), DIR_PRUEBAS + "/abierto.tres")
 	print("encuentros generados")
@@ -178,6 +201,181 @@ func _tratar_la_causa() -> Encuentro:
 	return enc
 
 
+# --- Niveles ------------------------------------------------------------------
+#
+# Cada nivel es un campo largo partido en tres sectores: la tropa avanza sola,
+# los healers la mantienen viva, y cada sector suma una sola cosa nueva. Nada
+# de derrota por frente (con sectores el frente casi no retrocede) y bajas
+# generosas: lo que se castiga es dejar morir, no llegar tarde.
+#
+# Los enemigos de cada sector arrancan a 9 m o mas de la puerta del anterior
+# (la batalla avisa si no). Las oleadas nacen fuera de cuadro, a ENTRADA_OLEADA
+# o mas pasado el x_fin de su sector, y entran caminando: mientras el sector
+# esta en curso la camara no muestra mas alla de su x_fin (la fila del fondo,
+# unos 2.5 m mas), y la tropa espera en x_fin - 2.6. Una oleada dentro del
+# sector nacia encima de la tropa y a la vista.
+
+## Nivel 1: el camino. Curar, cortar un sangrado y curar al grupo, en campo
+## abierto y sin enemigos que hagan nada raro.
+##
+## El sangrado es del encuentro y no del sector, asi que va bajo (0.15) para
+## que aparezca poco en los dos primeros tramos, y el tercero lo plantea de
+## entrada con dos lanceros que llegan sangrando: ahi Vendaje deja de ser una
+## opcion. El bosque suma una oleada con reloj para que el grupo junto (y la
+## Plegaria) tenga sentido.
+func _el_camino() -> Encuentro:
+	var enc := _nivel(&"n1_el_camino", "El camino",
+		"Toque para curar, dos Toques seguidos para cortar un sangrado, Plegaria para el grupo.",
+		72001, 90.0, 10.0)
+	enc.probabilidad_sangrado = 0.15
+	enc.movimientos = _movimientos([TOQUE, VENDAJE, PLEGARIA, IMPULSO])
+	enc.condicion = Encuentro.Condicion.LLEGAR_A_BASE
+	enc.bajas_aliadas_maximas = 4
+	enc.grupos_iniciales = _grupos([
+		_grupo(ESCUDERO, ALIADO, 3, 7.0, 10.0),
+		_grupo(LANCERO, ALIADO, 2, 7.0, 10.0),
+	])
+
+	var camino := _sector("El camino", 30.0, [
+		_grupo(ZOMBIE, ENEMIGO, 5, 18.0, 22.0),
+	])
+
+	# Dos zombis cada 20 s desde el fondo del bosque: la presion no depende de
+	# lo que tarde el jugador, y el ritmo se aprende. Cada 14 s no: la tropa
+	# frenada en su tope tarda mas que eso en matar a cada par, el campo no
+	# queda nunca vacio y el sector no se libera.
+	var bosque := _sector("El bosque", 60.0, [
+		_grupo(ZOMBIE, ENEMIGO, 6, 42.0, 46.0),
+	], [
+		_grupo(ESCUDERO, ALIADO, 1, 33.0, 34.0),
+	], [
+		_oleada(OleadaEncuentro.Disparador.RELOJ, 20.0, true, [
+			_grupo(ZOMBIE, ENEMIGO, 2, 60.0 + ENTRADA_OLEADA, 65.0),
+		]),
+	])
+
+	# Los lanceros de refuerzo llegan sangrando: la situacion esta planteada y
+	# no depende del azar.
+	var sangrando := _grupo(LANCERO, ALIADO, 2, 62.0, 64.0)
+	sangrando.sangrado_inicial = 6.0
+	var cuesta := _sector("La cuesta", 90.0, [
+		_grupo(ZOMBIE, ENEMIGO, 7, 72.0, 76.0),
+	], [sangrando])
+
+	enc.sectores = [camino, bosque, cuesta] as Array[Sector]
+	_guardar(enc, DIR + "/n1_el_camino.tres")
+	return enc
+
+
+## Nivel 2: el puente. Los golpes anunciados del oso, los caidos y el salto.
+##
+## Mas angosto (6 m): en el puente la tropa se apelotona, y el barrido del oso
+## alcanza a varios. La cabecera presenta a un solo oso entre zombis; el
+## puente trae dos escuderos ya caidos para reanimar (8 s de reloj cada uno) y
+## prende los emergentes, que salen como zombis; la otra orilla trae dos osos,
+## uno detras del otro, para que se lea cada golpe.
+##
+## Es el salto grande de dificultad, y por eso la tropa trae un lancero mas y
+## las peleas son mas cortas que las del primer nivel: los caidos piden 80 de
+## mana en 8 s, justo despues del primer oso (ver docs/niveles.md).
+func _el_puente() -> Encuentro:
+	var enc := _nivel(&"n2_el_puente", "El puente",
+		"Bendeci (L, P) a quien va a recibir el golpe del oso; Reanima (P) a los caidos; salta el barrido.",
+		72002, 90.0, 6.0)
+	enc.probabilidad_sangrado = 0.15
+	enc.movimientos = _movimientos([TOQUE, VENDAJE, PLEGARIA, IMPULSO, BENDICION, REANIMAR, CAIDA])
+	enc.condicion = Encuentro.Condicion.LLEGAR_A_BASE
+	enc.bajas_aliadas_maximas = 4
+	enc.grupos_iniciales = _franja([
+		_grupo(ESCUDERO, ALIADO, 4, 7.0, 10.0),
+		_grupo(ESPADACHIN, ALIADO, 1, 7.0, 10.0),
+		_grupo(LANCERO, ALIADO, 1, 7.0, 10.0),
+	])
+
+	var cabecera := _sector("La cabecera", 30.0, _franja([
+		_grupo(ZOMBIE, ENEMIGO, 3, 18.0, 22.0),
+		_grupo(BRUTO, ENEMIGO, 1, 22.0, 24.0),
+	]))
+
+	# Los caidos, pegados a la puerta: se llega a ellos antes que los zombis.
+	var caidos := _grupo(ESCUDERO, ALIADO, 2, 31.0, 33.0)
+	caidos.derribada_inicial = true
+	var puente := _sector("El puente", 60.0, _franja([
+		_grupo(ZOMBIE, ENEMIGO, 5, 44.0, 48.0),
+	]), _franja([caidos]))
+	puente.emergentes = true
+
+	var orilla := _sector("La otra orilla", 90.0, _franja([
+		_grupo(BRUTO, ENEMIGO, 1, 72.0, 74.0),
+		_grupo(ZOMBIE, ENEMIGO, 3, 76.0, 80.0),
+		_grupo(BRUTO, ENEMIGO, 1, 80.0, 82.0),
+	]), _franja([
+		_grupo(LANCERO, ALIADO, 1, 63.0, 63.0),
+		_grupo(ESCUDERO, ALIADO, 1, 62.0, 64.0),
+	]))
+
+	enc.sectores = [cabecera, puente, orilla] as Array[Sector]
+	_guardar(enc, DIR + "/n2_el_puente.tres")
+	return enc
+
+
+## Nivel 3: las puertas. Todo lo aprendido contra el jefe.
+##
+## Se gana dejando el campo limpio, y con sectores eso solo cuenta en el
+## ultimo. La muralla castiga cada baja con dos zombis mas (la cuenta es la
+## del nivel entero: quien llega con muertos del foso los paga al entrar), y
+## en las puertas el demonio pega en area con dos golpes anunciados mientras
+## cada 20 s llegan dos zombis. Todos los movimientos.
+##
+## Lo que decide este nivel es el demonio y no su escolta: sin zombis delante,
+## con la vida recortada o con mas tropa se gana apenas mas seguido (ver
+## docs/niveles.md). Si hay que aflojarlo, es en demonio.tres.
+func _las_puertas() -> Encuentro:
+	var enc := _nivel(&"n3_las_puertas", "Las puertas",
+		"El demonio anuncia sus golpes: Bendeci, cura en area con Oleada (L, L, P) y no te quedes parado.",
+		72003, 70.0, 10.0)
+	enc.probabilidad_sangrado = 0.2
+	# Vacia: todos los de la escena del healer.
+	enc.movimientos = [] as Array[Movimiento]
+	enc.condicion = Encuentro.Condicion.LIMPIAR_ENEMIGOS
+	enc.bajas_aliadas_maximas = 5
+	enc.grupos_iniciales = _grupos([
+		_grupo(ESCUDERO, ALIADO, 3, 7.0, 10.0),
+		_grupo(LANCERO, ALIADO, 2, 7.0, 10.0),
+		_grupo(ESPADACHIN, ALIADO, 1, 7.0, 10.0),
+	])
+
+	var foso := _sector("El foso", 25.0, [
+		_grupo(ZOMBIE, ENEMIGO, 5, 15.0, 19.0),
+		_grupo(BRUTO, ENEMIGO, 1, 19.0, 21.0),
+	])
+
+	var muralla := _sector("La muralla", 50.0, [
+		_grupo(ZOMBIE, ENEMIGO, 8, 36.0, 42.0),
+	], [
+		_grupo(ESCUDERO, ALIADO, 2, 27.0, 29.0),
+	], [
+		_oleada(OleadaEncuentro.Disparador.BAJAS_ALIADAS, 1.0, true, [
+			_grupo(ZOMBIE, ENEMIGO, 2, 50.0 + ENTRADA_OLEADA, 55.0),
+		]),
+	])
+
+	# Los de la oleada salen por las puertas, pasado el borde del campo: la
+	# camara nunca muestra mas alla del ancho.
+	var puertas := _sector("Las puertas", 70.0, [
+		_grupo(DEMONIO, ENEMIGO, 1, 62.0, 64.0),
+		_grupo(ZOMBIE, ENEMIGO, 3, 60.0, 62.0),
+	], [], [
+		_oleada(OleadaEncuentro.Disparador.RELOJ, 20.0, true, [
+			_grupo(ZOMBIE, ENEMIGO, 2, 70.0 + ENTRADA_OLEADA, 75.0),
+		]),
+	])
+
+	enc.sectores = [foso, muralla, puertas] as Array[Sector]
+	_guardar(enc, DIR + "/n3_las_puertas.tres")
+	return enc
+
+
 ## La batalla completa de siempre: los tres tipos aliados, la horda, todos los
 ## movimientos y victoria por llegar a la base. No es parte de la campania;
 ## existe para que las pruebas sigan ejercitando el caso abierto.
@@ -225,6 +423,64 @@ func _grupo(ruta_tipo: String, bando: Unidad3D.Bando, cantidad: int,
 	g.z_min = 1.5
 	g.z_max = 8.5
 	return g
+
+
+## Lo comun a los niveles: el campo largo con las bases a 1.5 m de cada punta,
+## el healer detras de la tropa y en la mitad de la profundidad, los nombres,
+## el sangrado prendido y sin derrota por frente.
+func _nivel(id: StringName, titulo: String, objetivo: String, semilla: int,
+		ancho: float, profundidad: float) -> Encuentro:
+	var enc := Encuentro.new()
+	enc.id = id
+	enc.titulo = titulo
+	enc.objetivo_pedagogico = objetivo
+	enc.semilla = semilla
+	enc.nombres = NOMBRES
+	enc.ancho_campo = ancho
+	enc.profundidad_campo = profundidad
+	enc.base_aliada_x = 1.5
+	enc.base_enemiga_x = ancho - 1.5
+	enc.healer_inicial = Vector2(6.0, profundidad * 0.5)
+	enc.sangrado_habilitado = true
+	enc.frente_derrota_x = -1.0
+	return enc
+
+
+## Un tramo que se libera al quedar sin enemigos en juego, que es como se
+## liberan todos los de los niveles: el cartel de avanzar llega cuando el
+## campo esta limpio, no por reloj.
+func _sector(titulo: String, x_fin: float, grupos: Array, refuerzos: Array = [],
+		oleadas: Array = []) -> Sector:
+	var s := Sector.new()
+	s.titulo = titulo
+	s.x_fin = x_fin
+	s.grupos = _grupos(grupos)
+	s.refuerzos_aliados = _grupos(refuerzos)
+	var tipadas: Array[OleadaEncuentro] = []
+	for o: OleadaEncuentro in oleadas:
+		tipadas.append(o)
+	s.oleadas = tipadas
+	s.liberacion = Sector.Liberacion.SIN_ENEMIGOS
+	return s
+
+
+func _oleada(disparador: OleadaEncuentro.Disparador, valor: float, repetir: bool,
+		grupos: Array) -> OleadaEncuentro:
+	var o := OleadaEncuentro.new()
+	o.disparador = disparador
+	o.valor = valor
+	o.repetir = repetir
+	o.grupos = _grupos(grupos)
+	return o
+
+
+## Los grupos de la lista, desplegados en las filas del puente.
+func _franja(lista: Array) -> Array[GrupoUnidades]:
+	var tipado := _grupos(lista)
+	for g in tipado:
+		g.z_min = FRANJA_PUENTE.x
+		g.z_max = FRANJA_PUENTE.y
+	return tipado
 
 
 func _meta(clave: StringName, comparador: MetaEncuentro.Comparador,

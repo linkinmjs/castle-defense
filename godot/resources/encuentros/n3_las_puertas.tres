@@ -1,0 +1,145 @@
+[gd_resource type="Resource" script_class="Encuentro" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_ktsad"]
+[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_xdmn7"]
+[ext_resource type="Resource" path="res://resources/soldados/lancero.tres" id="3_a2b6a"]
+[ext_resource type="Resource" path="res://resources/soldados/espadachin.tres" id="4_8rdh4"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="5_157bb"]
+[ext_resource type="Script" path="res://scripts/movimientos/movimiento.gd" id="6_k7obn"]
+[ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="7_1wuyn"]
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="8_4g31o"]
+[ext_resource type="Script" path="res://scripts/encuentros/sector.gd" id="9_7pxoa"]
+[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="10_1bygh"]
+[ext_resource type="Resource" path="res://resources/soldados/bruto.tres" id="11_pq1qj"]
+[ext_resource type="Resource" path="res://resources/soldados/demonio.tres" id="12_7fd0u"]
+
+[sub_resource type="Resource" id="Resource_qiw6q"]
+script = ExtResource("1_ktsad")
+tipo = ExtResource("2_xdmn7")
+cantidad = 3
+x_min = 7.0
+x_max = 10.0
+
+[sub_resource type="Resource" id="Resource_r1qtg"]
+script = ExtResource("1_ktsad")
+tipo = ExtResource("3_a2b6a")
+cantidad = 2
+x_min = 7.0
+x_max = 10.0
+
+[sub_resource type="Resource" id="Resource_oru6e"]
+script = ExtResource("1_ktsad")
+tipo = ExtResource("4_8rdh4")
+x_min = 7.0
+x_max = 10.0
+
+[sub_resource type="Resource" id="Resource_ja2uf"]
+script = ExtResource("1_ktsad")
+bando = 1
+tipo = ExtResource("10_1bygh")
+cantidad = 5
+x_min = 15.0
+x_max = 19.0
+
+[sub_resource type="Resource" id="Resource_4j7of"]
+script = ExtResource("1_ktsad")
+bando = 1
+tipo = ExtResource("11_pq1qj")
+x_min = 19.0
+x_max = 21.0
+
+[sub_resource type="Resource" id="Resource_sc2tp"]
+script = ExtResource("9_7pxoa")
+titulo = "El foso"
+x_fin = 25.0
+grupos = Array[ExtResource("1_ktsad")]([SubResource("Resource_ja2uf"), SubResource("Resource_4j7of")])
+
+[sub_resource type="Resource" id="Resource_nsm8l"]
+script = ExtResource("1_ktsad")
+bando = 1
+tipo = ExtResource("10_1bygh")
+cantidad = 8
+x_min = 36.0
+x_max = 42.0
+
+[sub_resource type="Resource" id="Resource_3n21r"]
+script = ExtResource("1_ktsad")
+bando = 1
+tipo = ExtResource("10_1bygh")
+cantidad = 2
+x_min = 53.0
+x_max = 55.0
+
+[sub_resource type="Resource" id="Resource_w0nel"]
+script = ExtResource("7_1wuyn")
+disparador = 1
+valor = 1.0
+repetir = true
+grupos = Array[ExtResource("1_ktsad")]([SubResource("Resource_3n21r")])
+
+[sub_resource type="Resource" id="Resource_l7ecv"]
+script = ExtResource("1_ktsad")
+tipo = ExtResource("2_xdmn7")
+cantidad = 2
+x_min = 27.0
+x_max = 29.0
+
+[sub_resource type="Resource" id="Resource_q5whd"]
+script = ExtResource("9_7pxoa")
+titulo = "La muralla"
+x_fin = 50.0
+grupos = Array[ExtResource("1_ktsad")]([SubResource("Resource_nsm8l")])
+refuerzos_aliados = Array[ExtResource("1_ktsad")]([SubResource("Resource_l7ecv")])
+oleadas = Array[ExtResource("7_1wuyn")]([SubResource("Resource_w0nel")])
+
+[sub_resource type="Resource" id="Resource_05ptt"]
+script = ExtResource("1_ktsad")
+bando = 1
+tipo = ExtResource("12_7fd0u")
+x_min = 62.0
+x_max = 64.0
+
+[sub_resource type="Resource" id="Resource_54jrx"]
+script = ExtResource("1_ktsad")
+bando = 1
+tipo = ExtResource("10_1bygh")
+cantidad = 3
+x_min = 60.0
+x_max = 62.0
+
+[sub_resource type="Resource" id="Resource_j67kr"]
+script = ExtResource("1_ktsad")
+bando = 1
+tipo = ExtResource("10_1bygh")
+cantidad = 2
+x_min = 73.0
+x_max = 75.0
+
+[sub_resource type="Resource" id="Resource_8k2p3"]
+script = ExtResource("7_1wuyn")
+valor = 20.0
+repetir = true
+grupos = Array[ExtResource("1_ktsad")]([SubResource("Resource_j67kr")])
+
+[sub_resource type="Resource" id="Resource_skwak"]
+script = ExtResource("9_7pxoa")
+titulo = "Las puertas"
+x_fin = 70.0
+grupos = Array[ExtResource("1_ktsad")]([SubResource("Resource_05ptt"), SubResource("Resource_54jrx")])
+oleadas = Array[ExtResource("7_1wuyn")]([SubResource("Resource_8k2p3")])
+
+[resource]
+script = ExtResource("8_4g31o")
+id = &"n3_las_puertas"
+titulo = "Las puertas"
+objetivo_pedagogico = "El demonio anuncia sus golpes: Bendeci, cura en area con Oleada (L, L, P) y no te quedes parado."
+semilla = 72003
+ancho_campo = 70.0
+base_enemiga_x = 68.5
+healer_inicial = Vector2(6, 5)
+grupos_iniciales = Array[ExtResource("1_ktsad")]([SubResource("Resource_qiw6q"), SubResource("Resource_r1qtg"), SubResource("Resource_oru6e")])
+nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
+sectores = Array[ExtResource("9_7pxoa")]([SubResource("Resource_sc2tp"), SubResource("Resource_q5whd"), SubResource("Resource_skwak")])
+probabilidad_sangrado = 0.2
+condicion = 2
+bajas_aliadas_maximas = 5

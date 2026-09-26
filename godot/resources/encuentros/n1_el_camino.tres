@@ -1,0 +1,117 @@
+[gd_resource type="Resource" script_class="Encuentro" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_2kns3"]
+[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_6yyto"]
+[ext_resource type="Resource" path="res://resources/soldados/lancero.tres" id="3_thlrv"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="4_d0qaa"]
+[ext_resource type="Script" path="res://scripts/movimientos/movimiento.gd" id="5_n7g3k"]
+[ext_resource type="Resource" path="res://resources/movimientos/toque.tres" id="6_l55rs"]
+[ext_resource type="Resource" path="res://resources/movimientos/vendaje.tres" id="7_t04ks"]
+[ext_resource type="Resource" path="res://resources/movimientos/plegaria.tres" id="8_okk5d"]
+[ext_resource type="Resource" path="res://resources/movimientos/impulso.tres" id="9_311gq"]
+[ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="10_cbc2t"]
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="11_qv403"]
+[ext_resource type="Script" path="res://scripts/encuentros/sector.gd" id="12_ns41n"]
+[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="13_leq51"]
+
+[sub_resource type="Resource" id="Resource_67e30"]
+script = ExtResource("1_2kns3")
+tipo = ExtResource("2_6yyto")
+cantidad = 3
+x_min = 7.0
+x_max = 10.0
+
+[sub_resource type="Resource" id="Resource_0ypq2"]
+script = ExtResource("1_2kns3")
+tipo = ExtResource("3_thlrv")
+cantidad = 2
+x_min = 7.0
+x_max = 10.0
+
+[sub_resource type="Resource" id="Resource_j3juu"]
+script = ExtResource("1_2kns3")
+bando = 1
+tipo = ExtResource("13_leq51")
+cantidad = 5
+x_min = 18.0
+x_max = 22.0
+
+[sub_resource type="Resource" id="Resource_erbn6"]
+script = ExtResource("12_ns41n")
+titulo = "El camino"
+grupos = Array[ExtResource("1_2kns3")]([SubResource("Resource_j3juu")])
+
+[sub_resource type="Resource" id="Resource_xtcau"]
+script = ExtResource("1_2kns3")
+bando = 1
+tipo = ExtResource("13_leq51")
+cantidad = 6
+x_min = 42.0
+x_max = 46.0
+
+[sub_resource type="Resource" id="Resource_woy7u"]
+script = ExtResource("1_2kns3")
+bando = 1
+tipo = ExtResource("13_leq51")
+cantidad = 2
+x_min = 63.0
+x_max = 65.0
+
+[sub_resource type="Resource" id="Resource_hleca"]
+script = ExtResource("10_cbc2t")
+valor = 20.0
+repetir = true
+grupos = Array[ExtResource("1_2kns3")]([SubResource("Resource_woy7u")])
+
+[sub_resource type="Resource" id="Resource_q7s4g"]
+script = ExtResource("1_2kns3")
+tipo = ExtResource("2_6yyto")
+x_min = 33.0
+x_max = 34.0
+
+[sub_resource type="Resource" id="Resource_1luq2"]
+script = ExtResource("12_ns41n")
+titulo = "El bosque"
+x_fin = 60.0
+grupos = Array[ExtResource("1_2kns3")]([SubResource("Resource_xtcau")])
+refuerzos_aliados = Array[ExtResource("1_2kns3")]([SubResource("Resource_q7s4g")])
+oleadas = Array[ExtResource("10_cbc2t")]([SubResource("Resource_hleca")])
+
+[sub_resource type="Resource" id="Resource_0ckqa"]
+script = ExtResource("1_2kns3")
+bando = 1
+tipo = ExtResource("13_leq51")
+cantidad = 7
+x_min = 72.0
+x_max = 76.0
+
+[sub_resource type="Resource" id="Resource_lplpp"]
+script = ExtResource("1_2kns3")
+tipo = ExtResource("3_thlrv")
+cantidad = 2
+x_min = 62.0
+x_max = 64.0
+sangrado_inicial = 6.0
+
+[sub_resource type="Resource" id="Resource_xxkj0"]
+script = ExtResource("12_ns41n")
+titulo = "La cuesta"
+x_fin = 90.0
+grupos = Array[ExtResource("1_2kns3")]([SubResource("Resource_0ckqa")])
+refuerzos_aliados = Array[ExtResource("1_2kns3")]([SubResource("Resource_lplpp")])
+
+[resource]
+script = ExtResource("11_qv403")
+id = &"n1_el_camino"
+titulo = "El camino"
+objetivo_pedagogico = "Toque para curar, dos Toques seguidos para cortar un sangrado, Plegaria para el grupo."
+semilla = 72001
+ancho_campo = 90.0
+base_enemiga_x = 88.5
+healer_inicial = Vector2(6, 5)
+grupos_iniciales = Array[ExtResource("1_2kns3")]([SubResource("Resource_67e30"), SubResource("Resource_0ypq2")])
+nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
+sectores = Array[ExtResource("12_ns41n")]([SubResource("Resource_erbn6"), SubResource("Resource_1luq2"), SubResource("Resource_xxkj0")])
+probabilidad_sangrado = 0.15
+movimientos = Array[ExtResource("5_n7g3k")]([ExtResource("6_l55rs"), ExtResource("7_t04ks"), ExtResource("8_okk5d"), ExtResource("9_311gq")])
+bajas_aliadas_maximas = 4

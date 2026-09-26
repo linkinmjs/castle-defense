@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="Campana" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="1_ac4cr"]
+[ext_resource type="Resource" path="res://resources/encuentros/n1_el_camino.tres" id="2_tajm7"]
+[ext_resource type="Resource" path="res://resources/encuentros/n2_el_puente.tres" id="3_1l7ur"]
+[ext_resource type="Resource" path="res://resources/encuentros/n3_las_puertas.tres" id="4_t7xib"]
+[ext_resource type="Script" path="res://scripts/encuentros/campana.gd" id="5_3mqpb"]
+
+[resource]
+script = ExtResource("5_3mqpb")
+encuentros = Array[ExtResource("1_ac4cr")]([ExtResource("2_tajm7"), ExtResource("3_1l7ur"), ExtResource("4_t7xib")])

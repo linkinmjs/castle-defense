@@ -1,0 +1,153 @@
+[gd_resource type="Resource" script_class="Encuentro" format=3]
+
+[ext_resource type="Script" path="res://scripts/encuentros/grupo_unidades.gd" id="1_k5241"]
+[ext_resource type="Resource" path="res://resources/soldados/escudero.tres" id="2_0y4ua"]
+[ext_resource type="Resource" path="res://resources/soldados/espadachin.tres" id="3_5gkqf"]
+[ext_resource type="Resource" path="res://resources/soldados/lancero.tres" id="4_ke42x"]
+[ext_resource type="Script" path="res://scripts/encuentros/meta_encuentro.gd" id="5_8kmm7"]
+[ext_resource type="Script" path="res://scripts/movimientos/movimiento.gd" id="6_1q20v"]
+[ext_resource type="Resource" path="res://resources/movimientos/toque.tres" id="7_paxc2"]
+[ext_resource type="Resource" path="res://resources/movimientos/vendaje.tres" id="8_5icle"]
+[ext_resource type="Resource" path="res://resources/movimientos/plegaria.tres" id="9_0ky6f"]
+[ext_resource type="Resource" path="res://resources/movimientos/impulso.tres" id="10_v8sf6"]
+[ext_resource type="Resource" path="res://resources/movimientos/bendicion.tres" id="11_doaxv"]
+[ext_resource type="Resource" path="res://resources/movimientos/reanimar.tres" id="12_63m2r"]
+[ext_resource type="Resource" path="res://resources/movimientos/caida.tres" id="13_r8wht"]
+[ext_resource type="Script" path="res://scripts/encuentros/oleada_encuentro.gd" id="14_e13qu"]
+[ext_resource type="Script" path="res://scripts/encuentros/encuentro.gd" id="15_a3vwd"]
+[ext_resource type="Script" path="res://scripts/encuentros/sector.gd" id="16_04x3s"]
+[ext_resource type="Resource" path="res://resources/soldados/zombie.tres" id="17_titnp"]
+[ext_resource type="Resource" path="res://resources/soldados/bruto.tres" id="18_qr1ux"]
+
+[sub_resource type="Resource" id="Resource_j8efe"]
+script = ExtResource("1_k5241")
+tipo = ExtResource("2_0y4ua")
+cantidad = 4
+x_min = 7.0
+x_max = 10.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_vm4mq"]
+script = ExtResource("1_k5241")
+tipo = ExtResource("3_5gkqf")
+x_min = 7.0
+x_max = 10.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_3kcbs"]
+script = ExtResource("1_k5241")
+tipo = ExtResource("4_ke42x")
+x_min = 7.0
+x_max = 10.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_jmn3d"]
+script = ExtResource("1_k5241")
+bando = 1
+tipo = ExtResource("17_titnp")
+cantidad = 3
+x_min = 18.0
+x_max = 22.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_mt58k"]
+script = ExtResource("1_k5241")
+bando = 1
+tipo = ExtResource("18_qr1ux")
+x_min = 22.0
+x_max = 24.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_ddj8x"]
+script = ExtResource("16_04x3s")
+titulo = "La cabecera"
+grupos = Array[ExtResource("1_k5241")]([SubResource("Resource_jmn3d"), SubResource("Resource_mt58k")])
+
+[sub_resource type="Resource" id="Resource_swgkk"]
+script = ExtResource("1_k5241")
+bando = 1
+tipo = ExtResource("17_titnp")
+cantidad = 5
+x_min = 44.0
+x_max = 48.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_ymrgd"]
+script = ExtResource("1_k5241")
+tipo = ExtResource("2_0y4ua")
+cantidad = 2
+x_min = 31.0
+x_max = 33.0
+z_max = 4.5
+derribada_inicial = true
+
+[sub_resource type="Resource" id="Resource_w41qx"]
+script = ExtResource("16_04x3s")
+titulo = "El puente"
+x_fin = 60.0
+grupos = Array[ExtResource("1_k5241")]([SubResource("Resource_swgkk")])
+refuerzos_aliados = Array[ExtResource("1_k5241")]([SubResource("Resource_ymrgd")])
+emergentes = true
+
+[sub_resource type="Resource" id="Resource_x4qmb"]
+script = ExtResource("1_k5241")
+bando = 1
+tipo = ExtResource("18_qr1ux")
+x_min = 72.0
+x_max = 74.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_8ngse"]
+script = ExtResource("1_k5241")
+bando = 1
+tipo = ExtResource("17_titnp")
+cantidad = 3
+x_min = 76.0
+x_max = 80.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_bi0lu"]
+script = ExtResource("1_k5241")
+bando = 1
+tipo = ExtResource("18_qr1ux")
+x_min = 80.0
+x_max = 82.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_3meo0"]
+script = ExtResource("1_k5241")
+tipo = ExtResource("4_ke42x")
+x_min = 63.0
+x_max = 63.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_gbk0q"]
+script = ExtResource("1_k5241")
+tipo = ExtResource("2_0y4ua")
+x_min = 62.0
+x_max = 64.0
+z_max = 4.5
+
+[sub_resource type="Resource" id="Resource_v6qwt"]
+script = ExtResource("16_04x3s")
+titulo = "La otra orilla"
+x_fin = 90.0
+grupos = Array[ExtResource("1_k5241")]([SubResource("Resource_x4qmb"), SubResource("Resource_8ngse"), SubResource("Resource_bi0lu")])
+refuerzos_aliados = Array[ExtResource("1_k5241")]([SubResource("Resource_3meo0"), SubResource("Resource_gbk0q")])
+
+[resource]
+script = ExtResource("15_a3vwd")
+id = &"n2_el_puente"
+titulo = "El puente"
+objetivo_pedagogico = "Bendeci (L, P) a quien va a recibir el golpe del oso; Reanima (P) a los caidos; salta el barrido."
+semilla = 72002
+ancho_campo = 90.0
+profundidad_campo = 6.0
+base_enemiga_x = 88.5
+healer_inicial = Vector2(6, 3)
+grupos_iniciales = Array[ExtResource("1_k5241")]([SubResource("Resource_j8efe"), SubResource("Resource_vm4mq"), SubResource("Resource_3kcbs")])
+nombres = PackedStringArray("Mara", "Tobias", "Elsa", "Bruno", "Nadia", "Ciro", "Delia", "Ivan")
+sectores = Array[ExtResource("16_04x3s")]([SubResource("Resource_ddj8x"), SubResource("Resource_w41qx"), SubResource("Resource_v6qwt")])
+probabilidad_sangrado = 0.15
+movimientos = Array[ExtResource("6_1q20v")]([ExtResource("7_paxc2"), ExtResource("8_5icle"), ExtResource("9_0ky6f"), ExtResource("10_v8sf6"), ExtResource("11_doaxv"), ExtResource("12_63m2r"), ExtResource("13_r8wht")])
+bajas_aliadas_maximas = 4
