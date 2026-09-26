@@ -8,7 +8,6 @@ const ANCHO := 30.0
 const PROFUNDIDAD := 10.0
 ## El personaje mide ~68 px de arte y queremos que mida 2 m en el mundo.
 const PIXEL_SIZE := 2.0 / 68.0
-const RUTA_GRILLA := "res://assets/texturas/grilla.png"
 const DIR_MOVIMIENTOS := "res://resources/movimientos"
 const DIR_SOLDADOS := "res://resources/soldados"
 const RUTA_HUD := "res://scenes/ui/hud.tscn"
@@ -28,7 +27,6 @@ func _initialize() -> void:
 			quit(1)
 			return
 
-	_crear_textura_grilla()
 	_crear_tipos()
 	_crear_healer()
 	_crear_unidad()
@@ -36,24 +34,6 @@ func _initialize() -> void:
 	_crear_marca_telegrafo()
 	_crear_battle()
 	quit()
-
-
-## Textura de una celda de 1 m: sin una referencia repetida en el piso, en 3D
-## no se percibe ni el avance ni la profundidad.
-func _crear_textura_grilla() -> void:
-	DirAccess.make_dir_recursive_absolute(
-		ProjectSettings.globalize_path("res://assets/texturas"))
-
-	var lado := 64
-	var imagen := Image.create(lado, lado, false, Image.FORMAT_RGBA8)
-	var base := Color("343a4d")
-	var linea := Color("3e455c")
-	imagen.fill(base)
-	for i in lado:
-		imagen.set_pixel(i, 0, linea)
-		imagen.set_pixel(0, i, linea)
-	imagen.save_png(ProjectSettings.globalize_path(RUTA_GRILLA))
-	print("%s -> OK" % RUTA_GRILLA)
 
 
 ## Cada tipo le crea un problema distinto al healer: el escudero es el mejor
