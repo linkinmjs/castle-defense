@@ -153,7 +153,7 @@ El simulador no está en el repo: es una herramienta de balance, no una prueba.
 |---|---|---|---|
 | N1 | pierde en el bosque (55-63 s, 5 bajas) | 4/4, **0 bajas** | 132-148 s (camino ~24 s, bosque 60-78 s, cuesta ~26 s) |
 | N2 | pierde en la cabecera o el puente (31-49 s) | 3/4, **2-3 bajas** | 123-147 s |
-| N3 | pierde en la muralla (~48 s) | 1/4 (1 baja); las otras tres, contra el demonio | 143 s |
+| N3 | pierde en la muralla (~48-71 s) | 3/4 con el demonio aflojado (1, 4 y 5 bajas); antes del ajuste, 1/4 | 135-181 s |
 
 N1 es cómodo para quien cura a tiempo y no perdona a quien no cura. N2 es el
 salto: se gana perdiendo gente. N3 hoy lo gana un jugador muy bueno (ver
@@ -172,8 +172,8 @@ abajo).
 | Sangrado N2 y N3 | No decía | 0.15 y 0.2 | Presente pero sin tapar lo que enseña cada nivel |
 | Healer en N2 | No decía | (6, 3) | La mitad de los 6 m de profundidad |
 
-N3 quedó como pide el brief (salvo dónde nacen las oleadas): ninguna variante
-de datos lo mejoró. Probadas con el bot, todas 0/4 o 1/4: sin escolta delante
+N3 quedó como pide el brief (salvo dónde nacen las oleadas). Con el demonio
+de arranque ninguna variante de datos lo mejoró. Probadas con el bot, todas 0/4 o 1/4: sin escolta delante
 del demonio, con la escolta detrás, con dos escuderos y un espadachín de
 refuerzo, con el demonio entrando al 60-75 % de la vida y con la oleada cada
 25 s.
@@ -189,9 +189,10 @@ Salió al medir, y no se arregla con datos:
   tropa amontonada: ~75 de daño por segundo en área, contra ~20-37 que sostiene
   un healer y ~30 que la tropa le hace a él; el bot ganaba 1 de 4. Se aflojó en
   `gen_scenes3d.gd` (`demonio.tres`): **700 de vida, 24/36 de daño y 1.8 m de
-  radio**. Queda pendiente volver a medirlo con el simulador; si sigue duro, el
-  siguiente paso es que el demonio entre al 70 % de vida o con una escolta
-  menor.
+  radio**. Medido de nuevo con el bot en las cuatro semillas: **3/4** (la
+  semilla fija del nivel, 72003, es justo la que el bot pierde; un jugador
+  humano no depende tanto de la posicion inicial, asi que se deja). Sin curar
+  sigue perdiendo en la muralla: no quedo trivial.
 - **La tropa en su tope pelea mal contra lo que llega de adelante.** Frenados
   en `x_fin − 2.6`, sólo 1 o 2 aliados alcanzan a los enemigos que se paran a
   su alcance; el resto no puede avanzar. Cada par de zombis tarda 10-15 s en
